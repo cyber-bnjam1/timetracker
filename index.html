@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Time Tracker</title>
+  <!-- Affichage plein écran sur iPhone -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NomDeTonApp">
+
+<!-- Icônes pour iPhone -->
+<link rel="apple-touch-icon" href="icone-180.png">
+<link rel="apple-touch-icon" sizes="120x120" href="icone-120.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icone-152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icone-180.png">
+
+<!-- Icône pour navigateur classique -->
+<link rel="icon" href="favicon.png" type="image/png">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;600;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    /* ===== Layout sans scroll de page ===== */
+    html, body { height: 100%; margin: 0; overflow: hidden; }
+    body {
+      font-family: Inter, system-ui, -apple-system, "SF Pro Text", Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background:
+        radial-gradient(1100px 700px at 80% -10%, rgba(59,130,246,0.20), transparent 60%),
+        radial-gradient(900px 600px at -10% 110%, rgba(236,72,153,0.16), transparent 60%),
+        linear-gradient(135deg, #0b1020 0%, #0f172a 40%, #0b132b 100%);
+      color: rgba(255,255,255,0.92);
+      -webkit-text-size-adjust: 100%;
+    }
+
+    /* L'app occupe 100dvh (viewport dynamique iOS) */
+    #app-shell {
+      position: fixed; inset: 0;
+      height: 100dvh; width: 100%;
+      display: flex; justify-content: center; align-items: center;
+      padding: 0;
+    }
+    #app-container {
+      width: 100%;
+      max-width: 560px;
+      height: 100%;
+      display: flex; flex-direction: column;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.14);
+      backdrop-filter: blur(22px) saturate(170%);
+      -webkit-backdrop-filter: blur(22px) saturate(170%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 10px 30px rgba(0,0,0,0.35);
+      overflow: hidden;
+    }
+
+    /* ===== Header compact ===== */
+    header.app-header {
+      padding: 8px 14px 6px;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+    }
+    .app-title { font-size: 18px; font-weight: 700; letter-spacing: .2px; text-shadow: 0 0 16px rgba(96,165,250,0.35); }
+    .app-sub { font-size: 11px; color: rgba(147,197,253,0.8); margin-top: 2px; }
+
+    /* ===== Pane central : hauteur calculée en JS -> var(--pane-h) ===== */
+    .pane {
+      height: var(--pane-h, 60dvh);
+      overflow: auto;                    /* si nécessaire, scroller ici uniquement */
+      -webkit-overflow-scrolling: touch; /* scrolling fluide iOS */
+      padding: 10px 14px 10px;
+    }
+    .section { margin-bottom: 10px; }
+
+    /* ===== Cartes compactes ===== */
+    .card {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 14px;
+      padding: 10px;
+    }
+    .row { display: flex; align-items: center; gap: 10px; }
+    .lbl { width: 124px; font-size: 12px; opacity: .85; }
+    .input {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 10px;
+      padding: 8px 10px;
+      color: rgba(255,255,255,0.95);
+      outline: none; font-size: 14px; height: 36px;
+      width: 100%;
+    }
+    .input:focus{
+      border-color: rgba(96,165,250,0.9);
+      box-shadow: 0 0 0 4px rgba(59,130,246,0.25);
+    }
+    select.input{
+      appearance: none; -webkit-appearance: none; -moz-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 20 20'%3E%3Cpath d='M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.21 8.27a.75.75 0 0 1 .02-1.06z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.6rem center;
+      background-size: 1rem 1rem;
+      padding-right: 2rem;
+    }
+    .btn-primary{
+      height: 40px; border-radius: 12px; font-weight: 700;
+      background: linear-gradient(180deg, rgba(59,130,246,0.88), rgba(37,99,235,0.88));
+      border: 1px solid rgba(255,255,255,0.25);
+      box-shadow: 0 8px 22px rgba(37,99,235,0.42), inset 0 1px 0 rgba(255,255,255,0.28);
+      width: 100%;
+    }
+    .btn-secondary{
+      height: 40px; border-radius: 12px; font-weight: 700;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.18);
+      width: 100%;
+    }
+
+    /* ===== Segmented control iOS (tabbar) fixé en bas ===== */
+    :root{ --tabbar-h: 66px; }
+    .tabbar {
+      position: absolute; left: 0; right: 0;
+      bottom: 0;
+      padding: 10px 14px calc(10px + env(safe-area-inset-bottom,0px));
+      border-top: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.18);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      backdrop-filter: blur(16px) saturate(160%);
+      height: calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px));
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ios-seg {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 6px; padding: 6px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.16);
+      backdrop-filter: blur(16px) saturate(160%);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      width: 100%; max-width: 520px;
+    }
+    .ios-seg-btn {
+      height: 36px; border-radius: 10px; font-size: 13px; font-weight: 600; letter-spacing: .2px;
+      color: rgba(255,255,255,0.86); background: transparent; border: 1px solid transparent;
+    }
+    .ios-seg-btn.is-active {
+      color: #0a84ff; background: rgba(255,255,255,0.98);
+      border: 1px solid rgba(0,0,0,0.06);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 2px rgba(0,0,0,0.18);
+    }
+
+    /* ===== Sélecteur de mois (compact) ===== */
+    .month-picker {
+      display: grid; grid-template-columns: 40px 1fr 40px;
+      gap: 8px; align-items: center;
+    }
+    .month-nav-btn {
+      height: 36px; border-radius: 10px; font-weight: 700;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.16);
+    }
+
+    /* Petites lignes statistiques */
+    .stat-row { display:flex; justify-content:space-between; font-size:13px; padding:4px 0; }
+    .divider { border-top: 1px solid rgba(255,255,255,0.10); margin:6px 0; }
+  </style>
+</head>
+
+<body>
+  <div id="app-shell">
+    <div id="app-container">
+      <!-- Header -->
+      <header id="app-header" class="app-header">
+        <div class="app-title">Time Tracker</div>
+        <div class="app-sub">Suivi des heures</div>
+      </header>
+
+      <!-- Pane central (hauteur calculée) -->
+      <main id="pane" class="pane">
+        <!-- ===== Saisie ===== -->
+        <section id="tab-saisie" class="section">
+          <div class="card" style="padding-top:8px;">
+            <div class="row">
+              <label class="lbl" for="entry-date">Date</label>
+              <input type="date" id="entry-date" class="input" />
+            </div>
+            <div class="row" style="margin-top:8px;">
+              <label class="lbl" for="entry-type-select">Type</label>
+              <select id="entry-type-select" class="input">
+                <option value="WORK">Travail</option>
+                <option value="RTT">RTT</option>
+                <option value="VACATION">Vacances</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="work-card" class="card" style="margin-top:8px;">
+            <div class="stat-row" style="padding-bottom:6px;">
+              <span>Pause midi (réglage)</span>
+              <span id="lunch-duration-display" class="font-semibold text-blue-300">45 min</span>
+            </div>
+            <div class="row">
+              <label class="lbl" for="lunch-duration-manual">Pause (min)</label>
+              <input type="number" id="lunch-duration-manual" min="0" max="240" step="5" class="input" placeholder="Vide = défaut"/>
+            </div>
+            <div class="row" style="margin-top:8px;">
+              <label class="lbl" for="start-time">Début</label>
+              <input type="time" id="start-time" class="input"/>
+            </div>
+            <div class="row" style="margin-top:8px;">
+              <label class="lbl" for="end-time">Fin</label>
+              <input type="time" id="end-time" class="input"/>
+            </div>
+            <div class="stat-row" style="margin-top:6px;">
+              <span>Total du jour</span>
+              <span id="current-day-minutes" class="font-bold text-emerald-300">0h 00m</span>
+            </div>
+          </div>
+
+          <button id="save-entry-btn" class="btn-primary" style="margin-top:8px;">Enregistrer</button>
+
+          <div class="card" style="margin-top:8px;">
+            <div class="stat-row" style="padding-bottom:4px;"><strong>Dernières saisies</strong><span></span></div>
+            <div id="latest-list" style="margin-top:2px;">
+              <!-- items -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Hebdo ===== -->
+        <section id="tab-hebdo" class="section" style="display:none;">
+          <div class="card">
+            <div class="stat-row"><span>Objectif hebdo</span><span id="target-weekly-hours-summary" class="text-blue-300">37h 00m</span></div>
+            <div class="stat-row"><span>Total travaillé</span><span id="total-weekly-hours">0h 00m</span></div>
+            <div class="divider"></div>
+            <div class="stat-row"><strong>Écart</strong><strong id="deviation-weekly-hours">0h 00m</strong></div>
+          </div>
+          <div id="weekly-body" class="card" style="margin-top:8px; padding:6px;">
+            <!-- lignes jours -->
+          </div>
+        </section>
+
+        <!-- ===== Mensuelle ===== -->
+        <section id="tab-mensuelle" class="section" style="display:none;">
+          <div class="card">
+            <div class="month-picker">
+              <button id="month-prev" class="month-nav-btn">‹</button>
+              <select id="month-select" class="input">
+                <!-- options injectées -->
+              </select>
+              <button id="month-next" class="month-nav-btn">›</button>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:8px;">
+            <div class="stat-row" style="padding-bottom:4px; border-bottom:1px solid rgba(255,255,255,0.10);">
+              <span class="font-medium">Jours travaillés</span><span id="monthly-days-worked" class="font-bold text-emerald-300">0</span>
+            </div>
+            <div class="stat-row"><span>Jours de RTT</span><span id="monthly-rtt-days" class="font-bold text-blue-300">0</span></div>
+            <div class="stat-row"><span>Jours de vacances</span><span id="monthly-vacation-days" class="font-bold text-fuchsia-300">0</span></div>
+            <div class="divider"></div>
+            <div class="stat-row"><strong>Total heures</strong><strong id="monthly-total-work-hours">0h 00m</strong></div>
+            <div class="stat-row"><strong>Écart mensuel</strong><strong id="monthly-deviation-hours">0h 00m</strong></div>
+          </div>
+        </section>
+
+        <!-- ===== Réglages ===== -->
+        <section id="tab-reglages" class="section" style="display:none;">
+          <div class="card">
+            <div class="row">
+              <label class="lbl" for="target-hours">Objectif hebdo (h)</label>
+              <input type="number" id="target-hours" min="1" max="48" step="0.5" class="input text-right" value="37.0"/>
+            </div>
+            <div class="row" style="margin-top:8px;">
+              <label class="lbl" for="lunch-minutes">Pause midi (min)</label>
+              <input type="number" id="lunch-minutes" min="15" max="120" step="5" class="input text-right" value="45"/>
+            </div>
+            <button id="save-settings-btn" class="btn-primary" style="margin-top:10px;">Sauvegarder</button>
+          </div>
+
+          <div class="card" style="margin-top:8px;">
+            <div class="stat-row" style="padding-bottom:4px;"><strong>Données</strong><span></span></div>
+            <div class="row" style="gap:8px; margin-top:6px;">
+              <button id="export-data-btn" class="btn-primary">Exporter CSV</button>
+              <button id="import-data-btn" class="btn-secondary">Importer CSV</button>
+              <input id="import-file" type="file" accept=".csv,text/csv" style="display:none;" />
+            </div>
+            <div style="text-align:center; font-size:11px; color:rgba(255,255,255,0.75); margin-top:6px;">
+              ID Utilisateur : <code id="user-id-display" style="opacity:.9;"></code>
+            <div style="text-align:center; font-size:11px; color:rgba(255,255,255,0.75); margin-top:6px;">
+              Créé par Bnjam1
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Tabbar iOS, fixe et toujours visible -->
+      <nav id="tabbar" class="tabbar">
+        <div class="ios-seg" role="tablist" aria-label="Onglets">
+          <button id="btn-saisie"     class="ios-seg-btn is-active" role="tab" aria-selected="true">Saisie</button>
+          <button id="btn-hebdo"      class="ios-seg-btn" role="tab" aria-selected="false">Hebdo</button>
+          <button id="btn-mensuelle"  class="ios-seg-btn" role="tab" aria-selected="false">Mensuelle</button>
+          <button id="btn-reglages"   class="ios-seg-btn" role="tab" aria-selected="false">Réglages</button>
+        </div>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Modal simple -->
+  <div id="custom-modal" style="position:fixed; inset:0; background:rgba(0,0,0,.7); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; padding:16px; z-index:999;">
+    <div style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); border-radius:16px; padding:14px; max-width:360px; width:100%;">
+      <div id="modal-title" style="font-weight:800; color:#93c5fd; margin-bottom:6px;">Titre</div>
+      <div id="modal-message" style="font-size:14px; margin-bottom:10px;">Message</div>
+      <button id="close-modal-btn" class="btn-primary">Fermer</button>
+    </div>
+  </div>
+
+  <!-- App -->
+  <script type="module">
+    /* ========= Mode ultra-compact (optionnel) ========= */
+    const ULTRA_COMPACT = false;
+
+    // ====== Firebase (facultatif) ======
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-time-tracker-app-id';
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+    let app, db, auth;
+    try { app = initializeApp(firebaseConfig); db = getFirestore(app); auth = getAuth(app); setLogLevel('debug'); } catch(_) {}
+
+    // ====== État ======
+    let userId = null;
+    let workEntries = [];
+    let useLocalOnly = !auth;
+
+    let config = {
+      targetWeeklyHours: 37 * 60,
+      lunchDurationMinutes: 45,
+      workingDays: [1,2,3,4,5],
+      lastSelectedDate: new Date().toISOString().substring(0,10),
+      selectedMonthYM: new Date().toISOString().substring(0,7)
+    };
+
+    // ====== Utils ======
+    const $ = (s)=>document.querySelector(s);
+    const dateToYMD = d => d.toISOString().substring(0,10);
+    const fmtMinutes = m => { const s=m<0?"-":""; const a=Math.abs(m); const h=Math.floor(a/60); const mn=a%60; return `${s}${h}h ${mn<10?'0':''}${mn}m`; };
+    const calcWorkMinutes = (e)=>{ if(e?.type!=='WORK'||!e.start||!e.end) return 0; const p=t=>{const [h,m]=t.split(':').map(Number);return h*60+m}; const lunch=(e.lunchDurationMinutes ?? config.lunchDurationMinutes) || 0; return Math.max(p(e.end)-p(e.start)-lunch,0); };
+    const clampMonth = (ym)=>ym.replace(/^(\d{4})-(\d{2}).*$/,(_,y,m)=>`${y}-${m.padStart(2,'0')}`);
+    const addMonths = (ym, d)=>{ let [y,m]=ym.split('-').map(Number); const dt=new Date(y,m-1+d,1); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; };
+    const monthLabel = (ym)=>{ const [y,m]=ym.split('-').map(Number); return new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(new Date(y,m-1,1)); };
+
+    // ====== LocalStorage ======
+    const LS_KEYS = { entries:`tt_${appId}_entries`, config:`tt_${appId}_config` };
+    const lsLoadEntriesMap = ()=>{ try{return JSON.parse(localStorage.getItem(LS_KEYS.entries)||'{}')}catch{return{}} };
+    const lsSaveEntriesMap = (map)=>{ try{localStorage.setItem(LS_KEYS.entries, JSON.stringify(map))}catch{} };
+    const lsUpsertEntry = (e)=>{ const map=lsLoadEntriesMap(); const ex=map[e.date]; if(!ex||(ex.timestamp||0)<= (e.timestamp||0)){ map[e.date]=e; lsSaveEntriesMap(map);} };
+    const lsGetAllEntriesArray = ()=>Object.values(lsLoadEntriesMap()).sort((a,b)=>b.date.localeCompare(a.date));
+    const lsLoadConfig = ()=>{ try{return JSON.parse(localStorage.getItem(LS_KEYS.config)||'null')}catch{return null} };
+    const lsSaveConfig = (cfg)=>{ try{localStorage.setItem(LS_KEYS.config, JSON.stringify(cfg))}catch{} };
+
+    // ====== Firestore refs ======
+    const entriesCol = ()=> collection(db, 'artifacts', appId, 'users', userId, 'work_entries');
+    const configDoc = ()=> doc(db, 'artifacts', appId, 'users', userId, 'app_settings', 'config');
+    const entryDoc  = (d)=> doc(db, 'artifacts', appId, 'users', userId, 'work_entries', d);
+
+    // ====== Modal ======
+    const showModal=(t,m)=>{$('#modal-title').textContent=t; $('#modal-message').innerHTML=m; $('#custom-modal').style.display='flex';};
+    $('#close-modal-btn').addEventListener('click', ()=>$('#custom-modal').style.display='none');
+
+    // ====== Layout : calcul des hauteurs réelles ======
+    function resizePane(){
+      const headerH = $('#app-header').offsetHeight;
+      const tabbarH = $('#tabbar').offsetHeight;
+      const shellH  = $('#app-shell').offsetHeight; // ~100dvh
+      const paneH   = Math.max(0, shellH - headerH - tabbarH);
+      document.documentElement.style.setProperty('--pane-h', `${paneH}px`);
+    }
+    window.addEventListener('resize', resizePane);
+    window.addEventListener('orientationchange', resizePane);
+
+    // ====== Onglets ======
+    function setActiveTab(name){
+      const ids=['saisie','hebdo','mensuelle','reglages'];
+      ids.forEach(id=>{
+        $('#tab-'+id).style.display = (id===name)? 'block':'none';
+        const btn = $('#btn-'+id);
+        if(btn){ if(id===name){btn.classList.add('is-active'); btn.setAttribute('aria-selected','true');}
+                 else {btn.classList.remove('is-active'); btn.setAttribute('aria-selected','false');}}
+      });
+      if(name==='hebdo') updateWeeklyView();
+      if(name==='mensuelle'){ buildMonthOptions(); updateMonthlyView(); }
+    }
+
+    // ====== UI Saisie ======
+    function refreshDayTotal(){
+      const entry = {
+        date: $('#entry-date').value,
+        type: $('#entry-type-select').value,
+        start: $('#start-time').value,
+        end:   $('#end-time').value,
+        lunchDurationMinutes: (()=>{
+          const s=$('#lunch-duration-manual').value;
+          return s===''? undefined : Math.max(0, parseInt(s,10)||0);
+        })()
+      };
+      const mins = calcWorkMinutes(entry);
+      $('#current-day-minutes').textContent = (entry.type==='WORK') ? fmtMinutes(mins) : (entry.type==='RTT'?'Jour de RTT':'Jour de vacances');
+      if(entry.type==='WORK'){ $('#work-card').style.opacity='1'; $('#work-card').style.pointerEvents='auto'; }
+      else { $('#work-card').style.opacity='.55'; $('#work-card').style.pointerEvents='none'; }
+    }
+    function updateEntryUI(date){
+      const e = workEntries.find(x=>x.date===date);
+      $('#entry-date').value = date;
+      $('#entry-type-select').value = e?.type || 'WORK';
+      $('#start-time').value = e?.start || '';
+      $('#end-time').value   = e?.end   || '';
+      $('#lunch-duration-manual').value = (e?.lunchDurationMinutes!==undefined && e?.type==='WORK') ? e.lunchDurationMinutes : '';
+      $('#lunch-duration-display').textContent = `${config.lunchDurationMinutes} min`;
+      refreshDayTotal();
+    }
+
+    function renderLatestList(){
+      const container = $('#latest-list');
+      if(ULTRA_COMPACT){ container.innerHTML = `<div style="font-size:12px; opacity:.75;">(Masqué en mode ultra-compact)</div>`; return; }
+      const sorted = [...workEntries].sort((a,b)=> b.date.localeCompare(a.date) || (b.timestamp||0)-(a.timestamp||0)).slice(0,6);
+      container.innerHTML = sorted.map(e=>{
+        const tag = (e.type==='WORK')? fmtMinutes(calcWorkMinutes(e)) : (e.type==='RTT'?'RTT':'Vacances');
+        const info = (e.type==='WORK')? `${e.start||'--:--'} → ${e.end||'--:--'}` : e.type;
+        return `<button data-date="${e.date}" style="display:flex; justify-content:space-between; width:100%; padding:6px 8px; border-radius:8px; background:rgba(255,255,255,0.03); margin-top:4px;">
+                  <div style="display:flex; flex-direction:column;">
+                    <span style="font-size:13px; font-weight:600;">${e.date}</span>
+                    <span style="font-size:11px; opacity:.75;">${info}</span>
+                  </div>
+                  <span style="font-size:13px;">${tag}</span>
+                </button>`;
+      }).join('') || `<div style="font-size:12px; opacity:.75;">Aucune saisie.</div>`;
+      container.querySelectorAll('[data-date]').forEach(btn=>{
+        btn.addEventListener('click', (ev)=>{
+          const d = ev.currentTarget.getAttribute('data-date');
+          config.lastSelectedDate = d; lsSaveConfig(config);
+          updateEntryUI(d); setActiveTab('saisie'); $('#pane').scrollTop = 0;
+        });
+      });
+    }
+
+    // ====== Weekly ======
+    function updateWeeklyView(){
+      const now=new Date(); const today=now.getDay(); const diff=now.getDate()-today+(today===0?-6:1);
+      const monday=new Date(now.setDate(diff));
+      const names=['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
+      let total=0; const rows=[];
+      for(let i=0;i<5;i++){
+        const d=new Date(monday); d.setDate(monday.getDate()+i);
+        const ymd=dateToYMD(d); const e=workEntries.find(x=>x.date===ymd);
+        let status='Non saisi';
+        if(e){ if(e.type==='WORK'){ const mins=calcWorkMinutes(e); total+=mins; status=fmtMinutes(mins); }
+               else if(e.type==='RTT') status='RTT'; else if(e.type==='VACATION') status='Vacances'; }
+        rows.push(`<div style="display:flex; justify-content:space-between; padding:6px 6px; border-bottom:1px solid rgba(255,255,255,0.06);">
+                     <div><div style="font-size:13px; font-weight:600;">${names[i]}</div><div style="font-size:11px; opacity:.7;">${ymd}</div></div>
+                     <div style="font-size:13px;">${status}</div>
+                   </div>`);
+      }
+      const dev = total - config.targetWeeklyHours;
+      $('#total-weekly-hours').textContent = fmtMinutes(total);
+      $('#target-weekly-hours-summary').textContent = fmtMinutes(config.targetWeeklyHours);
+      $('#deviation-weekly-hours').textContent = fmtMinutes(dev);
+      $('#weekly-body').innerHTML = rows.join('');
+    }
+
+    // ====== Monthly ======
+    function buildMonthOptions(){
+      const sel = $('#month-select'); if(!sel) return;
+      const nowYM = new Date().toISOString().substring(0,7);
+      const months = new Set(); let cur=nowYM;
+      for(let i=0;i<18;i++){ months.add(cur); cur = addMonths(cur,-1); }
+      workEntries.forEach(e=>months.add(e.date.substring(0,7)));
+      const list=[...months].sort((a,b)=>b.localeCompare(a));
+      sel.innerHTML = list.map(ym=>`<option value="${ym}">${monthLabel(ym)}</option>`).join('');
+      const target=clampMonth(config.selectedMonthYM||nowYM);
+      sel.value = list.includes(target)? target : nowYM;
+      config.selectedMonthYM = sel.value; lsSaveConfig(config);
+    }
+    function updateMonthlyView(ym=config.selectedMonthYM){
+      ym = clampMonth(ym); config.selectedMonthYM=ym; lsSaveConfig(config);
+      const monthEntries = workEntries.filter(e=>e.date.startsWith(ym));
+      let dW=0,dR=0,dV=0,total=0;
+      monthEntries.forEach(e=>{
+        if(e.type==='WORK'){ dW++; total+=calcWorkMinutes(e); }
+        else if(e.type==='RTT'){ dR++; } else if(e.type==='VACATION'){ dV++; }
+      });
+      const dailyTarget = config.targetWeeklyHours/5;
+      const dev = total - (dailyTarget * dW);
+      $('#monthly-days-worked').textContent = dW;
+      $('#monthly-rtt-days').textContent = dR;
+      $('#monthly-vacation-days').textContent = dV;
+      $('#monthly-total-work-hours').textContent = fmtMinutes(total);
+      $('#monthly-deviation-hours').textContent = fmtMinutes(dev);
+      const sel=$('#month-select'); if(sel && sel.value!==ym) sel.value=ym;
+    }
+
+    // ====== Entrées ======
+    async function upsertEntryAll(entry){
+      // Local
+      lsUpsertEntry(entry);
+      workEntries = lsGetAllEntriesArray();
+
+      // Remote
+      if(userId && db && !useLocalOnly){
+        try { await setDoc(entryDoc(entry.date), entry); }
+        catch(e){ useLocalOnly = true; }
+      }
+      updateEntryUI(entry.date);
+      renderLatestList();
+      const activeBtn = document.querySelector('.ios-seg-btn.is-active');
+      if(activeBtn && activeBtn.id==='btn-hebdo') updateWeeklyView();
+      if(activeBtn && activeBtn.id==='btn-mensuelle'){ buildMonthOptions(); updateMonthlyView(); }
+    }
+
+    // ====== Config ======
+    async function saveConfigAll(){ lsSaveConfig(config); if(userId && db && !useLocalOnly){ try{ await setDoc(configDoc(), config, {merge:true}); }catch(_){}} }
+    async function loadConfig(){
+      const localCfg = lsLoadConfig(); if(localCfg) config = {...config, ...localCfg};
+      if(userId && db){ try{ const snap=await getDoc(configDoc()); if(snap.exists()) { config={...config, ...snap.data()}; lsSaveConfig(config);} }catch(_){ } }
+    }
+
+    function hydrateLocalFirst(){
+      const localCfg = lsLoadConfig(); if(localCfg) config = {...config, ...localCfg};
+      workEntries = lsGetAllEntriesArray();
+      $('#user-id-display').textContent = userId || (useLocalOnly? 'LOCAL':'N/A');
+      const today = dateToYMD(new Date());
+      $('#entry-date').setAttribute('max', today);
+      if(!$('#entry-date').value) $('#entry-date').value = today;
+      updateEntryUI(config.lastSelectedDate);
+      renderLatestList();
+      buildMonthOptions();
+      updateMonthlyView();
+    }
+
+    function setupFirestoreListener(){
+      if(!userId || !db) return;
+      const q = query(entriesCol(), orderBy('date','desc'));
+      onSnapshot(q, (snap)=>{
+        const map = lsLoadEntriesMap();
+        snap.forEach(d=>{
+          const remote=d.data(); const local=map[remote.date];
+          if(!local || (local.timestamp||0) < (remote.timestamp||0)) map[remote.date]=remote;
+        });
+        lsSaveEntriesMap(map);
+        workEntries = Object.values(map).sort((a,b)=>b.date.localeCompare(a.date));
+        buildMonthOptions();
+        updateEntryUI(config.lastSelectedDate);
+        renderLatestList();
+        const active = document.querySelector('.ios-seg-btn.is-active')?.id;
+        if(active==='btn-hebdo') updateWeeklyView();
+        if(active==='btn-mensuelle') updateMonthlyView();
+      }, (_)=>{ useLocalOnly=true; });
+    }
+
+    // ====== Export CSV ======
+    function exportCSV(){
+      const rowsArr = workEntries.length? workEntries : lsGetAllEntriesArray();
+      if(!rowsArr.length){ return showModal('Exportation', 'Aucune donnée à exporter.'); }
+      const header = ["Date","Type","Heure Début","Heure Fin","Pause Midi (min)","Total Travaillé (min)"];
+      const rows = rowsArr.map(e=>{
+        const total = e.type==='WORK'? calcWorkMinutes(e) : 0;
+        const lunch = e.type==='WORK'? (e.lunchDurationMinutes ?? config.lunchDurationMinutes) : 0;
+        return [e.date, e.type, e.start||'', e.end||'', lunch, total].join(',');
+      });
+      const csv = "data:text/csv;charset=utf-8," + header.join(',') + "\n" + rows.join('\n');
+      const a=document.createElement('a');
+      a.href=encodeURI(csv);
+      a.download=`suivi_heures_${new Date().toISOString().substring(0,10)}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      showModal('Exportation', 'Export CSV lancé.');
+    }
+
+    // ====== Import CSV ======
+    // Détection du séparateur (virgule/point-virgule) sur l'entête
+    function detectDelimiter(line){
+      const c = (line.match(/,/g)||[]).length;
+      const s = (line.match(/;/g)||[]).length;
+      return s>c ? ';' : ',';
+    }
+    // Split CSV en tenant compte de guillemets (basique mais robuste)
+    function smartSplit(line, delim){
+      const re = new RegExp(`${delim}(?=(?:[^"]*"[^"]*")*[^"]*$)`, 'g');
+      return line.split(re).map(v=>v.replace(/^"(.*)"$/,'$1').replace(/""/g,'"').trim());
+    }
+    function normalizeType(t){
+      const v=(t||'').toString().trim().toUpperCase();
+      if(v==='WORK' || v==='TRAVAIL') return 'WORK';
+      if(v==='RTT') return 'RTT';
+      if(v==='VACATION' || v==='VACANCES') return 'VACATION';
+      return null;
+    }
+    function isYMD(s){ return /^\d{4}-\d{2}-\d{2}$/.test(s); }
+    function isHHMM(s){ return !s || /^\d{2}:\d{2}$/.test(s); }
+
+    async function importCSVText(text){
+      const lines = text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(l=>l.trim().length>0);
+      if(lines.length<2) { showModal('Import CSV','Fichier vide ou invalide.'); return; }
+
+      const hdr = lines[0].trim();
+      const delim = detectDelimiter(hdr);
+      const headers = smartSplit(hdr, delim).map(h=>h.toLowerCase());
+
+      // Vérif colonnes minimales
+      const req = ["date","type","heure début","heure fin","pause midi (min)"];
+      const hasReq = req.every(k => headers.find(h=>h.indexOf(k)>=0));
+      if(!hasReq){
+        return showModal('Import CSV', "Entêtes invalides.<br>Attendu : <code>Date,Type,Heure Début,Heure Fin,Pause Midi (min),Total Travaillé (min)</code>");
+      }
+
+      // Indices
+      const idx = {
+        date: headers.findIndex(h=>h.indexOf('date')>=0),
+        type: headers.findIndex(h=>h.indexOf('type')>=0),
+        start: headers.findIndex(h=>h.indexOf('heure début')>=0),
+        end: headers.findIndex(h=>h.indexOf('heure fin')>=0),
+        lunch: headers.findIndex(h=>h.indexOf('pause midi')>=0)
+      };
+
+      // Backup local avant import
+      try{ localStorage.setItem(LS_KEYS.entries + "_backup_" + Date.now(), localStorage.getItem(LS_KEYS.entries)||'{}'); }catch{}
+
+      let imported=0, skipped=0, errors=0;
+      const nowTs = Date.now();
+      const map = lsLoadEntriesMap();
+
+      for(let i=1;i<lines.length;i++){
+        const raw = lines[i].trim();
+        if(!raw) continue;
+        const cols = smartSplit(raw, delim);
+        const date = cols[idx.date]?.trim();
+        const typeRaw = cols[idx.type];
+        const start = cols[idx.start]?.trim();
+        const end   = cols[idx.end]?.trim();
+        const lunchStr = (cols[idx.lunch]||'').toString().replace(',', '.').trim(); // tolère virgule décimale
+        const lunch = lunchStr===''? undefined : Math.max(0, parseInt(lunchStr,10)||0);
+
+        // Validation
+        const t = normalizeType(typeRaw);
+        if(!isYMD(date) || !t || !isHHMM(start) || !isHHMM(end)){
+          errors++; continue;
+        }
+        if(t==='WORK' && (!start || !end)){ errors++; continue; }
+
+        const entry = {
+          date, type: t,
+          ...(t==='WORK'? {start, end} : {}),
+          ...(t==='WORK' && lunch!==undefined ? {lunchDurationMinutes:lunch} : {}),
+          timestamp: nowTs + i // ordre stable
+        };
+
+        // Overwrite si plus récent ou inexistant
+        const existing = map[date];
+        if(!existing || (existing.timestamp||0) <= entry.timestamp){
+          map[date] = entry;
+          imported++;
+        } else {
+          skipped++;
+        }
+      }
+
+      // Sauvegarde map fusionnée
+      lsSaveEntriesMap(map);
+      workEntries = Object.values(map).sort((a,b)=>b.date.localeCompare(a.date));
+
+      // Push Firestore (best-effort)
+      if(userId && db && !useLocalOnly){
+        try{
+          const batchPromises = workEntries.map(e => setDoc(entryDoc(e.date), e));
+          await Promise.allSettled(batchPromises);
+        }catch(_){ /* silencieux */ }
+      }
+
+      renderLatestList();
+      buildMonthOptions();
+      updateMonthlyView();
+      updateEntryUI(config.lastSelectedDate);
+
+      showModal('Import terminé', `
+        <div style="line-height:1.5;">
+          <div>Importés : <b>${imported}</b></div>
+          <div>Ignorés (plus récent déjà présent) : <b>${skipped}</b></div>
+          <div>Erreurs de ligne : <b>${errors}</b></div>
+          <div style="margin-top:6px; font-size:12px; opacity:.8;">Une sauvegarde locale a été créée avant import.</div>
+        </div>
+      `);
+    }
+
+    function importCSVFile(file){
+      if(!file) return;
+      if(!/\.csv$/i.test(file.name)){ showModal('Import CSV','Veuillez choisir un fichier .csv'); return; }
+      const reader = new FileReader();
+      reader.onload = e => importCSVText(e.target.result);
+      reader.onerror = () => showModal('Import CSV','Impossible de lire le fichier.');
+      reader.readAsText(file, 'utf-8');
+    }
+
+    // ====== Boot ======
+    function bootLocalOnly(){
+      hydrateLocalFirst();
+      resizePane();
+      $('#app-shell').style.visibility='visible';
+    }
+
+    function bootWithAuth(){
+      if(!auth){ bootLocalOnly(); return; }
+      onAuthStateChanged(auth, async (user)=>{
+        if(user){
+          userId=user.uid; hydrateLocalFirst();
+          await loadConfig(); setupFirestoreListener();
+          resizePane();
+          $('#app-shell').style.visibility='visible';
+        }else{
+          try{ if(initialAuthToken) await signInWithCustomToken(auth, initialAuthToken); else await signInAnonymously(auth); }
+          catch(_){ useLocalOnly=true; bootLocalOnly(); }
+        }
+      });
+    }
+
+    // ====== Events ======
+    document.addEventListener('DOMContentLoaded', ()=>{
+      // onglets
+      $('#btn-saisie').addEventListener('click', ()=>{ setActiveTab('saisie'); });
+      $('#btn-hebdo').addEventListener('click', ()=>{ setActiveTab('hebdo');   });
+      $('#btn-mensuelle').addEventListener('click', ()=>{ setActiveTab('mensuelle'); });
+      $('#btn-reglages').addEventListener('click', ()=>{ setActiveTab('reglages');  });
+
+      // saisie
+      $('#entry-date').addEventListener('change',(e)=>{ config.lastSelectedDate=e.target.value; lsSaveConfig(config); updateEntryUI(e.target.value); });
+      $('#entry-type-select').addEventListener('change', refreshDayTotal);
+      $('#start-time').addEventListener('input', refreshDayTotal);
+      $('#end-time').addEventListener('input', refreshDayTotal);
+      $('#lunch-duration-manual').addEventListener('input', refreshDayTotal);
+      $('#save-entry-btn').addEventListener('click', async ()=>{
+        const date=$('#entry-date').value, type=$('#entry-type-select').value, start=$('#start-time').value, end=$('#end-time').value;
+        const s=$('#lunch-duration-manual').value; const lunch=(s===''? undefined : Math.max(0, parseInt(s,10)||0));
+        if(type==='WORK'){
+          if(!start||!end) return showModal('Erreur','Renseignez les heures de début et fin.');
+          if(start>=end)    return showModal('Erreur',"L'heure de fin doit être postérieure à l'heure de début.");
+        }
+        const entry={ date, type, ...(type==='WORK'?{start,end}:{}) , ...(type==='WORK'&&lunch!==undefined?{lunchDurationMinutes:lunch}:{}) , timestamp:Date.now() };
+        await upsertEntryAll(entry); config.lastSelectedDate=date; await saveConfigAll();
+        showModal('Succès',`Entrée enregistrée pour le ${date}.`);
+      });
+
+      // réglages
+      $('#save-settings-btn').addEventListener('click', async ()=>{
+        const t=parseFloat($('#target-hours').value); const l=parseInt($('#lunch-minutes').value,10);
+        if(isNaN(t)||t<=0||t>48) return showModal('Erreur','Heures hebdo invalides (1–48).');
+        if(isNaN(l)||l<15||l>120) return showModal('Erreur','Pause midi invalide (15–120).');
+        config.targetWeeklyHours=Math.round(t*60); config.lunchDurationMinutes=l; await saveConfigAll();
+        updateEntryUI(config.lastSelectedDate); showModal('Succès','Réglages enregistrés.');
+      });
+
+      // export
+      $('#export-data-btn').addEventListener('click', exportCSV);
+
+      // import
+      $('#import-data-btn').addEventListener('click', ()=>$('#import-file').click());
+      $('#import-file').addEventListener('change', (e)=> importCSVFile(e.target.files[0]));
+
+      // mensuelle
+      $('#month-select').addEventListener('change',(e)=>updateMonthlyView(clampMonth(e.target.value)));
+      $('#month-prev').addEventListener('click',()=>{ const ym=clampMonth(config.selectedMonthYM||new Date().toISOString().substring(0,7)); updateMonthlyView(addMonths(ym,-1)); });
+      $('#month-next').addEventListener('click',()=>{ const ym=clampMonth(config.selectedMonthYM||new Date().toISOString().substring(0,7)); updateMonthlyView(addMonths(ym,+1)); });
+
+      // boot
+      bootWithAuth();
+
+      // première mesure & re-mesure (iOS UI)
+      setTimeout(resizePane, 0);
+      setTimeout(resizePane, 300);
+    });
+  </script>
+</body>
+</html>
