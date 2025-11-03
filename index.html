@@ -21,7 +21,11 @@
 
   <style>
     /* ===== Layout sans scroll de page ===== */
-    html, body { height: 100%; margin: 0; overflow: hidden; }
+    html, body { 
+      height: 100%; 
+      margin: 0; 
+      /* CORRECTION : Suppression de overflow: hidden; ici pour permettre au date-picker de s'afficher */
+    }
     body {
       font-family: Inter, system-ui, -apple-system, "SF Pro Text", Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
       background:
@@ -38,6 +42,8 @@
       height: 100dvh; width: 100%;
       display: flex; justify-content: center; align-items: center;
       padding: 0;
+      /* On peut s'assurer que l'app-shell lui-même ne déborde pas */
+      overflow: hidden; 
     }
     #app-container {
       width: 100%;
