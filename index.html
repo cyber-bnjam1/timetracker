@@ -106,7 +106,8 @@
         font-size: 14px; height: 36px;
         width: 100%; cursor: pointer;
     }
-    #entry-date-button:disabled { opacity: 0.6; cursor: not-allowed; }
+    /* Rétablit l'apparence normale du bouton même si une entrée existe */
+    #entry-date-button:disabled { opacity: 1.0; cursor: pointer; } 
 
     textarea.input { height: auto; min-height: 80px; }
     
@@ -411,7 +412,7 @@
 
     // ====== Utils (CORRIGÉ) ======
     const $ = (s)=>document.querySelector(s);
-    // CORRECTION : Utilise les composants locaux pour éviter le décalage UTC
+    // CORRECTION (v2) : Utilise les composants locaux pour éviter le décalage UTC
     const dateToYMD = d => {
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -478,7 +479,8 @@
       $('#lunch-duration-manual').value = '';
       
       currentEntryDate = null;
-      $('#entry-date-button').disabled = false;
+      // Laisse le bouton de date actif pour la sélection du calendrier
+      // $('#entry-date-button').disabled = false;
       
       updateEntryUI($('#entry-date-hidden').value); 
       refreshDayTotal(); 
@@ -529,7 +531,8 @@
         $('#save-entry-btn').style.width = 'calc(100% - 56px)';
       }
       
-      $('#entry-date-button').disabled = !!e;
+      // FIX : Retiré cette ligne pour que le bouton de date ne soit plus grisé.
+      // $('#entry-date-button').disabled = !!e;
     }
 
     // ... (Reste des fonctions d'affichage des vues, inchangées) ...
@@ -682,7 +685,8 @@
 
       if (entry.date === currentEntryDate) {
         currentEntryDate = null;
-        $('#entry-date-button').disabled = false;
+        // Laisse le bouton de date actif
+        // $('#entry-date-button').disabled = false;
         $('#entry-date-hidden').value = dateToYMD(new Date());
       }
       
@@ -822,7 +826,7 @@
         const startDay = new Date(firstDayOfMonth);
         startDay.setDate(firstDayOfMonth.getDate() - dayOfWeek);
         
-        // La restriction sur les dates futures est supprimée, donc isDisabled est toujours false ici.
+        // La restriction sur les dates futures est supprimée
         const isDisabled = false; 
 
         for(let i = 0; i < 42; i++) {
