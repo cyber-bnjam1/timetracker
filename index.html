@@ -272,6 +272,15 @@
           <div class="card">
             <div class="stat-row"><span>Objectif hebdo</span><span id="target-weekly-hours-summary" class="text-blue-300">37h 00m</span></div>
             <div class="stat-row"><span>Total travaillé</span><span id="total-weekly-hours">0h 00m</span></div>
+            
+            <div id="progress-bar-container" style="margin-top:10px; margin-bottom:10px;">
+                <div class="progress-wrapper" style="height:12px; border-radius:6px; background:rgba(255,255,255,0.12); overflow:hidden; position:relative;">
+                    <div id="weekly-progress-bar" class="progress-bar-fill" 
+                         style="height:100%; width:0%; transition:width 0.3s ease-out; position:absolute; left:0; top:0;">
+                    </div>
+                </div>
+                <div id="progress-bar-label" style="text-align:center; font-size:12px; font-weight:600; margin-top:4px;">0%</div>
+            </div>
             <div class="divider"></div>
             <div class="stat-row"><strong>Écart</strong><strong id="deviation-weekly-hours">0h 00m</strong></div>
           </div>
@@ -479,8 +488,6 @@
       $('#lunch-duration-manual').value = '';
       
       currentEntryDate = null;
-      // Laisse le bouton de date actif pour la sélection du calendrier
-      // $('#entry-date-button').disabled = false;
       
       updateEntryUI($('#entry-date-hidden').value); 
       refreshDayTotal(); 
@@ -535,7 +542,7 @@
       // $('#entry-date-button').disabled = !!e;
     }
 
-    // ... (Reste des fonctions d'affichage des vues, inchangées) ...
+    // ... (Reste des fonctions d'affichage des vues) ...
     function renderLatestList(){
       const container = $('#latest-list');
       if(ULTRA_COMPACT){ container.innerHTML = `<div style="font-size:12px; opacity:.75;">(Masqué en mode ultra-compact)</div>`; return; }
@@ -602,11 +609,13 @@
       });
     }
 
+    // Fonction mise à jour avec la barre de progression (CORRIGÉE)
     function updateWeeklyView(){
       const now=new Date(); const today=now.getDay(); const diff=now.getDate()-today+(today===0?-6:1);
       const monday=new Date(now.setDate(diff));
       const names=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
       let total=0; const rows=[];
+      
       for(let i=0;i<7;i++){ 
         const d=new Date(monday); d.setDate(monday.getDate()+i);
         const ymd=dateToYMD(d); 
@@ -628,11 +637,49 @@
                      <div style="font-size:13px;">${status}</div>
                    </div>`);
       }
+      
       const dev = total - config.targetWeeklyHours;
+      
       $('#total-weekly-hours').textContent = fmtMinutes(total);
       $('#target-weekly-hours-summary').textContent = fmtMinutes(config.targetWeeklyHours);
       $('#deviation-weekly-hours').textContent = fmtMinutes(dev);
       $('#weekly-body').innerHTML = rows.join('');
+      
+      // === NOUVEAU LOGIC POUR LA BARRE DE PROGRESSION ===
+      const totalTargetMinutes = config.targetWeeklyHours;
+      const progressBarContainer = $('#progress-bar-container');
+      
+      if(totalTargetMinutes > 0) {
+          progressBarContainer.style.display = 'block';
+          const percent = (total / totalTargetMinutes) * 100;
+          const fillBar = $('#weekly-progress-bar');
+          const progressLabel = $('#progress-bar-label');
+          
+          let color = '#10b981'; // Vert (emerald-500)
+          let barText = `${Math.round(percent)}%`;
+          
+          if (percent >= 100) {
+              color = '#ef4444'; // Rouge (red-500) pour dépassement
+          } else if (percent < 50) {
+              color = '#f59e0b'; // Jaune/Orange (amber-500) si moins de 50%
+          } else {
+              color = '#10b981'; // Vert (emerald-500)
+          }
+
+          const clampedWidth = Math.min(100, percent); // Limite la largeur visuelle du fill à 100%
+          
+          fillBar.style.width = `${clampedWidth}%`;
+          fillBar.style.backgroundColor = color;
+          fillBar.style.boxShadow = 'none'; // Réinitialiser le shadow
+          
+          if (percent > 100) {
+              progressLabel.innerHTML = `<span style="color:${color};"><strong>${barText}</strong></span> (Objectif atteint ! ${fmtMinutes(dev)} en trop)`;
+          } else {
+             progressLabel.innerHTML = `${barText}`;
+          }
+      } else {
+          progressBarContainer.style.display = 'none';
+      }
     }
 
     function buildMonthOptions(){
@@ -685,8 +732,6 @@
 
       if (entry.date === currentEntryDate) {
         currentEntryDate = null;
-        // Laisse le bouton de date actif
-        // $('#entry-date-button').disabled = false;
         $('#entry-date-hidden').value = dateToYMD(new Date());
       }
       
@@ -937,6 +982,9 @@
       });
 
       // réglages
+      $('#target-hours').value = (config.targetWeeklyHours / 60).toFixed(1);
+      $('#lunch-minutes').value = config.lunchDurationMinutes;
+
       $('#save-settings-btn').addEventListener('click', async ()=>{
         const t=parseFloat($('#target-hours').value); const l=parseInt($('#lunch-minutes').value,10);
         if(isNaN(t)||t<=0||t>48) return showModal('Erreur','Heures hebdo invalides (1–48).');
