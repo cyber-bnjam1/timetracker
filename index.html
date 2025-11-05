@@ -40,6 +40,7 @@
       height: 100dvh; width: 100%;
       display: flex; justify-content: center; align-items: center;
       padding: 0;
+      visibility: hidden; /* Caché par défaut, révélé après le splash screen */
     }
     #app-container {
       width: 100%;
@@ -202,6 +203,14 @@
 </head>
 
 <body>
+  <div id="splash-screen" style="position:fixed; inset:0; background:#0b1020; z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; opacity:1; transition:opacity 0.5s ease-out;">
+    <div id="clock-container" style="position:relative; width:100px; height:100px; border:4px solid #3b82f6; border-radius:50%; margin-bottom:15px;">
+        <div id="hour-hand" style="position:absolute; width:4px; height:30px; background:#60a5fa; top:50%; left:50%; margin-left:-2px; margin-top:-30px; border-radius:2px; transform-origin:bottom; transform:rotate(0deg); transition:transform 0.1s linear;"></div>
+        <div id="minute-hand" style="position:absolute; width:3px; height:40px; background:#93c5fd; top:50%; left:50%; margin-left:-1.5px; margin-top:-40px; border-radius:1.5px; transform-origin:bottom; transform:rotate(0deg); transition:transform 0.1s linear;"></div>
+        <div id="center-dot" style="position:absolute; width:8px; height:8px; background:white; border-radius:50%; top:50%; left:50%; margin-left:-4px; margin-top:-4px;"></div>
+    </div>
+    <div style="font-size:24px; font-weight:700; color:#93c5fd; letter-spacing:1px;">Time Tracker</div>
+  </div>
   <div id="app-shell">
     <div id="app-container">
       <header id="app-header" class="app-header">
@@ -819,10 +828,33 @@
     function exportCSV(){ showModal('Export CSV', 'Fonction non implémentée.'); }
     function importCSVFile(file){ showModal('Import CSV', 'Fonction non implémentée.'); }
 
+    // === NOUVELLE ANIMATION DE L'HORLOGE CSS ===
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes tick-tock {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #hour-hand, #minute-hand {
+            animation: tick-tock 2s linear infinite; /* 2 secondes pour faire un tour complet */
+        }
+    `;
+    document.head.appendChild(style);
+    // ===========================================
+
     function bootLocalOnly(){
       hydrateLocalFirst();
       resizePane();
-      $('#app-shell').style.visibility='visible';
+      
+      // *** Dévoilement de l'application après un délai ***
+      setTimeout(()=>{
+        $('#splash-screen').style.opacity = '0'; // Fondu de sortie
+        setTimeout(()=>{
+            $('#splash-screen').style.display = 'none'; // Suppression après le fondu
+            $('#app-shell').style.visibility='visible'; // Affichage de l'app principale
+        }, 500); // Délai après le fondu (0.5s)
+      }, 2500); // 2.5 secondes de temps d'affichage total de l'horloge
+      // *******************************************
     }
 
     function bootWithAuth(){
@@ -831,93 +863,23 @@
         if(user){
           userId=user.uid; hydrateLocalFirst();
           await loadConfig(); setupFirestoreListener();
-          resizePane();
-          $('#app-shell').style.visibility='visible';
         }else{
           try{ if(initialAuthToken) await signInWithCustomToken(auth, initialAuthToken); else await signInAnonymously(auth); }
-          catch(_){ useLocalOnly=true; bootLocalOnly(); }
+          catch(_){ useLocalOnly=true; }
         }
+        
+        // *** Dévoilement de l'application après un délai ***
+        setTimeout(()=>{
+          resizePane(); // S'assurer que le pane est redimensionné
+          $('#splash-screen').style.opacity = '0'; // Fondu de sortie
+          setTimeout(()=>{
+            $('#splash-screen').style.display = 'none'; // Suppression après le fondu
+            $('#app-shell').style.visibility='visible'; // Affichage de l'app principale
+          }, 500); // Délai après le fondu (0.5s)
+        }, 2500); // Laisse l'animation tourner pendant 2.5 secondes
+        // *******************************************************
       });
     }
-
-    // ====== Calendrier Modal (inchangé) ======
-    function setDateFromCalendar(ymd){
-        const oldYMD = $('#entry-date-hidden').value;
-        if(ymd === oldYMD) return;
-
-        config.lastSelectedDate = ymd;
-        lsSaveConfig(config);
-        
-        $('#entry-date-hidden').value = ymd;
-        $('#entry-date-display').textContent = dateToFr(ymd);
-        
-        updateEntryUI(ymd);
-        $('#calendar-modal').style.display = 'none';
-    }
-
-    function renderCalendar(date){
-        const todayYMD = dateToYMD(new Date());
-        const selectedYMD = $('#entry-date-hidden').value;
-        const targetMonth = date.getMonth();
-        const targetYear = date.getFullYear();
-        
-        $('#calendar-title').textContent = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(date);
-        
-        const grid = $('#calendar-grid');
-        while(grid.children.length > 7) { grid.removeChild(grid.lastChild); }
-        
-        const firstDayOfMonth = new Date(targetYear, targetMonth, 1);
-        const dayOfWeek = (firstDayOfMonth.getDay() + 6) % 7; // Lundi=0, Dimanche=6
-        const startDay = new Date(firstDayOfMonth);
-        startDay.setDate(firstDayOfMonth.getDate() - dayOfWeek);
-        
-        // La restriction sur les dates futures est supprimée
-        const isDisabled = false; 
-
-        for(let i = 0; i < 42; i++) {
-            const currentDay = new Date(startDay);
-            currentDay.setDate(startDay.getDate() + i);
-            const currentYMD = dateToYMD(currentDay);
-            const dayNum = currentDay.getDate();
-
-            const isCurrentMonth = currentDay.getMonth() === targetMonth;
-            const isSelected = currentYMD === selectedYMD;
-            const isToday = currentYMD === todayYMD;
-
-            const btn = document.createElement('button');
-            btn.className = 'calendar-day-btn';
-            btn.textContent = dayNum;
-            btn.setAttribute('data-ymd', currentYMD);
-            
-            if(isCurrentMonth) btn.classList.add('is-current-month');
-            if(isSelected) btn.classList.add('is-selected');
-            if(isToday) btn.classList.add('is-today');
-            if(isDisabled) btn.disabled = true;
-
-            btn.addEventListener('click', (e) => {
-                setDateFromCalendar(e.target.getAttribute('data-ymd'));
-            });
-
-            grid.appendChild(btn);
-            
-            if(i >= 28 && currentDay.getDay() === 0 && currentDay.getMonth() !== targetMonth) break; 
-        }
-    }
-    
-    function showCalendarModal(){
-        const ymd = $('#entry-date-hidden').value;
-        // La création de la date pour le mois en cours doit utiliser les valeurs locales YYYY-MM
-        const [y, m] = ymd.split('-').map(Number);
-        currentCalendarMonth = new Date(y, m - 1, 1);
-        renderCalendar(currentCalendarMonth);
-        $('#calendar-modal').style.display = 'flex';
-    }
-    
-    function changeCalendarMonth(offset) {
-        currentCalendarMonth.setMonth(currentCalendarMonth.getMonth() + offset);
-        renderCalendar(currentCalendarMonth);
-    }
-
 
     // ====== Events (COMPLET) ======
     document.addEventListener('DOMContentLoaded', ()=>{
@@ -1017,6 +979,84 @@
       setTimeout(resizePane, 0);
       setTimeout(resizePane, 300);
     });
+    
+    // === Fonctions calendrier (inchangées) ===
+    function setDateFromCalendar(ymd){
+        const oldYMD = $('#entry-date-hidden').value;
+        if(ymd === oldYMD) return;
+
+        config.lastSelectedDate = ymd;
+        lsSaveConfig(config);
+        
+        $('#entry-date-hidden').value = ymd;
+        $('#entry-date-display').textContent = dateToFr(ymd);
+        
+        updateEntryUI(ymd);
+        $('#calendar-modal').style.display = 'none';
+    }
+
+    function renderCalendar(date){
+        const todayYMD = dateToYMD(new Date());
+        const selectedYMD = $('#entry-date-hidden').value;
+        const targetMonth = date.getMonth();
+        const targetYear = date.getFullYear();
+        
+        $('#calendar-title').textContent = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(date);
+        
+        const grid = $('#calendar-grid');
+        while(grid.children.length > 7) { grid.removeChild(grid.lastChild); }
+        
+        const firstDayOfMonth = new Date(targetYear, targetMonth, 1);
+        const dayOfWeek = (firstDayOfMonth.getDay() + 6) % 7; // Lundi=0, Dimanche=6
+        const startDay = new Date(firstDayOfMonth);
+        startDay.setDate(firstDayOfMonth.getDate() - dayOfWeek);
+        
+        // La restriction sur les dates futures est supprimée
+        const isDisabled = false; 
+
+        for(let i = 0; i < 42; i++) {
+            const currentDay = new Date(startDay);
+            currentDay.setDate(startDay.getDate() + i);
+            const currentYMD = dateToYMD(currentDay);
+            const dayNum = currentDay.getDate();
+
+            const isCurrentMonth = currentDay.getMonth() === targetMonth;
+            const isSelected = currentYMD === selectedYMD;
+            const isToday = currentYMD === todayYMD;
+
+            const btn = document.createElement('button');
+            btn.className = 'calendar-day-btn';
+            btn.textContent = dayNum;
+            btn.setAttribute('data-ymd', currentYMD);
+            
+            if(isCurrentMonth) btn.classList.add('is-current-month');
+            if(isSelected) btn.classList.add('is-selected');
+            if(isToday) btn.classList.add('is-today');
+            if(isDisabled) btn.disabled = true;
+
+            btn.addEventListener('click', (e) => {
+                setDateFromCalendar(e.target.getAttribute('data-ymd'));
+            });
+
+            grid.appendChild(btn);
+            
+            if(i >= 28 && currentDay.getDay() === 0 && currentDay.getMonth() !== targetMonth) break; 
+        }
+    }
+    
+    function showCalendarModal(){
+        const ymd = $('#entry-date-hidden').value;
+        // La création de la date pour le mois en cours doit utiliser les valeurs locales YYYY-MM
+        const [y, m] = ymd.split('-').map(Number);
+        currentCalendarMonth = new Date(y, m - 1, 1);
+        renderCalendar(currentCalendarMonth);
+        $('#calendar-modal').style.display = 'flex';
+    }
+    
+    function changeCalendarMonth(offset) {
+        currentCalendarMonth.setMonth(currentCalendarMonth.getMonth() + offset);
+        renderCalendar(currentCalendarMonth);
+    }
   </script>
 </body>
 </html>
