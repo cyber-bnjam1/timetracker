@@ -428,7 +428,7 @@
       selectedMonthYM: new Date().toISOString().substring(0,7),
     };
 
-    // ====== Utils (CORRIGÉ) ======
+    // ====== Utils (CORRIGÉ & MODIFIÉ) ======
     const $ = (s)=>document.querySelector(s);
     // CORRECTION (v2) : Utilise les composants locaux pour éviter le décalage UTC
     const dateToYMD = d => {
@@ -439,8 +439,23 @@
     };
 
     const dateToFr = ymd => { const [y,m,d]=ymd.split('-'); return `${d}/${m}/${y}`; };
-    const fmtMinutes = m => { const s=m<0?"-":""; const a=Math.abs(m); const h=Math.floor(a/60); const mn=a%60; return `${s}${h}h ${mn<10?'0':''}${mn}m`; };
-    const calcWorkMinutes = (e)=>{ if(e?.type!=='WORK'||!e.start||!e.end) return 0; const p=t=>{const [h,m]=t.split(':').map(Number);return h*60+m}; const lunch=(e.lunchDurationMinutes ?? config.lunchDurationMinutes) || 0; return Math.max(p(e.end)-p(e.start)-lunch,0); };
+    const fmtMinutes = m => { const s=m<0?"-":""; const a=Math.abs(m); const h=Math.floor(a/60); const mn=Math.round(a%60); return `${s}${h}h ${mn<10?'0':''}${mn}m`; };
+    
+    // MODIFICATION ICI : calcWorkMinutes utilise l'objectif hebdo / 5 pour RTT/VACATION/HOLIDAY
+    const calcWorkMinutes = (e)=>{ 
+      // Calcul dynamique de la journée théorique
+      const dailyTargetMinutes = config.targetWeeklyHours / 5;
+      
+      if(e?.type==='RTT' || e?.type==='VACATION' || e?.type==='HOLIDAY') {
+          // Retourne l'objectif journalier dynamique
+          return dailyTargetMinutes; 
+      }
+      if(e?.type!=='WORK'||!e.start||!e.end) return 0; 
+      const p=t=>{const [h,m]=t.split(':').map(Number);return h*60+m}; 
+      const lunch=(e.lunchDurationMinutes ?? config.lunchDurationMinutes) || 0; 
+      return Math.max(p(e.end)-p(e.start)-lunch,0); 
+    };
+
     const clampMonth = (ym)=>ym.replace(/^(\d{4})-(\d{2}).*$/,(_,y,m)=>`${y}-${m.padStart(2,'0')}`);
     const addMonths = (ym, d)=>{ let [y,m]=ym.split('-').map(Number); const dt=new Date(y,m-1+d,1); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; };
     const monthLabel = (ym)=>{ const [y,m]=ym.split('-').map(Number); return new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(new Date(y,m-1,1)); };
@@ -484,7 +499,7 @@
       if(name==='data') renderDataListView();
     }
     
-    // ... (Fonctions de l'UI de Saisie, inchangées) ...
+    // ... (Fonctions de l'UI de Saisie) ...
     function clearEntryUI(clearDate = false){
       if(clearDate) {
           const todayYMD = dateToYMD(new Date());
@@ -502,6 +517,7 @@
       refreshDayTotal(); 
     }
 
+    // MODIFICATION ICI : refreshDayTotal affiche le décompte dynamique
     function refreshDayTotal(){
       const entry = {
         date: $('#entry-date-hidden').value,
@@ -515,10 +531,27 @@
       };
       const mins = calcWorkMinutes(entry);
       let statusText = '';
-      if(entry.type==='WORK'){ statusText = fmtMinutes(mins); $('#work-card').style.opacity='1'; $('#work-card').style.pointerEvents='auto'; }
-      else if(entry.type==='RTT'){ statusText = 'Jour de RTT'; $('#work-card').style.opacity='.55'; $('#work-card').style.pointerEvents='none'; }
-      else if(entry.type==='VACATION'){ statusText = 'Jour de vacances'; $('#work-card').style.opacity='.55'; $('#work-card').style.pointerEvents='none'; }
-      else if(entry.type==='HOLIDAY'){ statusText = 'Jour férié'; $('#work-card').style.opacity='.55'; $('#work-card').style.pointerEvents='none'; }
+      
+      if(entry.type==='WORK'){ 
+          statusText = fmtMinutes(mins); 
+          $('#work-card').style.opacity='1'; 
+          $('#work-card').style.pointerEvents='auto'; 
+      }
+      else if(entry.type==='RTT'){ 
+          statusText = `Jour de RTT (${fmtMinutes(mins)})`; 
+          $('#work-card').style.opacity='.55'; 
+          $('#work-card').style.pointerEvents='none'; 
+      }
+      else if(entry.type==='VACATION'){ 
+          statusText = `Jour de vacances (${fmtMinutes(mins)})`; 
+          $('#work-card').style.opacity='.55'; 
+          $('#work-card').style.pointerEvents='none'; 
+      }
+      else if(entry.type==='HOLIDAY'){ 
+          statusText = `Jour férié (${fmtMinutes(mins)})`; 
+          $('#work-card').style.opacity='.55'; 
+          $('#work-card').style.pointerEvents='none'; 
+      }
       
       $('#current-day-minutes').textContent = statusText;
     }
@@ -560,9 +593,9 @@
         let tag = '';
         let info = '';
         if(e.type==='WORK'){ tag=fmtMinutes(calcWorkMinutes(e)); info=`${e.start||'--:--'} → ${e.end||'--:--'}`;}
-        else if(e.type==='RTT'){ tag='RTT'; info=e.type;}
-        else if(e.type==='VACATION'){ tag='Vacances'; info=e.type;}
-        else if(e.type==='HOLIDAY'){ tag='Férié'; info=e.type;}
+        else if(e.type==='RTT'){ tag='RTT'; info=`Décompté: ${fmtMinutes(calcWorkMinutes(e))}`;}
+        else if(e.type==='VACATION'){ tag='Vacances'; info=`Décompté: ${fmtMinutes(calcWorkMinutes(e))}`;}
+        else if(e.type==='HOLIDAY'){ tag='Férié'; info=`Décompté: ${fmtMinutes(calcWorkMinutes(e))}`;}
         
         return `<button data-date="${e.date}" style="display:flex; justify-content:space-between; width:100%; padding:6px 8px; border-radius:8px; background:rgba(255,255,255,0.03); margin-top:4px;">
                   <div style="display:flex; flex-direction:column;">
@@ -594,9 +627,21 @@
             info=`${e.start||'--:--'} → ${e.end||'--:--'} (${e.lunchDurationMinutes??config.lunchDurationMinutes}m pause)`;
             tagColor='text-emerald-300';
         }
-        else if(e.type==='RTT'){ tag='RTT'; info=e.type; tagColor='text-blue-300'; }
-        else if(e.type==='VACATION'){ tag='Vacances'; info=e.type; tagColor='text-fuchsia-300'; }
-        else if(e.type==='HOLIDAY'){ tag='Férié'; info=e.type; tagColor='text-yellow-300'; }
+        else if(e.type==='RTT'){ 
+            tag='RTT'; 
+            info=`Décompté: ${fmtMinutes(calcWorkMinutes(e))}`; 
+            tagColor='text-blue-300'; 
+        }
+        else if(e.type==='VACATION'){ 
+            tag='Vacances'; 
+            info=`Décompté: ${fmtMinutes(calcWorkMinutes(e))}`; 
+            tagColor='text-fuchsia-300'; 
+        }
+        else if(e.type==='HOLIDAY'){ 
+            tag='Férié'; 
+            info=`Décompté: ${fmtMinutes(calcWorkMinutes(e))}`; 
+            tagColor='text-yellow-300'; 
+        }
         
         return `<div data-date="${e.date}" class="card" style="margin-top:8px; padding:10px; display:flex; justify-content:space-between; align-items:center;">
                   <div style="display:flex; flex-direction:column;">
@@ -632,14 +677,15 @@
         let status='Non saisi';
         
         if(e){ 
+          const mins=calcWorkMinutes(e); 
+          total+=mins; 
+
           if(e.type==='WORK'){ 
-            const mins=calcWorkMinutes(e); 
-            total+=mins; 
             status=fmtMinutes(mins); 
           }
-          else if(e.type==='RTT') status='RTT'; 
-          else if(e.type==='VACATION') status='Vacances'; 
-          else if(e.type==='HOLIDAY') status='Férié';
+          else if(e.type==='RTT') status=`RTT (${fmtMinutes(mins)})`; 
+          else if(e.type==='VACATION') status=`Vacances (${fmtMinutes(mins)})`; 
+          else if(e.type==='HOLIDAY') status=`Férié (${fmtMinutes(mins)})`;
         }
         rows.push(`<div style="display:flex; justify-content:space-between; padding:6px 6px; border-bottom:1px solid rgba(255,255,255,0.06);">
                      <div><div style="font-size:13px; font-weight:600;">${names[i]}</div><div style="font-size:11px; opacity:.7;">${ymd}</div></div>
@@ -705,26 +751,34 @@
       config.selectedMonthYM = sel.value; lsSaveConfig(config);
     }
     
+    // MODIFICATION ICI : updateMonthlyView utilise la valeur de l'objectif dynamique pour le calcul de l'écart
     function updateMonthlyView(ym=config.selectedMonthYM){
       ym = clampMonth(ym); config.selectedMonthYM=ym; lsSaveConfig(config);
       const monthEntries = workEntries.filter(e=>e.date.startsWith(ym));
 
-      let dW=0,dR=0,dV=0,dH=0,total=0;
+      let dW=0,dR=0,dV=0,dH=0,totalMinutesWorked=0;
       
       monthEntries.forEach(e=>{
-        if(e.type==='WORK'){ dW++; total+=calcWorkMinutes(e); }
+        const mins = calcWorkMinutes(e); // Utilise la fonction qui inclut le décompte dynamique
+        totalMinutesWorked += mins;
+
+        if(e.type==='WORK'){ dW++; }
         else if(e.type==='RTT'){ dR++; } 
         else if(e.type==='VACATION'){ dV++; }
         else if(e.type==='HOLIDAY'){ dH++; }
       });
+      
       const dailyTarget = config.targetWeeklyHours/5;
-      const dev = total - (dailyTarget * dW); // Simplification
+      const totalDaysConsidered = dW + dR + dV + dH; 
+      const targetForPeriod = dailyTarget * totalDaysConsidered;
+
+      const dev = totalMinutesWorked - targetForPeriod; 
 
       $('#monthly-days-worked').textContent = dW;
       $('#monthly-rtt-days').textContent = dR;
       $('#monthly-vacation-days').textContent = dV;
       $('#monthly-holiday-days').textContent = dH;
-      $('#monthly-total-work-hours').textContent = fmtMinutes(total);
+      $('#monthly-total-work-hours').textContent = fmtMinutes(totalMinutesWorked);
       $('#monthly-deviation-hours').textContent = fmtMinutes(dev);
       const sel=$('#month-select'); if(sel && sel.value!==ym) sel.value=ym;
     }
