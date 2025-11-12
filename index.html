@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>Worker</title>
+  <title>Time Tracker</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="NomDeTonApp">
@@ -114,7 +114,7 @@
     
     select.input{
       appearance: none; -webkit-appearance: none; -moz-appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 20 20'%3E%3Cpath d='M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.21 8.27a.75.75 0 0 1 .02-1.06z'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 20 20'%3E%3Cpath d='M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.21 8.27a.75.75 0 0 1 .02-1.06z'/%3E%3Csvg%3E");
       background-repeat: no-repeat;
       background-position: right 0.6rem center;
       background-size: 1rem 1rem;
@@ -214,7 +214,7 @@
   <div id="app-shell">
     <div id="app-container">
       <header id="app-header" class="app-header">
-        <div class="app-title">Worker</div>
+        <div class="app-title">Time Tracker</div>
         <div class="app-sub">Suivi des heures</div>
       </header>
 
@@ -225,17 +225,17 @@
               <label class="lbl" for="entry-date-button">Date</label>
               <button id="entry-date-button">
                 <span id="entry-date-display">2025-01-01</span> 
-                <span style="font-size:18px;">🗓️</span>
+                <span style="font-size:18px;">📅</span>
               </button>
               <input type="hidden" id="entry-date-hidden" />
             </div>
             <div class="row" style="margin-top:8px;">
               <label class="lbl" for="entry-type-select">Type</label>
               <select id="entry-type-select" class="input">
-                <option value="WORK">Travail 💻</option>
-                <option value="RTT">RTT 😴</option>
-                <option value="VACATION">Vacances 🏝️</option>
-                <option value="HOLIDAY">Férié 📅</option> </select>
+                <option value="WORK">Travail</option>
+                <option value="RTT">RTT</option>
+                <option value="VACATION">Vacances</option>
+                <option value="HOLIDAY">Férié</option> </select>
             </div>
           </div>
 
@@ -327,7 +327,7 @@
                   <span class="font-medium">Jours de CP restants</span><span id="current-vacation-balance" class="font-bold text-fuchsia-300">0</span>
               </div>
           </div>
-          </section>
+        </section>
 
         <section id="tab-data" class="section" style="display:none;">
           <div class="card">
@@ -420,38 +420,48 @@
     const ULTRA_COMPACT = false;
 
     // ====== Firebase (facultatif) ======
+    // Utilisation de versions plus récentes et simplifiées si l'hôte le permet
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, setLogLevel, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+    // Variables de configuration d'hôte (si l'application est hébergée sur une plateforme spécifique)
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-time-tracker-app-id';
     const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
     const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
     let app, db, auth;
-    try { app = initializeApp(firebaseConfig); db = getFirestore(app); auth = getAuth(app); setLogLevel('debug'); } catch(_) {}
+    try { 
+        // Tentative d'initialisation de Firebase
+        app = initializeApp(firebaseConfig); 
+        db = getFirestore(app); 
+        auth = getAuth(app); 
+        setLogLevel('debug'); 
+    } catch(_) {
+        // En cas d'échec (pas de config Firebase), on passe en mode local seulement
+    }
 
     // ====== État ======
     let userId = null;
     let workEntries = [];
-    let useLocalOnly = !auth;
+    let useLocalOnly = !auth; // Vrai si Firebase n'a pas pu être initialisé
     let currentEntryDate = null; 
     let currentCalendarMonth = new Date();
 
     let config = {
       targetWeeklyHours: 37 * 60,
       lunchDurationMinutes: 45,
-      workingDays: [1,2,3,4,5],
+      workingDays: [1,2,3,4,5], // Lundi=1 à Vendredi=5
       lastSelectedDate: new Date().toISOString().substring(0,10),
       selectedMonthYM: new Date().toISOString().substring(0,7),
-      // NOUVEAU : Soldes de jours
+      // Soldes de jours
       initialRttDays: 10,
       initialVacationDays: 25,
       currentRttBalance: 10,  
       currentVacationBalance: 25,
     };
 
-    // ====== Utils (CORRIGÉ & MODIFIÉ) ======
+    // ====== Utils ======
     const $ = (s)=>document.querySelector(s);
     const dateToYMD = d => {
       const y = d.getFullYear();
@@ -480,7 +490,7 @@
     const addMonths = (ym, d)=>{ let [y,m]=ym.split('-').map(Number); const dt=new Date(y,m-1+d,1); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; };
     const monthLabel = (ym)=>{ const [y,m]=ym.split('-').map(Number); return new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(new Date(y,m-1,1)); };
 
-    // ====== LocalStorage & Firestore (fonctions abrégées, car inchangées) ======
+    // ====== LocalStorage & Firestore (fonctions abrégées) ======
     const LS_KEYS = { entries:`tt_${appId}_entries`, config:`tt_${appId}_config` };
     const lsLoadEntriesMap = ()=>{ try{return JSON.parse(localStorage.getItem(LS_KEYS.entries)||'{}')}catch{return{}} };
     const lsSaveEntriesMap = (map)=>{ try{localStorage.setItem(LS_KEYS.entries, JSON.stringify(map))}catch{} };
@@ -493,7 +503,7 @@
     const configDoc = ()=> doc(db, 'artifacts', appId, 'users', userId, 'app_settings', 'config');
     const entryDoc  = (d)=> doc(db, 'artifacts', appId, 'users', userId, 'work_entries', d);
 
-    // ====== Gestion des Soldes (NOUVEAU) ======
+    // ====== Gestion des Soldes ======
     function recalculateBalances(){
       let rttUsed = 0;
       let vacationUsed = 0;
@@ -512,13 +522,13 @@
       config.currentRttBalance = initialRtt - rttUsed;
       config.currentVacationBalance = initialVacation - vacationUsed;
       
-      lsSaveConfig(config); // Sauvegarde immédiate
+      lsSaveConfig(config); 
     }
     
-    // ====== Modal (inchangé) ======
+    // ====== Modal ======
     const showModal=(t,m)=>{$('#modal-title').textContent=t; $('#modal-message').innerHTML=m; $('#custom-modal').style.display='flex';};
 
-    // ====== Layout (inchangé) ======
+    // ====== Layout ======
     function resizePane(){
       const headerH = $('#app-header').offsetHeight;
       const tabbarH = $('#tabbar').offsetHeight;
@@ -527,7 +537,7 @@
       document.documentElement.style.setProperty('--pane-h', `${paneH}px`);
     }
 
-    // ====== Onglets (inchangé) ======
+    // ====== Onglets ======
     function setActiveTab(name){
       const ids=['saisie','hebdo','mensuelle','data','reglages'];
       ids.forEach(id=>{
@@ -539,7 +549,7 @@
       if(name==='hebdo') updateWeeklyView();
       if(name==='mensuelle'){ buildMonthOptions(); updateMonthlyView(); }
       if(name==='data') renderDataListView();
-      if(name==='reglages') updateSettingsUI(); // NOUVEAU: Mettre à jour l'UI des réglages
+      if(name==='reglages') updateSettingsUI();
     }
     
     // ... (Fonctions de l'UI de Saisie) ...
@@ -821,12 +831,12 @@
       $('#monthly-deviation-hours').textContent = fmtMinutes(dev);
       const sel=$('#month-select'); if(sel && sel.value!==ym) sel.value=ym;
       
-      // NOUVEAU : Affichage des soldes
+      // Affichage des soldes
       $('#current-rtt-balance').textContent = config.currentRttBalance;
       $('#current-vacation-balance').textContent = config.currentVacationBalance;
     }
     
-    // NOUVEAU : Met à jour l'UI des réglages
+    // Met à jour l'UI des réglages
     function updateSettingsUI() {
         $('#target-hours').value = (config.targetWeeklyHours / 60).toFixed(1);
         $('#lunch-minutes').value = config.lunchDurationMinutes;
@@ -834,11 +844,11 @@
         $('#initial-vacation-days').value = config.initialVacationDays;
     }
 
-    // ... (Fonctions de sauvegarde/chargement/synchro) ...
+    // ====== Fonctions de Sauvegarde/Synchronisation ======
     async function upsertEntryAll(entry){
       lsUpsertEntry(entry);
       workEntries = lsGetAllEntriesArray();
-      recalculateBalances(); // NOUVEAU: Recalcul des soldes
+      recalculateBalances(); 
       
       if(userId && db && !useLocalOnly){
         try { await setDoc(entryDoc(entry.date), entry); }
@@ -857,7 +867,7 @@
     async function deleteEntry(dateToDelete){
       lsDeleteEntry(dateToDelete);
       workEntries = lsGetAllEntriesArray();
-      recalculateBalances(); // NOUVEAU: Recalcul des soldes
+      recalculateBalances();
       
       if(userId && db && !useLocalOnly){
         try{ await deleteDoc(entryDoc(dateToDelete)); }
@@ -896,7 +906,7 @@
       if(localCfg) config = {...config, ...localCfg};
 
       workEntries = lsGetAllEntriesArray();
-      recalculateBalances(); // NOUVEAU: Calcule les soldes initiaux
+      recalculateBalances(); 
 
       $('#user-id-display').textContent = userId || (useLocalOnly? 'LOCAL':'N/A');
       const today = dateToYMD(new Date());
@@ -909,7 +919,7 @@
       buildMonthOptions();
       updateMonthlyView();
       renderDataListView(); 
-      updateSettingsUI(); // NOUVEAU: S'assurer que les réglages sont à jour
+      updateSettingsUI();
     }
 
     function setupFirestoreListener(){
@@ -924,7 +934,7 @@
         lsSaveEntriesMap(map);
         workEntries = Object.values(map).sort((a,b)=>b.date.localeCompare(a.date));
         
-        recalculateBalances(); // NOUVEAU: Recalcule les soldes après sync
+        recalculateBalances(); 
         
         buildMonthOptions();
         updateEntryUI(config.lastSelectedDate);
@@ -937,12 +947,138 @@
         if(active==='btn-reglages') updateSettingsUI();
       }, (_)=>{ useLocalOnly=true; });
     }
-    
-    // ... (Fonctions export/import CSV non implémentées) ...
-    function exportCSV(){ showModal('Export CSV', 'Fonction non implémentée.'); }
-    function importCSVFile(file){ showModal('Import CSV', 'Fonction non implémentée.'); }
 
-    // === NOUVELLE ANIMATION DE L'HORLOGE CSS ===
+    // === Fonctions export/import CSV (IMPLEMENTEES) ===
+    function exportCSV() {
+      if (workEntries.length === 0) {
+        return showModal('Erreur', 'Aucune donnée à exporter.');
+      }
+
+      const header = "Date;Type;Debut;Fin;Pause_Min;Minutes_Travaillees;Timestamp\n";
+
+      const csvContent = workEntries.map(e => {
+        const date = e.date || '';
+        const type = e.type || '';
+        const start = e.start || '';
+        const end = e.end || '';
+        const lunch = e.lunchDurationMinutes !== undefined ? e.lunchDurationMinutes : config.lunchDurationMinutes;
+        const pauseMin = e.type === 'WORK' ? lunch : '';
+        const minutesWorked = calcWorkMinutes(e);
+        const timestamp = e.timestamp || '';
+
+        // Utiliser le point-virgule comme séparateur
+        return `${date};${type};${start};${end};${pauseMin};${minutesWorked};${timestamp}`;
+      }).join('\n');
+
+      const finalCSV = header + csvContent;
+      const blob = new Blob([finalCSV], { type: 'text/csv;charset=utf-8;' });
+      const filename = `time_tracker_export_${new Date().toISOString().substring(0, 10)}.csv`;
+
+      const link = document.createElement("a");
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showModal('Succès', `L'export **${filename}** a été lancé.`);
+      } else {
+        showModal('Erreur', "Le téléchargement n'est pas supporté par votre navigateur.");
+      }
+    }
+    
+    function importCSVFile(file) {
+      if (!file) return showModal('Erreur', 'Veuillez sélectionner un fichier.');
+
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const content = event.target.result;
+          const lines = content.split('\n').filter(line => line.trim() !== '');
+
+          if (lines.length <= 1) {
+            return showModal('Erreur', 'Le fichier est vide ou ne contient que l\'entête.');
+          }
+
+          const header = lines[0].trim().toLowerCase().split(';'); 
+          
+          if (!header.includes('date') || !header.includes('type')) {
+              return showModal('Erreur', 'Entête CSV invalide. Les colonnes "Date" et "Type" sont requises.');
+          }
+
+          let successCount = 0;
+          let conflictCount = 0;
+          const entryMap = lsLoadEntriesMap();
+
+          for (let i = 1; i < lines.length; i++) {
+            const values = lines[i].trim().split(';');
+            if (values.length < header.length) continue;
+
+            const entry = {};
+            header.forEach((key, index) => {
+              entry[key.trim()] = values[index].trim();
+            });
+            
+            const date = entry.date;
+            const type = entry.type.toUpperCase();
+            
+            if (!date || !type || !['WORK', 'RTT', 'VACATION', 'HOLIDAY'].includes(type)) {
+                console.warn(`Ligne ${i + 1} ignorée (Date ou Type invalide).`);
+                continue; 
+            }
+            
+            const newEntry = {
+              date: date,
+              type: type,
+              timestamp: Date.now() + i
+            };
+            
+            if (type === 'WORK') {
+                newEntry.start = entry.debut || '';
+                newEntry.end = entry.fin || '';
+                
+                if (entry.pause_min && !isNaN(parseInt(entry.pause_min, 10))) {
+                    newEntry.lunchDurationMinutes = parseInt(entry.pause_min, 10);
+                }
+            }
+            
+            const existing = entryMap[date];
+            if (existing && existing.timestamp >= newEntry.timestamp) {
+                conflictCount++; 
+                continue;
+            }
+            
+            entryMap[date] = newEntry;
+            successCount++;
+          }
+          
+          lsSaveEntriesMap(entryMap);
+          workEntries = lsGetAllEntriesArray();
+          recalculateBalances(); 
+          refreshAllViews();
+          
+          let message = `Import réussi. **${successCount}** entrée(s) mise(s) à jour ou ajoutée(s).`;
+          if (conflictCount > 0) {
+              message += `<br>**${conflictCount}** entrée(s) plus récente(s) ont été ignorée(s).`;
+          }
+          showModal('Import Succès', message);
+
+        } catch (error) {
+          console.error("Erreur lors du traitement du fichier CSV:", error);
+          showModal('Erreur Import', `Une erreur s'est produite lors de l'import : ${error.message}`);
+        }
+      };
+      
+      reader.onerror = () => {
+        showModal('Erreur', "Impossible de lire le fichier.");
+      };
+
+      reader.readAsText(file, 'utf-8');
+    }
+
+    // === Initialisation et Boot ===
     const style = document.createElement('style');
     style.textContent = `
         @keyframes tick-tock {
@@ -954,13 +1090,11 @@
         }
     `;
     document.head.appendChild(style);
-    // ===========================================
 
     function bootLocalOnly(){
       hydrateLocalFirst();
       resizePane();
       
-      // *** Dévoilement de l'application après un délai ***
       setTimeout(()=>{
         $('#splash-screen').style.opacity = '0'; 
         setTimeout(()=>{
@@ -981,7 +1115,6 @@
           catch(_){ useLocalOnly=true; }
         }
         
-        // *** Dévoilement de l'application après un délai ***
         setTimeout(()=>{
           resizePane(); 
           $('#splash-screen').style.opacity = '0'; 
@@ -996,11 +1129,10 @@
     // ====== Events (COMPLET) ======
     document.addEventListener('DOMContentLoaded', ()=>{
       
-      // *** Rétablissement du resize ***
       window.addEventListener('resize', resizePane);
       window.addEventListener('orientationchange', resizePane);
       
-      // *** Rétablissement des écouteurs d'onglets ***
+      // Onglets
       $('#btn-saisie').addEventListener('click', ()=>{ setActiveTab('saisie'); });
       $('#btn-hebdo').addEventListener('click', ()=>{ setActiveTab('hebdo');   });
       $('#btn-mensuelle').addEventListener('click', ()=>{ setActiveTab('mensuelle'); });
@@ -1056,13 +1188,12 @@
       });
 
       // réglages
-      updateSettingsUI(); // Initialise l'UI des réglages
+      updateSettingsUI(); 
 
       $('#save-settings-btn').addEventListener('click', async ()=>{
         const t=parseFloat($('#target-hours').value); 
         const l=parseInt($('#lunch-minutes').value,10);
         
-        // NOUVEAU : Récupération des jours initiaux
         const ir = parseInt($('#initial-rtt-days').value, 10);
         const iv = parseInt($('#initial-vacation-days').value, 10);
 
@@ -1074,13 +1205,12 @@
         config.targetWeeklyHours=Math.round(t*60); 
         config.lunchDurationMinutes=l; 
         
-        // NOUVEAU : Sauvegarde des jours initiaux et recalcul des soldes
         config.initialRttDays = ir;
         config.initialVacationDays = iv;
 
         await saveConfigAll(); 
         
-        recalculateBalances(); // Déclenche le recalcul des soldes
+        recalculateBalances();
         
         updateEntryUI(config.lastSelectedDate); 
         refreshAllViews();
@@ -1092,7 +1222,13 @@
 
       // import
       $('#import-data-btn').addEventListener('click', ()=>$('#import-file').click());
-      $('#import-file').addEventListener('change', (e)=> importCSVFile(e.target.files[0]));
+      $('#import-file').addEventListener('change', (e)=> {
+          const file = e.target.files[0];
+          if (file) {
+              importCSVFile(file);
+          }
+          e.target.value = null; // Réinitialise l'input file pour permettre l'import du même fichier
+      });
 
       // mensuelle
       $('#month-select').addEventListener('change',(e)=>updateMonthlyView(clampMonth(e.target.value)));
@@ -1102,12 +1238,11 @@
       // boot
       bootWithAuth();
 
-      // première mesure & re-mesure (iOS UI)
       setTimeout(resizePane, 0);
       setTimeout(resizePane, 300);
     });
     
-    // === Fonctions calendrier (inchangées) ===
+    // === Fonctions calendrier ===
     function setDateFromCalendar(ymd){
         const oldYMD = $('#entry-date-hidden').value;
         if(ymd === oldYMD) return;
@@ -1134,7 +1269,7 @@
         while(grid.children.length > 7) { grid.removeChild(grid.lastChild); }
         
         const firstDayOfMonth = new Date(targetYear, targetMonth, 1);
-        const dayOfWeek = (firstDayOfMonth.getDay() + 6) % 7; // Lundi=0, Dimanche=6
+        const dayOfWeek = (firstDayOfMonth.getDay() + 6) % 7; 
         const startDay = new Date(firstDayOfMonth);
         startDay.setDate(firstDayOfMonth.getDate() - dayOfWeek);
         
