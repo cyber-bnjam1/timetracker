@@ -38,7 +38,8 @@
     /* Variables de hauteur */
     :root{ 
       --tabbar-h: 66px; 
-      --app-height: 100dvh; /* Valeur de secours (fallback) */
+      /* FIX SAFARI/PWA: Utilisation de la hauteur dynamique (dvh) comme meilleur fallback */
+      --app-height: 100dvh; 
     }
 
     /* L'app occupe 100dvh (viewport dynamique iOS) */
@@ -76,8 +77,6 @@
 
     /* ===== Pane central : Hauteur gérée par flex-grow: 1 ===== */
     .pane {
-      /* Suppression du calcul de hauteur JS/CSS pour laisser Flexbox gérer l'espace restant */
-      /* height: var(--pane-h, 60dvh); <-- Supprimé */
       overflow-y: auto;                    /* si nécessaire, scroller ici uniquement */
       -webkit-overflow-scrolling: touch; /* scrolling fluide iOS */
       padding: 10px 14px 10px;
@@ -1256,9 +1255,11 @@
       setTimeout(hideSplashScreen, 2500); 
 
       // Appels initiaux pour la hauteur (multiples appels pour contrer le problème iOS)
-      setAppHeight();
+      setAppHeight(); 
+      setTimeout(setAppHeight, 100); 
       setTimeout(setAppHeight, 300);
       setTimeout(setAppHeight, 1000); 
+      setTimeout(setAppHeight, 3000); // FIX: Appel supplémentaire après le masquage du splash
     });
     
     // === Fonctions calendrier ===
