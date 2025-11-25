@@ -46,7 +46,7 @@
       width: 100%;
       max-width: 560px;
       height: 100%;
-      display: flex; flex-direction: column;
+      display: flex; flex-direction: column; /* Clé pour le layout Header | Pane | Tabbar */
       border-radius: 18px;
       background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.14);
@@ -60,13 +60,14 @@
     header.app-header {
       padding: 8px 14px 6px;
       border-bottom: 1px solid rgba(255,255,255,0.10);
+      flex-shrink: 0; /* Important pour que l'en-tête garde sa hauteur */
     }
     .app-title { font-size: 18px; font-weight: 700; letter-spacing: .2px; text-shadow: 0 0 16px rgba(96,165,250,0.35); }
     .app-sub { font-size: 11px; color: rgba(147,197,253,0.8); margin-top: 2px; }
 
-    /* ===== Pane central : hauteur calculée en JS -> var(--pane-h) ===== */
+    /* ===== Pane central : La hauteur est gérée par flex-grow: 1 dans le conteneur flex-column (#app-container) ===== */
     .pane {
-      height: var(--pane-h, 60dvh);
+      /* height: var(--pane-h, 60dvh); <-- Commenté pour laisser Flexbox gérer l'espace restant */
       overflow-y: auto;                    /* si nécessaire, scroller ici uniquement */
       -webkit-overflow-scrolling: touch; /* scrolling fluide iOS */
       padding: 10px 14px 10px;
@@ -137,9 +138,10 @@
     /* ===== Segmented control iOS (tabbar) fixé en bas ===== */
     :root{ --tabbar-h: 66px; }
     .tabbar {
-      position: relative; /* important pour le calcul de hauteur */
-      left: 0; right: 0;
-      bottom: 0;
+      /* Suppression des propriétés de positionnement absolu/fixe pour laisser Flexbox gérer le positionnement en bas */
+      /* position: relative; */ 
+      /* left: 0; right: 0; */
+      /* bottom: 0; */
       padding: 10px 14px calc(10px + env(safe-area-inset-bottom,0px));
       border-top: 1px solid rgba(255,255,255,0.14);
       background: rgba(0,0,0,0.18);
@@ -528,7 +530,7 @@
     // ====== Modal ======
     const showModal=(t,m)=>{$('#modal-title').textContent=t; $('#modal-message').innerHTML=m; $('#custom-modal').style.display='flex';};
 
-    // ====== Layout ======
+    // ====== Layout (Redondant après correction CSS, mais conservé) ======
     function resizePane(){
       const headerH = $('#app-header').offsetHeight;
       const tabbarH = $('#tabbar').offsetHeight;
@@ -1037,7 +1039,7 @@
             
             if (type === 'WORK') {
                 newEntry.start = entry.debut || '';
-                newEntry.end = entry.fin || '';
+                newEntry.end = entry.end || '';
                 
                 if (entry.pause_min && !isNaN(parseInt(entry.pause_min, 10))) {
                     newEntry.lunchDurationMinutes = parseInt(entry.pause_min, 10);
