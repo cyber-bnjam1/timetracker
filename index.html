@@ -19,10 +19,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;600;700&display=swap" rel="stylesheet"/>
 
   <style>
-    /* ===== Layout sans scroll de page ===== */
+    /* ===== Layout sans scroll de page (CORRIGÉ : Ajout de overflow: hidden) ===== */
     html, body { 
       height: 100%; 
       margin: 0; 
+      overflow: hidden; /* Empêche tout défilement involontaire qui pourrait exposer le fond */
     }
     body {
       font-family: Inter, system-ui, -apple-system, "SF Pro Text", Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
@@ -495,7 +496,7 @@
 
     const clampMonth = (ym)=>ym.replace(/^(\d{4})-(\d{2}).*$/,(_,y,m)=>`${y}-${m.padStart(2,'0')}`);
     const addMonths = (ym, d)=>{ let [y,m]=ym.split('-').map(Number); const dt=new Date(y,m-1+d,1); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; };
-    const monthLabel = (ym)=>{ const [y,m]=ym.split('-').map(Number); return new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(new Date(y,m-1,1)); };
+    const monthLabel = (ym)=>{ const [y,m]=ym.split('-).map(Number); return new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(new Date(y,m-1,1)); };
 
     // ====== LocalStorage & Firestore (fonctions abrégées) ======
     const LS_KEYS = { entries:`tt_${appId}_entries`, config:`tt_${appId}_config` };
@@ -1254,6 +1255,7 @@
       // Appels initiaux pour la hauteur
       setAppHeight();
       setTimeout(setAppHeight, 300);
+      setTimeout(setAppHeight, 1000); // Ajout d'un appel décalé supplémentaire pour capter les barres dynamiques
     });
     
     // === Fonctions calendrier ===
