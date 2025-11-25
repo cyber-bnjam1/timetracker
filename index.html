@@ -33,11 +33,19 @@
       color: rgba(255,255,255,0.92);
       -webkit-text-size-adjust: 100%;
     }
+    
+    /* Variables de hauteur */
+    :root{ 
+      --tabbar-h: 66px; 
+      --app-height: 100dvh; /* Valeur de secours (fallback) */
+    }
 
     /* L'app occupe 100dvh (viewport dynamique iOS) */
     #app-shell {
       position: fixed; inset: 0;
-      height: 100dvh; width: 100%;
+      /* Correction : Utilisation de la variable JS calculée pour une hauteur fiable */
+      height: var(--app-height); 
+      width: 100%;
       display: flex; justify-content: center; align-items: center;
       padding: 0;
       visibility: hidden; /* Caché par défaut, révélé après le splash screen */
@@ -65,13 +73,14 @@
     .app-title { font-size: 18px; font-weight: 700; letter-spacing: .2px; text-shadow: 0 0 16px rgba(96,165,250,0.35); }
     .app-sub { font-size: 11px; color: rgba(147,197,253,0.8); margin-top: 2px; }
 
-    /* ===== Pane central : La hauteur est gérée par flex-grow: 1 dans le conteneur flex-column (#app-container) ===== */
+    /* ===== Pane central : Hauteur gérée par flex-grow: 1 ===== */
     .pane {
-      /* height: var(--pane-h, 60dvh); <-- Commenté pour laisser Flexbox gérer l'espace restant */
+      /* Suppression du calcul de hauteur JS/CSS pour laisser Flexbox gérer l'espace restant */
+      /* height: var(--pane-h, 60dvh); <-- Supprimé */
       overflow-y: auto;                    /* si nécessaire, scroller ici uniquement */
       -webkit-overflow-scrolling: touch; /* scrolling fluide iOS */
       padding: 10px 14px 10px;
-      flex-grow: 1; /* S'assurer qu'il prend l'espace restant */
+      flex-grow: 1; /* C'est la clé : prend l'espace restant */
     }
     .section { margin-bottom: 10px; }
 
@@ -136,12 +145,8 @@
     .divider { height: 1px; background: rgba(255,255,255,0.12); margin: 8px 0; }
 
     /* ===== Segmented control iOS (tabbar) fixé en bas ===== */
-    :root{ --tabbar-h: 66px; }
     .tabbar {
-      /* Suppression des propriétés de positionnement absolu/fixe pour laisser Flexbox gérer le positionnement en bas */
-      /* position: relative; */ 
-      /* left: 0; right: 0; */
-      /* bottom: 0; */
+      /* Pas de positionnement absolu/fixe, Flexbox le place en bas */
       padding: 10px 14px calc(10px + env(safe-area-inset-bottom,0px));
       border-top: 1px solid rgba(255,255,255,0.14);
       background: rgba(0,0,0,0.18);
@@ -530,14 +535,19 @@
     // ====== Modal ======
     const showModal=(t,m)=>{$('#modal-title').textContent=t; $('#modal-message').innerHTML=m; $('#custom-modal').style.display='flex';};
 
-    // ====== Layout (Redondant après correction CSS, mais conservé) ======
-    function resizePane(){
-      const headerH = $('#app-header').offsetHeight;
-      const tabbarH = $('#tabbar').offsetHeight;
-      const shellH  = $('#app-shell').offsetHeight;
-      const paneH   = Math.max(0, shellH - headerH - tabbarH);
-      document.documentElement.style.setProperty('--pane-h', `${paneH}px`);
+    // ====== Layout (Correction de la hauteur iOS) ======
+    function setAppHeight() {
+      // Sur mobile (iOS Safari en particulier), window.innerHeight donne la hauteur CORRECTE
+      // pour le viewport disponible, même lorsque l'interface utilisateur du navigateur change.
+      const viewportHeight = window.innerHeight; 
+      
+      // Met à jour la variable CSS --app-height sur l'élément racine (<html>)
+      document.documentElement.style.setProperty('--app-height', `${viewportHeight}px`);
+      
+      // La hauteur du panneau (.pane) est maintenant gérée par flex-grow: 1, 
+      // donc le calcul du --pane-h n'est plus nécessaire.
     }
+
 
     // ====== Onglets ======
     function setActiveTab(name){
@@ -1095,7 +1105,7 @@
 
     function bootLocalOnly(){
       hydrateLocalFirst();
-      resizePane();
+      setAppHeight(); // Appelé au démarrage
       
       setTimeout(()=>{
         $('#splash-screen').style.opacity = '0'; 
@@ -1118,7 +1128,7 @@
         }
         
         setTimeout(()=>{
-          resizePane(); 
+          setAppHeight(); // Appelé après l'auth
           $('#splash-screen').style.opacity = '0'; 
           setTimeout(()=>{
             $('#splash-screen').style.display = 'none'; 
@@ -1131,8 +1141,9 @@
     // ====== Events (COMPLET) ======
     document.addEventListener('DOMContentLoaded', ()=>{
       
-      window.addEventListener('resize', resizePane);
-      window.addEventListener('orientationchange', resizePane);
+      // FIX : Remplacer resizePane par setAppHeight
+      window.addEventListener('resize', setAppHeight);
+      window.addEventListener('orientationchange', setAppHeight);
       
       // Onglets
       $('#btn-saisie').addEventListener('click', ()=>{ setActiveTab('saisie'); });
@@ -1240,8 +1251,9 @@
       // boot
       bootWithAuth();
 
-      setTimeout(resizePane, 0);
-      setTimeout(resizePane, 300);
+      // Appels initiaux pour la hauteur
+      setAppHeight();
+      setTimeout(setAppHeight, 300);
     });
     
     // === Fonctions calendrier ===
