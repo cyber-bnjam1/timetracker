@@ -19,14 +19,27 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;600;700&display=swap" rel="stylesheet"/>
 
   <style>
-    /* ===== Layout sans scroll de page (CORRIGÉ : Ajout de overflow: hidden) ===== */
-    html, body { 
+    /* Variables de hauteur (Utilise 100dvh comme FALLBACK) */
+    :root{ 
+      --tabbar-h: 66px; 
+      --app-height: 100dvh; /* Meilleur fallback pour Safari 15.4+ */
+    }
+    
+    /* ===== Layout sans scroll de page (FIX iOS CRITIQUE) ===== */
+    html { 
       height: 100%; 
       margin: 0; 
-      overflow: hidden; /* Empêche tout défilement involontaire qui pourrait exposer le fond */
+      overflow: hidden; 
     }
     body {
+      /* FIX: Forcer la hauteur du body à utiliser la variable calculée par JS */
+      height: var(--app-height); 
+      min-height: 100%; /* S'assurer qu'il remplit l'html au moins */
+      margin: 0; 
+      overflow: hidden; /* Empêche tout défilement involontaire */
+      
       font-family: Inter, system-ui, -apple-system, "SF Pro Text", Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      /* Le fond est appliqué ici */
       background:
         radial-gradient(1100px 700px at 80% -10%, rgba(59,130,246,0.20), transparent 60%),
         radial-gradient(900px 600px at -10% 110%, rgba(236,72,153,0.16), transparent 60%),
@@ -35,22 +48,14 @@
       -webkit-text-size-adjust: 100%;
     }
     
-    /* Variables de hauteur */
-    :root{ 
-      --tabbar-h: 66px; 
-      /* FIX SAFARI/PWA: Utilisation de la hauteur dynamique (dvh) comme meilleur fallback */
-      --app-height: 100dvh; 
-    }
-
-    /* L'app occupe 100dvh (viewport dynamique iOS) */
+    /* L'app shell occupe l'espace disponible */
     #app-shell {
       position: fixed; inset: 0;
-      /* Correction : Utilisation de la variable JS calculée pour une hauteur fiable */
+      /* FIX: Utilisation de la variable JS calculée pour une hauteur fiable */
       height: var(--app-height); 
       width: 100%;
       display: flex; justify-content: center; align-items: center;
       padding: 0;
-      /* visibility: hidden est géré par l'attribut style dans le HTML pour la transition JS */
     }
     #app-container {
       width: 100%;
@@ -66,25 +71,25 @@
       overflow: hidden;
     }
 
-    /* ===== Header compact ===== */
+    /* ===== Header compact (inchangé) ===== */
     header.app-header {
       padding: 8px 14px 6px;
       border-bottom: 1px solid rgba(255,255,255,0.10);
-      flex-shrink: 0; /* Important pour que l'en-tête garde sa hauteur */
+      flex-shrink: 0; 
     }
     .app-title { font-size: 18px; font-weight: 700; letter-spacing: .2px; text-shadow: 0 0 16px rgba(96,165,250,0.35); }
     .app-sub { font-size: 11px; color: rgba(147,197,253,0.8); margin-top: 2px; }
 
-    /* ===== Pane central : Hauteur gérée par flex-grow: 1 ===== */
+    /* ===== Pane central (inchangé) ===== */
     .pane {
-      overflow-y: auto;                    /* si nécessaire, scroller ici uniquement */
-      -webkit-overflow-scrolling: touch; /* scrolling fluide iOS */
+      overflow-y: auto;                    
+      -webkit-overflow-scrolling: touch; 
       padding: 10px 14px 10px;
-      flex-grow: 1; /* C'est la clé : prend l'espace restant */
+      flex-grow: 1; 
     }
     .section { margin-bottom: 10px; }
 
-    /* ===== Styles des éléments (inchangés) ===== */
+    /* ===== Styles des éléments (omis pour la concision) ===== */
     .card {
       background: rgba(255,255,255,0.08);
       border: 1px solid rgba(255,255,255,0.16);
@@ -106,7 +111,6 @@
       border-color: rgba(96,165,250,0.9);
       box-shadow: 0 0 0 4px rgba(59,130,246,0.25);
     }
-    /* Style pour le bouton Date (remplacement de l'input type="date") */
     #entry-date-button {
         display: flex; justify-content: space-between; align-items: center;
         background: rgba(255,255,255,0.06);
@@ -117,11 +121,8 @@
         font-size: 14px; height: 36px;
         width: 100%; cursor: pointer;
     }
-    /* Rétablit l'apparence normale du bouton même si une entrée existe */
     #entry-date-button:disabled { opacity: 1.0; cursor: pointer; } 
-
     textarea.input { height: auto; min-height: 80px; }
-    
     select.input{
       appearance: none; -webkit-appearance: none; -moz-appearance: none;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 20 20'%3E%3Cpath d='M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.21 8.27a.75.75 0 0 1 .02-1.06z'/%3E%3Csvg%3E");
@@ -143,10 +144,9 @@
     .btn-icon-label { font-size: 18px; line-height: 1; }
     .stat-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; padding: 4px 0; }
     .divider { height: 1px; background: rgba(255,255,255,0.12); margin: 8px 0; }
-
-    /* ===== Segmented control iOS (tabbar) fixé en bas ===== */
+    
+    /* ===== Segmented control iOS (tabbar) fixé en bas (inchangé) ===== */
     .tabbar {
-      /* Pas de positionnement absolu/fixe, Flexbox le place en bas */
       padding: 10px 14px calc(10px + env(safe-area-inset-bottom,0px));
       border-top: 1px solid rgba(255,255,255,0.14);
       background: rgba(0,0,0,0.18);
@@ -176,7 +176,7 @@
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 2px rgba(0,0,0,0.18);
     }
 
-    /* ===== Calendrier Modal (NOUVEAU) ===== */
+    /* ===== Calendrier Modal (inchangé) ===== */
     #calendar-modal {
         position: fixed; inset: 0; background: rgba(0,0,0,.8); 
         backdrop-filter: blur(8px); display: none; 
@@ -210,6 +210,18 @@
 </head>
 
 <body>
+  
+  <script>
+    // ========= FIX IOS/SAFARI: Calcul synchrone de la hauteur =========
+    // Cette fonction doit s'exécuter AVANT que le CSS ne dessine le body.
+    function setAppHeightImmediate() {
+      // window.innerHeight est la valeur la plus fiable sur iOS, y compris en mode PWA.
+      const viewportHeight = window.innerHeight; 
+      document.documentElement.style.setProperty('--app-height', `${viewportHeight}px`);
+    }
+    setAppHeightImmediate();
+  </script>
+  
   <div id="splash-screen" style="position:fixed; inset:0; background:#0b1020; z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; opacity:1; transition:opacity 0.5s ease-out;">
     <div id="clock-container" style="position:relative; width:100px; height:100px; border:4px solid #3b82f6; border-radius:50%; margin-bottom:15px;">
         <div id="hour-hand" style="position:absolute; width:4px; height:30px; background:#60a5fa; top:50%; left:50%; margin-left:-2px; margin-top:-30px; border-radius:2px; transform-origin:bottom; transform:rotate(0deg); transition:transform 0.1s linear;"></div>
@@ -426,7 +438,6 @@
     const ULTRA_COMPACT = false;
 
     // ====== Firebase (facultatif) ======
-    // Utilisation de versions plus récentes et simplifiées si l'hôte le permet
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, setLogLevel, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -479,7 +490,6 @@
     const dateToFr = ymd => { const [y,m,d]=ymd.split('-'); return `${d}/${m}/${y}`; };
     const fmtMinutes = m => { const s=m<0?"-":""; const a=Math.abs(m); const h=Math.floor(a/60); const mn=Math.round(a%60); return `${s}${h}h ${mn<10?'0':''}${mn}m`; };
     
-    // calcWorkMinutes utilise l'objectif hebdo / 5 pour RTT/VACATION/HOLIDAY
     const calcWorkMinutes = (e)=>{ 
       const dailyTargetMinutes = config.targetWeeklyHours / 5;
       
@@ -542,9 +552,6 @@
       
       // Met à jour la variable CSS --app-height sur l'élément racine (<html>)
       document.documentElement.style.setProperty('--app-height', `${viewportHeight}px`);
-      
-      // La hauteur du panneau (.pane) est maintenant gérée par flex-grow: 1, 
-      // donc le calcul du --pane-h n'est plus nécessaire.
     }
 
 
@@ -1255,7 +1262,7 @@
       setTimeout(hideSplashScreen, 2500); 
 
       // Appels initiaux pour la hauteur (multiples appels pour contrer le problème iOS)
-      setAppHeight(); 
+      // NOTE: setAppHeight() est déjà appelé SYNCHRONOUSMENT au début du <body>
       setTimeout(setAppHeight, 100); 
       setTimeout(setAppHeight, 300);
       setTimeout(setAppHeight, 1000); 
