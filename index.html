@@ -49,7 +49,7 @@
       width: 100%;
       display: flex; justify-content: center; align-items: center;
       padding: 0;
-      visibility: hidden; /* Caché par défaut, révélé après le splash screen */
+      /* visibility: hidden est géré par l'attribut style dans le HTML pour la transition JS */
     }
     #app-container {
       width: 100%;
@@ -219,8 +219,7 @@
     </div>
     <div style="font-size:24px; font-weight:700; color:#93c5fd; letter-spacing:1px;"> </div>
   </div>
-  <div id="app-shell">
-    <div id="app-container">
+  <div id="app-shell" style="visibility:hidden;"> <div id="app-container">
       <header id="app-header" class="app-header">
         <div class="app-title">Worker</div>
         <div class="app-sub">Suivi des heures</div>
@@ -496,7 +495,7 @@
 
     const clampMonth = (ym)=>ym.replace(/^(\d{4})-(\d{2}).*$/,(_,y,m)=>`${y}-${m.padStart(2,'0')}`);
     const addMonths = (ym, d)=>{ let [y,m]=ym.split('-').map(Number); const dt=new Date(y,m-1+d,1); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; };
-    const monthLabel = (ym)=>{ const [y,m]=ym.split('-).map(Number); return new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(new Date(y,m-1,1)); };
+    const monthLabel = (ym)=>{ const [y,m]=ym.split('-').map(Number); return new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(new Date(y,m-1,1)); };
 
     // ====== LocalStorage & Firestore (fonctions abrégées) ======
     const LS_KEYS = { entries:`tt_${appId}_entries`, config:`tt_${appId}_config` };
@@ -1103,18 +1102,20 @@
         }
     `;
     document.head.appendChild(style);
+    
+    // NOUVEAU : Fonction pour masquer le splash screen et afficher l'app.
+    function hideSplashScreen() {
+        setAppHeight(); // Assure la bonne hauteur juste avant l'affichage
+        $('#app-shell').style.visibility = 'visible';
+        $('#splash-screen').style.opacity = '0'; 
+        
+        setTimeout(()=>{
+            $('#splash-screen').style.display = 'none'; 
+        }, 500); // Laisse le temps à la transition CSS de s'effectuer
+    }
 
     function bootLocalOnly(){
       hydrateLocalFirst();
-      setAppHeight(); // Appelé au démarrage
-      
-      setTimeout(()=>{
-        $('#splash-screen').style.opacity = '0'; 
-        setTimeout(()=>{
-            $('#splash-screen').style.display = 'none'; 
-            $('#app-shell').style.visibility='visible'; 
-        }, 500); 
-      }, 2500); 
     }
 
     function bootWithAuth(){
@@ -1128,14 +1129,8 @@
           catch(_){ useLocalOnly=true; }
         }
         
-        setTimeout(()=>{
-          setAppHeight(); // Appelé après l'auth
-          $('#splash-screen').style.opacity = '0'; 
-          setTimeout(()=>{
-            $('#splash-screen').style.display = 'none'; 
-            $('#app-shell').style.visibility='visible'; 
-          }, 500); 
-        }, 2500); 
+        // IMPORTANT: La logique de masquage est dans DOMContentLoaded
+        
       });
     }
 
@@ -1250,12 +1245,20 @@
       $('#month-next').addEventListener('click',()=>{ const ym=clampMonth(config.selectedMonthYM||new Date().toISOString().substring(0,7)); updateMonthlyView(addMonths(ym,+1)); });
 
       // boot
-      bootWithAuth();
+      if (useLocalOnly) {
+          bootLocalOnly();
+      } else {
+          bootWithAuth();
+      }
+      
+      // **CORRECTION CRITIQUE** : La logique de masquage du splash-screen est inconditionnelle
+      // après un délai, garantissant que l'application devient visible.
+      setTimeout(hideSplashScreen, 2500); 
 
-      // Appels initiaux pour la hauteur
+      // Appels initiaux pour la hauteur (multiples appels pour contrer le problème iOS)
       setAppHeight();
       setTimeout(setAppHeight, 300);
-      setTimeout(setAppHeight, 1000); // Ajout d'un appel décalé supplémentaire pour capter les barres dynamiques
+      setTimeout(setAppHeight, 1000); 
     });
     
     // === Fonctions calendrier ===
