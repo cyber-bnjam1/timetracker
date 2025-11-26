@@ -859,14 +859,17 @@
       $('#lunch-duration-manual').addEventListener('input', refreshDayTotal);
       $('#month-select').addEventListener('change', (e)=>updateMonthlyView(e.target.value));
       
+      // ... (Code d'initialisation) ...
+
       // Boot
       updateEntryUI(config.lastSelectedDate);
       renderLatestList();
 
-      setTimeout(()=>{ 
-          $('#splash-screen').style.opacity='0'; 
-          setTimeout(()=>$('#splash-screen').style.display='none', 400); 
-      }, 1000);
+      // Cache le splash screen immédiatement après l'initialisation du DOM et du JS.
+      $('#splash-screen').style.opacity='0'; 
+      // Le setTimeout de 400ms est conservé pour l'effet de transition CSS.
+      setTimeout(()=>$('#splash-screen').style.display='none', 400); 
+      
     });
   </script>
 </body>
