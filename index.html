@@ -257,7 +257,7 @@
     </section>
 
     <section id="tab-data" class="tab-content" style="display:none;">
-      <h3 class="text-xs text-gray-500 uppercase font-bold mb-3 px-2">Historique complet</h3>
+      <h3 class="text-sm font-bold text-gray-500 uppercase mb-3 px-2">Historique complet</h3>
       <div id="data-list-container" class="space-y-2"></div>
     </section>
 
@@ -451,6 +451,123 @@
       if(name==='data') renderDataListView();
       if(name==='reglages') updateSettingsUI();
     }
+
+    // --- FONCTIONS IMPORT/EXPORT CSV (Ajoutées) ---
+    
+    /** Exporte toutes les entrées dans un fichier CSV. */
+    function exportDataToCsv() {
+        if (workEntries.length === 0) {
+            showModal("Erreur d'export", "Aucune donnée à exporter.");
+            return;
+        }
+
+        const headers = ["Date", "Type", "Heure_Debut", "Heure_Fin", "Pause_Minutes_Manuelle", "Timestamp"];
+        
+        // Mappage des données
+        const rows = workEntries.map(e => [
+            `"${e.date}"`,
+            `"${e.type}"`,
+            `"${e.start || ''}"`,
+            `"${e.end || ''}"`,
+            `"${e.lunchDurationMinutes || ''}"`,
+            `"${e.timestamp || ''}"`
+        ]);
+
+        // Création du contenu CSV
+        const csvContent = [
+            headers.join(";"),
+            ...rows.map(row => row.join(";"))
+        ].join("\n");
+
+        // Création du Blob et téléchargement
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `worker_data_${new Date().toISOString().substring(0, 10)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showModal("Exportation réussie", `Vos ${workEntries.length} entrées ont été exportées en CSV.`);
+    }
+
+    /** Lit un fichier CSV et importe les entrées. */
+    function importDataFromCsv(file) {
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const csvText = event.target.result;
+            let importedCount = 0;
+            const entriesMap = lsLoadEntriesMap();
+
+            // Sépare les lignes et retire l'en-tête
+            const lines = csvText.split('\n').filter(line => line.trim() !== '');
+            if (lines.length < 2) {
+                showModal("Erreur d'import", "Le fichier CSV est vide ou n'a pas de données.");
+                return;
+            }
+            
+            const headers = lines[0].toLowerCase().replace(/"/g, '').split(';');
+
+            // Index des colonnes (pour être robuste si l'ordre change)
+            const dateIndex = headers.indexOf('date');
+            const typeIndex = headers.indexOf('type');
+            const startIndex = headers.indexOf('heure_debut') !== -1 ? headers.indexOf('heure_debut') : headers.indexOf('start');
+            const endIndex = headers.indexOf('heure_fin') !== -1 ? headers.indexOf('heure_fin') : headers.indexOf('end');
+            const lunchIndex = headers.indexOf('pause_minutes_manuelle');
+            const tsIndex = headers.indexOf('timestamp');
+
+            if (dateIndex === -1 || typeIndex === -1) {
+                showModal("Erreur d'import", "Le CSV doit contenir les colonnes 'Date' et 'Type'.");
+                return;
+            }
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].replace(/"/g, '').split(';');
+                if (values.length < Math.max(dateIndex, typeIndex, startIndex, endIndex, lunchIndex, tsIndex) + 1) continue;
+
+                const date = values[dateIndex]?.trim();
+                const type = values[typeIndex]?.trim();
+
+                if (!date || !type) continue; 
+                
+                const entry = {
+                    date: date,
+                    type: type,
+                    start: startIndex !== -1 ? values[startIndex]?.trim() : '',
+                    end: endIndex !== -1 ? values[endIndex]?.trim() : '',
+                    lunchDurationMinutes: lunchIndex !== -1 && values[lunchIndex]?.trim() ? parseInt(values[lunchIndex]?.trim()) : undefined,
+                    timestamp: tsIndex !== -1 && values[tsIndex]?.trim() ? parseInt(values[tsIndex]?.trim()) : Date.now()
+                };
+
+                // On écrase les anciennes entrées par les nouvelles ou on ajoute
+                entriesMap[date] = entry;
+                importedCount++;
+            }
+            
+            if (importedCount > 0) {
+                lsSaveEntriesMap(entriesMap);
+                workEntries = lsGetAllEntriesArray();
+                recalculateBalances();
+                // On met à jour toutes les vues qui dépendent des données
+                updateEntryUI(config.lastSelectedDate); 
+                renderLatestList();
+                showModal("Importation réussie", `${importedCount} entrées importées. Si des dates existaient, elles ont été mises à jour.`);
+            } else {
+                showModal("Échec de l'import", "Aucune nouvelle entrée valide trouvée dans le fichier.");
+            }
+        };
+
+        reader.onerror = () => {
+            showModal("Erreur", "Impossible de lire le fichier.");
+        };
+
+        reader.readAsText(file);
+    }
+    // --- FIN NOUVELLES FONCTIONS ---
 
     // --- UI SAISIE ---
     function updateEntryUI(date){
@@ -697,9 +814,10 @@
       // Delete
       $('#delete-entry-btn').onclick = ()=>{
          const date = $('#entry-date-hidden').value;
-         if(confirm("Supprimer ?")){
+         if(confirm("Confirmez-vous la suppression de l'entrée du " + dateToFr(date) + " ?")){
             const map = lsLoadEntriesMap(); delete map[date]; lsSaveEntriesMap(map);
-            workEntries = lsGetAllEntriesArray(); recalculateBalances(); updateEntryUI(date); renderLatestList();
+            workEntries = lsGetAllEntriesArray(); recalculateBalances(); updateEntryUI(config.lastSelectedDate); renderLatestList();
+            showModal('Supprimé', 'L\'entrée a été supprimée.');
          }
       };
 
@@ -713,6 +831,17 @@
           showModal('Réglages', 'Préférences sauvegardées.');
       };
 
+      // ÉVÉNEMENTS IMPORT/EXPORT
+      $('#export-data-btn').onclick = exportDataToCsv;
+      $('#import-data-btn').onclick = () => $('#import-file').click();
+      $('#import-file').onchange = (e) => {
+          if (e.target.files.length > 0) {
+              importDataFromCsv(e.target.files[0]);
+              // Reset l'input file pour pouvoir importer le même fichier deux fois de suite
+              e.target.value = null; 
+          }
+      };
+
       // Events divers
       $('#close-modal-btn').onclick = ()=>$('#custom-modal').style.display='none';
       $('#clear-entry-btn').onclick = ()=>{ 
@@ -722,6 +851,7 @@
       $('#entry-type-select').addEventListener('change', refreshDayTotal);
       $('#start-time').addEventListener('input', refreshDayTotal);
       $('#end-time').addEventListener('input', refreshDayTotal);
+      $('#lunch-duration-manual').addEventListener('input', refreshDayTotal);
       $('#month-select').addEventListener('change', (e)=>updateMonthlyView(e.target.value));
       
       // Boot
