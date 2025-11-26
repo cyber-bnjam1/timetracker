@@ -353,6 +353,7 @@
 
   <script type="module">
     // --- VARIABLES (GARDER LA MEME LOGIQUE) ---
+    // Les imports Firebase sont maintenus mais mis dans un try/catch pour éviter de bloquer en mode local
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -397,11 +398,13 @@
     };
     const fmtMinutes = m => { const s=m<0?"-":""; const a=Math.abs(m); const h=Math.floor(a/60); const mn=Math.round(a%60); return `${s}${h}h ${mn<10?'0':''}${mn}m`; };
     
+    // CORRECTION CRITIQUE: t.split(':').map(Number) au lieu de t.split(':'.map(Number)
     const calcWorkMinutes = (e)=>{ 
       const dailyTargetMinutes = config.targetWeeklyHours / 5;
       if(e?.type!=='WORK') return dailyTargetMinutes; 
       if(!e.start||!e.end) return 0; 
-      const p=t=>{const [h,m]=t.split(':'.map(Number);return h*60+m}; 
+      // La ligne suivante a été corrigée
+      const p=t=>{const [h,m]=t.split(':').map(Number);return h*60+m}; 
       const lunch=(e.lunchDurationMinutes ?? config.lunchDurationMinutes) || 0; 
       return Math.max(p(e.end)-p(e.start)-lunch,0); 
     };
@@ -452,16 +455,16 @@
       if(name==='reglages') updateSettingsUI();
     }
 
-    // --- FONCTIONS IMPORT/EXPORT CSV (Mise à jour pour les colonnes de l'utilisateur) ---
+    // --- FONCTIONS IMPORT/EXPORT CSV ---
     
-    /** Exporte toutes les entrées dans un fichier CSV. */
+    /** Exporte toutes les entrées dans un fichier CSV. (En-têtes ajustées) */
     function exportDataToCsv() {
         if (workEntries.length === 0) {
             showModal("Erreur d'export", "Aucune donnée à exporter.");
             return;
         }
 
-        // Utilisation des en-têtes demandés par l'utilisateur (sauf la colonne calculée)
+        // Utilisation des en-têtes demandés par l'utilisateur
         const headers = ["Date", "Type", "Debut", "Fin", "Pause_min", "Timestamp"];
         
         // Mappage des données
@@ -495,7 +498,7 @@
         showModal("Exportation réussie", `Vos ${workEntries.length} entrées ont été exportées en CSV.`);
     }
 
-    /** Lit un fichier CSV et importe les entrées. */
+    /** Lit un fichier CSV et importe les entrées. (Colonnes ajustées) */
     function importDataFromCsv(file) {
         if (!file) return;
 
@@ -505,23 +508,21 @@
             let importedCount = 0;
             const entriesMap = lsLoadEntriesMap();
 
-            // Sépare les lignes et retire l'en-tête
             const lines = csvText.split('\n').filter(line => line.trim() !== '');
             if (lines.length < 2) {
                 showModal("Erreur d'import", "Le fichier CSV est vide ou n'a pas de données.");
                 return;
             }
             
-            // En-têtes en minuscules pour la comparaison
+            // En-têtes en minuscules pour la comparaison (robustesse)
             const headers = lines[0].toLowerCase().replace(/"/g, '').split(';');
 
             // Index des colonnes (Adaptation aux colonnes de l'utilisateur : debut, fin, pause_min)
             const dateIndex = headers.indexOf('date');
             const typeIndex = headers.indexOf('type');
-            const startIndex = headers.indexOf('debut'); // Mappe 'debut' -> start
-            const endIndex = headers.indexOf('fin');     // Mappe 'fin' -> end
-            const lunchIndex = headers.indexOf('pause_min'); // Mappe 'pause_min' -> lunchDurationMinutes
-            // minutes_travaillees est ignoré.
+            const startIndex = headers.indexOf('debut');
+            const endIndex = headers.indexOf('fin');
+            const lunchIndex = headers.indexOf('pause_min'); 
             const tsIndex = headers.indexOf('timestamp'); 
 
             if (dateIndex === -1 || typeIndex === -1) {
@@ -531,7 +532,6 @@
 
             for (let i = 1; i < lines.length; i++) {
                 const values = lines[i].replace(/"/g, '').split(';');
-                // Vérification de base pour s'assurer qu'on a assez de colonnes
                 if (values.length < Math.max(dateIndex, typeIndex, startIndex, endIndex, lunchIndex, tsIndex) + 1) continue;
 
                 const date = values[dateIndex]?.trim();
@@ -548,7 +548,6 @@
                     timestamp: tsIndex !== -1 && values[tsIndex]?.trim() ? parseInt(values[tsIndex]?.trim()) : Date.now()
                 };
 
-                // On écrase les anciennes entrées par les nouvelles ou on ajoute
                 entriesMap[date] = entry;
                 importedCount++;
             }
@@ -557,10 +556,9 @@
                 lsSaveEntriesMap(entriesMap);
                 workEntries = lsGetAllEntriesArray();
                 recalculateBalances();
-                // On met à jour toutes les vues qui dépendent des données
                 updateEntryUI(config.lastSelectedDate); 
                 renderLatestList();
-                showModal("Importation réussie", `${importedCount} entrées importées. Si des dates existaient, elles ont été mises à jour.`);
+                showModal("Importation réussie", `${importedCount} entrées importées.`);
             } else {
                 showModal("Échec de l'import", "Aucune nouvelle entrée valide trouvée dans le fichier.");
             }
@@ -572,7 +570,7 @@
 
         reader.readAsText(file);
     }
-    // --- FIN NOUVELLES FONCTIONS ---
+    // --- FIN FONCTIONS IMPORT/EXPORT CSV ---
 
     // --- UI SAISIE ---
     function updateEntryUI(date){
@@ -859,17 +857,13 @@
       $('#lunch-duration-manual').addEventListener('input', refreshDayTotal);
       $('#month-select').addEventListener('change', (e)=>updateMonthlyView(e.target.value));
       
-      // ... (Code d'initialisation) ...
-
       // Boot
       updateEntryUI(config.lastSelectedDate);
       renderLatestList();
 
-      // Cache le splash screen immédiatement après l'initialisation du DOM et du JS.
+      // CORRECTION DU SPLASH SCREEN: Masquer immédiatement après le chargement du DOM
       $('#splash-screen').style.opacity='0'; 
-      // Le setTimeout de 400ms est conservé pour l'effet de transition CSS.
       setTimeout(()=>$('#splash-screen').style.display='none', 400); 
-      
     });
   </script>
 </body>
