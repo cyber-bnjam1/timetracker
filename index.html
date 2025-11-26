@@ -2,40 +2,44 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+  <meta name="viewport" content="width=device-width, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Worker</title>
-  
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Worker">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NomDeTonApp">
 
-  <link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="icone-180.png">
+<link rel="apple-touch-icon" sizes="120x120" href="icone-120.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icone-152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icone-180.png">
+
+<link rel="icon" href="favicon.png" type="image/png">
   <script src="https://cdn.tailwindcss.com"></script>
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;600;700&display=swap" rel="stylesheet"/>
 
   <style>
+    /* Variables de hauteur (Utilise 100dvh comme FALLBACK) */
     :root{ 
       --tabbar-h: 66px; 
-      /* FIX IPHONE: Fallback propre */
-      --app-height: 100vh;
+      --app-height: 100dvh; /* Meilleur fallback pour Safari 15.4+ */
     }
     
+    /* ===== Layout sans scroll de page (FIX iOS CRITIQUE) ===== */
     html { 
       height: 100%; 
-      width: 100%;
-      overflow: hidden; /* Empêche le scroll élastique global */
-      -webkit-tap-highlight-color: transparent; /* Supprime le flash gris au clic */
-    }
-
-    body {
-      height: 100%;
-      width: 100%;
       margin: 0; 
-      overflow: hidden;
-      position: fixed; /* FIX IPHONE: Verrouille le body pour empêcher le scroll élastique */
-      inset: 0;
+      overflow: hidden; 
+    }
+    body {
+      /* FIX: Forcer la hauteur du body à utiliser la variable calculée par JS */
+      height: var(--app-height); 
+      min-height: 100%; /* S'assurer qu'il remplit l'html au moins */
+      margin: 0; 
+      overflow: hidden; /* Empêche tout défilement involontaire */
       
-      font-family: Inter, system-ui, -apple-system, "SF Pro Text", sans-serif;
+      font-family: Inter, system-ui, -apple-system, "SF Pro Text", Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      /* Le fond est appliqué ici */
       background:
         radial-gradient(1100px 700px at 80% -10%, rgba(59,130,246,0.20), transparent 60%),
         radial-gradient(900px 600px at -10% 110%, rgba(236,72,153,0.16), transparent 60%),
@@ -44,208 +48,189 @@
       -webkit-text-size-adjust: 100%;
     }
     
+    /* L'app shell occupe l'espace disponible */
     #app-shell {
-      position: absolute; 
-      inset: 0;
-      height: 100%; /* Utilise 100% car le body est fixed */
+      position: fixed; inset: 0;
+      /* FIX: Utilisation de la variable JS calculée pour une hauteur fiable */
+      height: var(--app-height); 
       width: 100%;
       display: flex; justify-content: center; align-items: center;
       padding: 0;
-      z-index: 1;
     }
-
     #app-container {
       width: 100%;
-      max-width: 600px; /* Un peu plus large pour les Max/Plus */
+      max-width: 560px;
       height: 100%;
-      display: flex; 
-      flex-direction: column;
-      background: transparent; /* Transparence pour voir le fond du body */
-      /* FIX IPHONE: Pas de bordures/ombres complexes sur mobile plein écran pour perf */
+      display: flex; flex-direction: column; /* Clé pour le layout Header | Pane | Tabbar */
+      border-radius: 18px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.14);
+      backdrop-filter: blur(22px) saturate(170%);
+      -webkit-backdrop-filter: blur(22px) saturate(170%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 10px 30px rgba(0,0,0,0.35);
       overflow: hidden;
     }
 
-    /* ===== Header Adaptatif ===== */
+    /* ===== Header compact (inchangé) ===== */
     header.app-header {
-      /* FIX IPHONE: Ajout du padding-top safe-area pour l'encoche */
-      padding-top: calc(10px + env(safe-area-inset-top)); 
-      padding-bottom: 10px;
-      padding-left: 16px;
-      padding-right: 16px;
-      background: rgba(11, 16, 32, 0.8); /* Fond semi-transparent pour la barre d'état */
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      padding: 8px 14px 6px;
       border-bottom: 1px solid rgba(255,255,255,0.10);
       flex-shrink: 0; 
-      z-index: 20;
     }
-    .app-title { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
-    .app-sub { font-size: 12px; color: rgba(147,197,253,0.8); margin-top: 0px; }
+    .app-title { font-size: 18px; font-weight: 700; letter-spacing: .2px; text-shadow: 0 0 16px rgba(96,165,250,0.35); }
+    .app-sub { font-size: 11px; color: rgba(147,197,253,0.8); margin-top: 2px; }
 
-    /* ===== Zone de scroll centrale ===== */
+    /* ===== Pane central (inchangé) ===== */
     .pane {
       overflow-y: auto;                    
-      -webkit-overflow-scrolling: touch; /* FIX IPHONE: Scroll fluide natif */
-      padding: 16px;
-      flex-grow: 1;
-      padding-bottom: 100px; /* Espace pour ne pas cacher le contenu sous la tabbar */
+      -webkit-overflow-scrolling: touch; 
+      padding: 10px 14px 10px;
+      flex-grow: 1; 
     }
-    .section { margin-bottom: 16px; }
+    .section { margin-bottom: 10px; }
 
-    /* ===== Inputs et Formulaires ===== */
+    /* ===== Styles des éléments (omis pour la concision) ===== */
     .card {
       background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 16px; /* Plus arrondi style iOS */
-      padding: 14px;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 14px;
+      padding: 10px;
     }
-    .row { display: flex; align-items: center; gap: 12px; }
-    .lbl { width: 110px; font-size: 14px; opacity: .9; font-weight: 500; }
-    
-    /* FIX IPHONE: FONT-SIZE 16PX MINIMUM pour empêcher le zoom automatique */
-    .input, select.input, textarea.input, input.input {
-      font-size: 16px !important; 
-      background: rgba(0,0,0,0.2);
-      border: 1px solid rgba(255,255,255,0.1);
+    .row { display: flex; align-items: center; gap: 10px; }
+    .lbl { width: 124px; font-size: 12px; opacity: .85; }
+    .input {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.16);
       border-radius: 10px;
-      padding: 10px 12px;
-      color: white;
-      outline: none; 
-      height: 44px; /* Hauteur tactile confortable (44px standard iOS) */
+      padding: 8px 10px;
+      color: rgba(255,255,255,0.95);
+      outline: none; font-size: 14px; height: 36px;
       width: 100%;
-      appearance: none; -webkit-appearance: none; /* Reset style iOS par défaut */
     }
-    
     .input:focus{
-      border-color: #3b82f6;
-      background: rgba(0,0,0,0.4);
+      border-color: rgba(96,165,250,0.9);
+      box-shadow: 0 0 0 4px rgba(59,130,246,0.25);
     }
-
-    /* Bouton date qui ressemble à un input */
     #entry-date-button {
         display: flex; justify-content: space-between; align-items: center;
-        background: rgba(0,0,0,0.2);
-        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.16);
         border-radius: 10px;
-        padding: 0 12px;
-        color: white;
-        font-size: 16px; /* FIX IPHONE */
-        height: 44px;
+        padding: 8px 10px;
+        color: rgba(255,255,255,0.95);
+        font-size: 14px; height: 36px;
         width: 100%; cursor: pointer;
     }
-
-    /* Icône select perso */
+    #entry-date-button:disabled { opacity: 1.0; cursor: pointer; } 
+    textarea.input { height: auto; min-height: 80px; }
     select.input{
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='rgba(255,255,255,0.5)' viewBox='0 0 20 20'%3E%3Cpath d='M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.21 8.27a.75.75 0 0 1 .02-1.06z'/%3E%3Csvg%3E");
+      appearance: none; -webkit-appearance: none; -moz-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 20 20'%3E%3Cpath d='M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.21 8.27a.75.75 0 0 1 .02-1.06z'/%3E%3Csvg%3E");
       background-repeat: no-repeat;
-      background-position: right 0.8rem center;
-      background-size: 1.2rem;
-      padding-right: 2.5rem;
+      background-position: right 0.6rem center;
+      background-size: 1rem 1rem;
+      padding-right: 2rem;
     }
-
-    /* Boutons */
     .btn-primary, .btn-secondary, .btn-tertiary, .btn-danger {
-        height: 44px; /* Standard tactile */
-        border-radius: 12px; font-weight: 600; font-size: 15px;
+        height: 38px; border-radius: 10px; font-weight: 600; font-size: 14px;
         display: flex; justify-content: center; align-items: center;
-        padding: 0 16px; cursor: pointer; border: none;
-        transition: transform 0.1s;
+        padding: 0 14px; cursor: pointer; border: 1px solid transparent;
+        transition: all 0.2s;
     }
-    .btn-primary:active, .btn-secondary:active { transform: scale(0.97); }
-    .btn-primary { background-color: #3b82f6; color: white; }
-    .btn-secondary { background: rgba(255,255,255,0.1); color: #93c5fd; }
-    .btn-tertiary { background: rgba(255,255,255,0.05); color: #fff; }
+    .btn-primary { background-color: #3b82f6; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .btn-secondary { background: rgba(255,255,255,0.1); color: #93c5fd; border-color: rgba(96,165,250,0.5); }
+    .btn-tertiary { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
     .btn-danger { background-color: #ef4444; color: white; }
+    .btn-icon-label { font-size: 18px; line-height: 1; }
+    .stat-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; padding: 4px 0; }
+    .divider { height: 1px; background: rgba(255,255,255,0.12); margin: 8px 0; }
     
-    .stat-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; padding: 6px 0; }
-    .divider { height: 1px; background: rgba(255,255,255,0.1); margin: 12px 0; }
-    
-    /* ===== Tabbar iOS ===== */
+    /* ===== Segmented control iOS (tabbar) fixé en bas (inchangé) ===== */
     .tabbar {
-      /* FIX IPHONE: Padding bottom safe area */
-      padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
-      border-top: 1px solid rgba(255,255,255,0.1);
-      background: rgba(15, 23, 42, 0.85); /* Plus sombre */
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      backdrop-filter: blur(20px) saturate(180%);
-      position: absolute; bottom: 0; left: 0; right: 0;
-      z-index: 50;
+      padding: 10px 14px calc(10px + env(safe-area-inset-bottom,0px));
+      border-top: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.18);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      backdrop-filter: blur(16px) saturate(160%);
+      height: calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px));
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
     }
     .ios-seg {
       display: grid; grid-template-columns: repeat(5, 1fr); 
-      gap: 4px; padding: 4px;
-      border-radius: 12px;
-      background: rgba(100,100,100,0.2);
-      width: 100%;
+      gap: 6px; padding: 6px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.16);
+      backdrop-filter: blur(16px) saturate(160%);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      width: 100%; max-width: 520px;
     }
     .ios-seg-btn {
-      height: 32px; border-radius: 9px; font-size: 11px; font-weight: 600;
-      color: rgba(255,255,255,0.6); background: transparent; border: none;
-      display: flex; align-items: center; justify-content: center;
+      height: 36px; border-radius: 10px; font-size: 13px; font-weight: 600; letter-spacing: .2px;
+      color: rgba(255,255,255,0.86); background: transparent; border: 1px solid transparent;
     }
     .ios-seg-btn.is-active {
-      color: #fff; background: rgba(100,100,100,0.5);
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      color: #0a84ff; background: rgba(255,255,255,0.98);
+      border: 1px solid rgba(0,0,0,0.06);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 2px rgba(0,0,0,0.18);
     }
 
-    /* Modal Calendrier */
+    /* ===== Calendrier Modal (inchangé) ===== */
     #calendar-modal {
-        position: fixed; inset: 0; background: rgba(0,0,0,.6); 
-        backdrop-filter: blur(5px); display: none; 
+        position: fixed; inset: 0; background: rgba(0,0,0,.8); 
+        backdrop-filter: blur(8px); display: none; 
         align-items: flex-end; justify-content: center; z-index: 1000;
-        /* FIX IPHONE: Bottom padding safe area */
-        padding-bottom: env(safe-area-inset-bottom);
+        padding-bottom: env(safe-area-inset-bottom, 10px);
     }
     #calendar-container {
-        background: #1e293b; border-radius: 20px 20px 0 0; 
-        width: 100%; padding: 20px;
-        box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
-        border-top: 1px solid rgba(255,255,255,0.1);
+        background: #1e293b; border-radius: 16px 16px 0 0; 
+        max-width: 400px; width: 100%; padding: 14px;
+        box-shadow: 0 -10px 20px rgba(0,0,0,0.4);
     }
-
-    /* Utilitaires */
-    .text-emerald-300 { color: #6ee7b7; }
-    .text-blue-300 { color: #93c5fd; }
-    .text-fuchsia-300 { color: #f0abfc; }
-    .text-yellow-300 { color: #fde047; }
-    .font-bold { font-weight: 700; }
-    .font-semibold { font-weight: 600; }
-
-    /* Animation Splash */
-    #splash-screen {
-        position:fixed; inset:0; background:#0b1020; z-index:9999; 
-        display:flex; justify-content:center; align-items:center; flex-direction:column; 
-        transition:opacity 0.5s ease-out;
+    #calendar-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 5px 0 10px;
     }
+    #calendar-grid {
+        display: grid; grid-template-columns: repeat(7, 1fr);
+        gap: 4px; text-align: center;
+    }
+    .calendar-day-label { font-size: 12px; opacity: 0.7; }
+    .calendar-day-btn {
+        width: 100%; height: 36px; border-radius: 8px; font-size: 14px;
+        background: rgba(255,255,255,0.05); color: white; border: none;
+    }
+    .calendar-day-btn.is-current-month { background: rgba(255,255,255,0.1); }
+    .calendar-day-btn.is-selected { background: #3b82f6; font-weight: bold; }
+    .calendar-day-btn.is-today { border: 2px solid #60a5fa; }
+    .calendar-day-btn:disabled { opacity: 0.3; cursor: not-allowed; background: rgba(255,255,255,0.05); }
+
   </style>
 </head>
 
 <body>
   
   <script>
-    // FIX IPHONE: On force la hauteur réelle via JS pour éviter les bugs de barre d'adresse
-    function setAppHeight() {
-      const vh = window.innerHeight;
-      document.documentElement.style.setProperty('--app-height', `${vh}px`);
-      // Force le body aussi au cas où
-      document.body.style.height = `${vh}px`;
+    // ========= FIX IOS/SAFARI: Calcul synchrone de la hauteur =========
+    // Cette fonction doit s'exécuter AVANT que le CSS ne dessine le body.
+    function setAppHeightImmediate() {
+      // window.innerHeight est la valeur la plus fiable sur iOS, y compris en mode PWA.
+      const viewportHeight = window.innerHeight; 
+      document.documentElement.style.setProperty('--app-height', `${viewportHeight}px`);
     }
-    window.addEventListener('resize', setAppHeight);
-    window.addEventListener('orientationchange', setAppHeight);
-    setAppHeight();
+    setAppHeightImmediate();
   </script>
   
-  <div id="splash-screen">
-    <div id="clock-container" style="position:relative; width:80px; height:80px; border:3px solid #3b82f6; border-radius:50%; margin-bottom:20px;">
-        <div id="hour-hand" style="position:absolute; width:3px; height:24px; background:#60a5fa; top:50%; left:50%; margin-left:-1.5px; margin-top:-24px; border-radius:2px; transform-origin:bottom; transform:rotate(0deg);"></div>
-        <div id="minute-hand" style="position:absolute; width:2px; height:32px; background:#93c5fd; top:50%; left:50%; margin-left:-1px; margin-top:-32px; border-radius:1.5px; transform-origin:bottom; transform:rotate(0deg);"></div>
-        <div id="center-dot" style="position:absolute; width:6px; height:6px; background:white; border-radius:50%; top:50%; left:50%; margin-left:-3px; margin-top:-3px;"></div>
+  <div id="splash-screen" style="position:fixed; inset:0; background:#0b1020; z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; opacity:1; transition:opacity 0.5s ease-out;">
+    <div id="clock-container" style="position:relative; width:100px; height:100px; border:4px solid #3b82f6; border-radius:50%; margin-bottom:15px;">
+        <div id="hour-hand" style="position:absolute; width:4px; height:30px; background:#60a5fa; top:50%; left:50%; margin-left:-2px; margin-top:-30px; border-radius:2px; transform-origin:bottom; transform:rotate(0deg); transition:transform 0.1s linear;"></div>
+        <div id="minute-hand" style="position:absolute; width:3px; height:40px; background:#93c5fd; top:50%; left:50%; margin-left:-1.5px; margin-top:-40px; border-radius:1.5px; transform-origin:bottom; transform:rotate(0deg); transition:transform 0.1s linear;"></div>
+        <div id="center-dot" style="position:absolute; width:8px; height:8px; background:white; border-radius:50%; top:50%; left:50%; margin-left:-4px; margin-top:-4px;"></div>
     </div>
-    <div style="font-size:18px; font-weight:600; color:#93c5fd; letter-spacing:1px;">WORKER</div>
+    <div style="font-size:24px; font-weight:700; color:#93c5fd; letter-spacing:1px;"> </div>
   </div>
-
-  <div id="app-shell" style="visibility:hidden;"> 
-    <div id="app-container">
+  <div id="app-shell" style="visibility:hidden;"> <div id="app-container">
       <header id="app-header" class="app-header">
         <div class="app-title">Worker</div>
         <div class="app-sub">Suivi des heures</div>
@@ -253,16 +238,16 @@
 
       <main id="pane" class="pane">
         <section id="tab-saisie" class="section">
-          <div class="card">
+          <div class="card" style="padding-top:8px;">
             <div class="row">
               <label class="lbl" for="entry-date-button">Date</label>
               <button id="entry-date-button">
-                <span id="entry-date-display">--/--/----</span> 
-                <span>📅</span>
+                <span id="entry-date-display">2025-01-01</span> 
+                <span style="font-size:18px;">📅</span>
               </button>
               <input type="hidden" id="entry-date-hidden" />
             </div>
-            <div class="row" style="margin-top:12px;">
+            <div class="row" style="margin-top:8px;">
               <label class="lbl" for="entry-type-select">Type</label>
               <select id="entry-type-select" class="input">
                 <option value="WORK">Travail</option>
@@ -272,39 +257,41 @@
             </div>
           </div>
 
-          <div id="work-card" class="card" style="margin-top:12px;">
+          <div id="work-card" class="card" style="margin-top:8px;">
             <div class="stat-row" style="padding-bottom:6px;">
               <span>Pause midi (réglage)</span>
               <span id="lunch-duration-display" class="font-semibold text-blue-300">45 min</span>
             </div>
             <div class="row" style="margin-top:8px;">
               <label class="lbl" for="lunch-duration-manual">Pause (min)</label>
-              <input type="number" id="lunch-duration-manual" min="0" max="240" step="5" class="input" placeholder="Par défaut"/>
+              <input type="number" id="lunch-duration-manual" min="0" max="240" step="5" class="input" placeholder="Vide = défaut"/>
             </div>
-            <div class="row" style="margin-top:12px;">
+            <div class="row" style="margin-top:8px;">
               <label class="lbl" for="start-time">Début</label>
               <input type="time" id="start-time" class="input"/>
             </div>
-            <div class="row" style="margin-top:12px;">
+            <div class="row" style="margin-top:8px;">
               <label class="lbl" for="end-time">Fin</label>
               <input type="time" id="end-time" class="input"/>
             </div>
-            <div class="divider"></div>
-            <div class="stat-row">
+            <div class="stat-row" style="margin-top:6px;">
               <span>Total du jour</span>
               <span id="current-day-minutes" class="font-bold text-emerald-300">0h 00m</span>
             </div>
           </div>
 
-          <div style="display:flex; gap:8px; margin-top:16px;">
-            <button id="clear-entry-btn" class="btn-tertiary" style="width: 54px;"><span style="font-size:20px;">↺</span></button>
-            <button id="save-entry-btn" class="btn-primary" style="flex-grow:1;">Enregistrer</button>
-            <button id="delete-entry-btn" class="btn-danger" style="width: 54px; display:none;"><span style="font-size:20px;">🗑</span></button>
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <button id="clear-entry-btn" class="btn-tertiary" style="width: 48px;"><span class="btn-icon-label" role="img" aria-label="Balai">&#128472;</span></button>
+            
+            <button id="save-entry-btn" class="btn-primary" style="flex-grow:1; max-width: calc(100% - 106px);">Enregistrer</button>
+            
+            <button id="delete-entry-btn" class="btn-danger" style="width: 48px; display:none;"><span class="btn-icon-label" role="img" aria-label="Poubelle">&#128465;</span></button>
           </div>
 
-          <div class="card" style="margin-top:16px;">
-            <div class="stat-row" style="padding-bottom:4px; opacity:0.7;"><strong>Dernières saisies</strong></div>
-            <div id="latest-list" style="margin-top:4px;"></div>
+          <div class="card" style="margin-top:8px;">
+            <div class="stat-row" style="padding-bottom:4px;"><strong>Dernières saisies</strong><span></span></div>
+            <div id="latest-list" style="margin-top:2px;">
+              </div>
           </div>
         </section>
 
@@ -313,29 +300,35 @@
             <div class="stat-row"><span>Objectif hebdo</span><span id="target-weekly-hours-summary" class="text-blue-300">37h 00m</span></div>
             <div class="stat-row"><span>Total travaillé</span><span id="total-weekly-hours">0h 00m</span></div>
             
-            <div id="progress-bar-container" style="margin-top:14px; margin-bottom:14px;">
-                <div class="progress-wrapper" style="height:14px; border-radius:7px; background:rgba(255,255,255,0.12); overflow:hidden; position:relative;">
-                    <div id="weekly-progress-bar" style="height:100%; width:0%; transition:width 0.3s ease-out; position:absolute; left:0; top:0;"></div>
+            <div id="progress-bar-container" style="margin-top:10px; margin-bottom:10px;">
+                <div class="progress-wrapper" style="height:12px; border-radius:6px; background:rgba(255,255,255,0.12); overflow:hidden; position:relative;">
+                    <div id="weekly-progress-bar" class="progress-bar-fill" 
+                         style="height:100%; width:0%; transition:width 0.3s ease-out; position:absolute; left:0; top:0;">
+                    </div>
                 </div>
-                <div id="progress-bar-label" style="text-align:center; font-size:12px; font-weight:600; margin-top:6px;">0%</div>
+                <div id="progress-bar-label" style="text-align:center; font-size:12px; font-weight:600; margin-top:4px;">0%</div>
             </div>
             <div class="divider"></div>
             <div class="stat-row"><strong>Écart</strong><strong id="deviation-weekly-hours">0h 00m</strong></div>
           </div>
-          <div id="weekly-body" class="card" style="margin-top:12px; padding:10px;"></div>
+          <div id="weekly-body" class="card" style="margin-top:8px; padding:6px;">
+            </div>
         </section>
 
         <section id="tab-mensuelle" class="section" style="display:none;">
           <div class="card">
             <div class="month-picker" style="display:flex; gap:8px; align-items:center;">
-              <button id="month-prev" class="btn-tertiary" style="width: 44px;">‹</button>
-              <select id="month-select" class="input" style="flex-grow: 1; text-align:center;"></select>
-              <button id="month-next" class="btn-tertiary" style="width: 44px;">›</button>
+              <button id="month-prev" class="btn-tertiary" style="width: 40px;">‹</button>
+              <select id="month-select" class="input" style="flex-grow: 1;">
+                </select>
+              <button id="month-next" class="btn-tertiary" style="width: 40px;">›</button>
             </div>
           </div>
 
-          <div class="card" style="margin-top:12px;">
-            <div class="stat-row"><span>Jours travaillés</span><span id="monthly-days-worked" class="font-bold text-emerald-300">0</span></div>
+          <div class="card" style="margin-top:8px;">
+            <div class="stat-row" style="padding-bottom:4px; border-bottom:1px solid rgba(255,255,255,0.10);">
+              <span class="font-medium">Jours travaillés</span><span id="monthly-days-worked" class="font-bold text-emerald-300">0</span>
+            </div>
             <div class="stat-row"><span>Jours de RTT</span><span id="monthly-rtt-days" class="font-bold text-blue-300">0</span></div>
             <div class="stat-row"><span>Jours de vacances</span><span id="monthly-vacation-days" class="font-bold text-fuchsia-300">0</span></div>
             <div class="stat-row"><span>Jours Fériés</span><span id="monthly-holiday-days" class="font-bold text-yellow-300">0</span></div>
@@ -344,12 +337,12 @@
             <div class="stat-row"><strong>Écart mensuel</strong><strong id="monthly-deviation-hours">0h 00m</strong></div>
           </div>
           
-          <div class="card" style="margin-top:12px;">
-              <div class="stat-row" style="padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.1);">
-                  <span class="font-medium">Solde RTT</span><span id="current-rtt-balance" class="font-bold text-blue-300">0</span>
+          <div class="card" style="margin-top:8px;">
+              <div class="stat-row" style="padding-bottom:4px; border-bottom:1px solid rgba(255,255,255,0.10);">
+                  <span class="font-medium">Jours de RTT restants</span><span id="current-rtt-balance" class="font-bold text-blue-300">0</span>
               </div>
-              <div class="stat-row" style="padding-top:8px;">
-                  <span class="font-medium">Solde CP</span><span id="current-vacation-balance" class="font-bold text-fuchsia-300">0</span>
+              <div class="stat-row">
+                  <span class="font-medium">Jours de CP restants</span><span id="current-vacation-balance" class="font-bold text-fuchsia-300">0</span>
               </div>
           </div>
         </section>
@@ -358,7 +351,8 @@
           <div class="card">
              <div class="stat-row" style="padding-bottom:4px;"><strong>Toutes les entrées</strong><span>(Cliquez pour modifier)</span></div>
           </div>
-          <div id="data-list-container" style="margin-top:12px;"></div>
+          <div id="data-list-container" style="margin-top:8px;">
+            </div>
         </section>
 
         <section id="tab-reglages" class="section" style="display:none;">
@@ -367,105 +361,124 @@
               <label class="lbl" for="target-hours">Objectif hebdo (h)</label>
               <input type="number" id="target-hours" min="1" max="48" step="0.5" class="input text-right" value="37.0"/>
             </div>
-            <div class="row" style="margin-top:12px;">
+            <div class="row" style="margin-top:8px;">
               <label class="lbl" for="lunch-minutes">Pause midi (min)</label>
               <input type="number" id="lunch-minutes" min="15" max="120" step="5" class="input text-right" value="45"/>
             </div>
-            <div class="divider"></div>
+            <div class="divider" style="margin-top:10px; margin-bottom:10px;"></div>
             <div class="row">
-                <label class="lbl" for="initial-rtt-days">Capital RTT</label>
+                <label class="lbl" for="initial-rtt-days">Capital RTT (Jours)</label>
                 <input type="number" id="initial-rtt-days" min="0" max="30" step="1" class="input text-right" value="10"/>
             </div>
-            <div class="row" style="margin-top:12px;">
-                <label class="lbl" for="initial-vacation-days">Capital CP</label>
+            <div class="row" style="margin-top:8px;">
+                <label class="lbl" for="initial-vacation-days">Capital CP (Jours)</label>
                 <input type="number" id="initial-vacation-days" min="0" max="50" step="1" class="input text-right" value="25"/>
             </div>
-            <button id="save-settings-btn" class="btn-primary" style="margin-top:16px; width:100%;">Sauvegarder</button>
+            <button id="save-settings-btn" class="btn-primary" style="margin-top:10px;">Sauvegarder</button>
           </div>
 
-          <div class="card" style="margin-top:12px;">
-            <div class="stat-row" style="padding-bottom:8px;"><strong>Données</strong></div>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-              <button id="export-data-btn" class="btn-secondary">Exporter CSV</button>
+          <div class="card" style="margin-top:8px;">
+            <div class="stat-row" style="padding-bottom:4px;"><strong>Données</strong><span></span></div>
+            <div class="row" style="gap:8px; margin-top:6px;">
+              <button id="export-data-btn" class="btn-primary">Exporter CSV</button>
               <button id="import-data-btn" class="btn-secondary">Importer CSV</button>
+              <input id="import-file" type="file" accept=".csv,text/csv" style="display:none;" />
             </div>
-            <input id="import-file" type="file" accept=".csv,text/csv" style="display:none;" />
-            <div style="text-align:center; font-size:11px; color:rgba(255,255,255,0.5); margin-top:12px;">
-              ID: <span id="user-id-display">Local</span>
+            <div style="text-align:center; font-size:11px; color:rgba(255,255,255,0.75); margin-top:6px;">
+              ID Utilisateur : <code id="user-id-display" style="opacity:.9;"></code>
+            </div>
+            <div style="text-align:center; font-size:11px; color:rgba(255,255,255,0.75); margin-top:6px;">
+              Créé par Bnjam1
             </div>
           </div>
         </section>
       </main>
 
       <nav id="tabbar" class="tabbar">
-        <div class="ios-seg" role="tablist">
-          <button id="btn-saisie"     class="ios-seg-btn is-active">Saisie</button>
-          <button id="btn-hebdo"      class="ios-seg-btn">Hebdo</button>
-          <button id="btn-mensuelle"  class="ios-seg-btn">Mensuelle</button>
-          <button id="btn-data"       class="ios-seg-btn">Données</button> 
-          <button id="btn-reglages"   class="ios-seg-btn">Réglages</button>
+        <div class="ios-seg" role="tablist" aria-label="Onglets">
+          <button id="btn-saisie"     class="ios-seg-btn is-active" role="tab" aria-selected="true">Saisie</button>
+          <button id="btn-hebdo"      class="ios-seg-btn" role="tab" aria-selected="false">Hebdo</button>
+          <button id="btn-mensuelle"  class="ios-seg-btn" role="tab" aria-selected="false">Mensuelle</button>
+          <button id="btn-data"       class="ios-seg-btn" role="tab" aria-selected="false">Données</button> 
+          <button id="btn-reglages"   class="ios-seg-btn" role="tab" aria-selected="false">Réglages</button>
         </div>
       </nav>
     </div>
   </div>
 
-  <div id="custom-modal" style="position:fixed; inset:0; background:rgba(0,0,0,.7); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; padding:20px; z-index:999;">
-    <div style="background:#1e293b; border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:20px; max-width:320px; width:100%; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-      <div id="modal-title" style="font-size:18px; font-weight:700; color:white; margin-bottom:8px;">Titre</div>
-      <div id="modal-message" style="font-size:15px; color:#cbd5e1; margin-bottom:20px; line-height:1.5;">Message</div>
-      <button id="close-modal-btn" class="btn-primary" style="width:100%;">Fermer</button>
+  <div id="custom-modal" style="position:fixed; inset:0; background:rgba(0,0,0,.7); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; padding:16px; z-index:999;">
+    <div style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); border-radius:16px; padding:14px; max-width:360px; width:100%;">
+      <div id="modal-title" style="font-weight:800; color:#93c5fd; margin-bottom:6px;">Titre</div>
+      <div id="modal-message" style="font-size:14px; margin-bottom:10px;">Message</div>
+      <button id="close-modal-btn" class="btn-primary">Fermer</button>
     </div>
   </div>
 
   <div id="calendar-modal">
     <div id="calendar-container">
-        <div id="calendar-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <button id="calendar-prev" class="btn-tertiary" style="width: 40px; height:40px; border-radius:50%;">‹</button>
-            <strong id="calendar-title" style="font-size:17px; text-transform:capitalize;">Mois Année</strong>
-            <button id="calendar-next" class="btn-tertiary" style="width: 40px; height:40px; border-radius:50%;">›</button>
+        <div id="calendar-header">
+            <button id="calendar-prev" class="btn-tertiary" style="width: 36px;">‹</button>
+            <strong id="calendar-title" style="font-size:16px;">Mois Année</strong>
+            <button id="calendar-next" class="btn-tertiary" style="width: 36px;">›</button>
         </div>
-        <div id="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center;">
-            <div class="calendar-day-label" style="font-size:12px; opacity:0.5; padding-bottom:5px;">L</div>
-            <div class="calendar-day-label" style="font-size:12px; opacity:0.5; padding-bottom:5px;">M</div>
-            <div class="calendar-day-label" style="font-size:12px; opacity:0.5; padding-bottom:5px;">M</div>
-            <div class="calendar-day-label" style="font-size:12px; opacity:0.5; padding-bottom:5px;">J</div>
-            <div class="calendar-day-label" style="font-size:12px; opacity:0.5; padding-bottom:5px;">V</div>
-            <div class="calendar-day-label" style="font-size:12px; opacity:0.5; padding-bottom:5px;">S</div>
-            <div class="calendar-day-label" style="font-size:12px; opacity:0.5; padding-bottom:5px;">D</div>
+        <div id="calendar-grid">
+            <div class="calendar-day-label">Lun</div>
+            <div class="calendar-day-label">Mar</div>
+            <div class="calendar-day-label">Mer</div>
+            <div class="calendar-day-label">Jeu</div>
+            <div class="calendar-day-label">Ven</div>
+            <div class="calendar-day-label">Sam</div>
+            <div class="calendar-day-label">Dim</div>
             </div>
     </div>
   </div>
 
-  <style>
-      .calendar-day-btn {
-        width: 100%; aspect-ratio: 1; border-radius: 50%; font-size: 15px;
-        background: transparent; color: white; border: none;
-        display:flex; align-items:center; justify-content:center;
-    }
-    .calendar-day-btn.is-selected { background: #3b82f6; font-weight: bold; }
-    .calendar-day-btn.is-today { border: 1px solid #60a5fa; color:#60a5fa;}
-  </style>
-
   <script type="module">
-    // --- VARIABLES & CONFIG FIREBASE REQUISES POUR LE SCRIPT (Identique à ton original) ---
-    // Je remets ici tout ton code JS original, légèrement nettoyé pour correspondre aux nouveaux IDs si besoin
-    
-    // ... [Ton code d'import Firebase ici si tu l'utilises] ...
-    // Pour cet exemple, je mets les placeholders du mode Local pour que ça marche direct.
-    
+    /* ========= Mode ultra-compact (optionnel) ========= */
+    const ULTRA_COMPACT = false;
+
+    // ====== Firebase (facultatif) ======
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, setLogLevel, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Variables de configuration d'hôte (si l'application est hébergée sur une plateforme spécifique)
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-time-tracker-app-id';
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+    let app, db, auth;
+    try { 
+        // Tentative d'initialisation de Firebase
+        app = initializeApp(firebaseConfig); 
+        db = getFirestore(app); 
+        auth = getAuth(app); 
+        setLogLevel('debug'); 
+    } catch(_) {
+        // En cas d'échec (pas de config Firebase), on passe en mode local seulement
+    }
+
+    // ====== État ======
+    let userId = null;
     let workEntries = [];
+    let useLocalOnly = !auth; // Vrai si Firebase n'a pas pu être initialisé
+    let currentEntryDate = null; 
+    let currentCalendarMonth = new Date();
+
     let config = {
       targetWeeklyHours: 37 * 60,
       lunchDurationMinutes: 45,
+      workingDays: [1,2,3,4,5], // Lundi=1 à Vendredi=5
       lastSelectedDate: new Date().toISOString().substring(0,10),
       selectedMonthYM: new Date().toISOString().substring(0,7),
+      // Soldes de jours
       initialRttDays: 10,
       initialVacationDays: 25,
       currentRttBalance: 10,  
       currentVacationBalance: 25,
     };
-    
-    // --- UTILS ---
+
+    // ====== Utils ======
     const $ = (s)=>document.querySelector(s);
     const dateToYMD = d => {
       const y = d.getFullYear();
@@ -473,13 +486,17 @@
       const day = String(d.getDate()).padStart(2, '0');
       return `${y}-${m}-${day}`;
     };
+
     const dateToFr = ymd => { const [y,m,d]=ymd.split('-'); return `${d}/${m}/${y}`; };
     const fmtMinutes = m => { const s=m<0?"-":""; const a=Math.abs(m); const h=Math.floor(a/60); const mn=Math.round(a%60); return `${s}${h}h ${mn<10?'0':''}${mn}m`; };
     
     const calcWorkMinutes = (e)=>{ 
       const dailyTargetMinutes = config.targetWeeklyHours / 5;
-      if(e?.type!=='WORK') return dailyTargetMinutes; // Pour RTT/Vacances, on compte comme journée faite
-      if(!e.start||!e.end) return 0; 
+      
+      if(e?.type==='RTT' || e?.type==='VACATION' || e?.type==='HOLIDAY') {
+          return dailyTargetMinutes; 
+      }
+      if(e?.type!=='WORK'||!e.start||!e.end) return 0; 
       const p=t=>{const [h,m]=t.split(':').map(Number);return h*60+m}; 
       const lunch=(e.lunchDurationMinutes ?? config.lunchDurationMinutes) || 0; 
       return Math.max(p(e.end)-p(e.start)-lunch,0); 
@@ -489,110 +506,232 @@
     const addMonths = (ym, d)=>{ let [y,m]=ym.split('-').map(Number); const dt=new Date(y,m-1+d,1); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; };
     const monthLabel = (ym)=>{ const [y,m]=ym.split('-').map(Number); return new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(new Date(y,m-1,1)); };
 
-    // --- LOCAL STORAGE ---
-    const LS_KEYS = { entries:`tt_worker_entries`, config:`tt_worker_config` };
+    // ====== LocalStorage & Firestore (fonctions abrégées) ======
+    const LS_KEYS = { entries:`tt_${appId}_entries`, config:`tt_${appId}_config` };
     const lsLoadEntriesMap = ()=>{ try{return JSON.parse(localStorage.getItem(LS_KEYS.entries)||'{}')}catch{return{}} };
     const lsSaveEntriesMap = (map)=>{ try{localStorage.setItem(LS_KEYS.entries, JSON.stringify(map))}catch{} };
+    const lsUpsertEntry = (e)=>{ const map=lsLoadEntriesMap(); const ex=map[e.date]; if(!ex||(ex.timestamp||0)<= (e.timestamp||0)){ map[e.date]=e; lsSaveEntriesMap(map);} };
+    const lsDeleteEntry = (date) => { const map=lsLoadEntriesMap(); delete map[date]; lsSaveEntriesMap(map); }; 
     const lsGetAllEntriesArray = ()=>Object.values(lsLoadEntriesMap()).sort((a,b)=>b.date.localeCompare(a.date));
-    const lsSaveConfig = (cfg)=>{ try{localStorage.setItem(LS_KEYS.config, JSON.stringify(cfg))}catch{} };
     const lsLoadConfig = ()=>{ try{return JSON.parse(localStorage.getItem(LS_KEYS.config)||'null')}catch{return null} };
+    const lsSaveConfig = (cfg)=>{ try{localStorage.setItem(LS_KEYS.config, JSON.stringify(cfg))}catch{} };
+    const entriesCol = ()=> collection(db, 'artifacts', appId, 'users', userId, 'work_entries');
+    const configDoc = ()=> doc(db, 'artifacts', appId, 'users', userId, 'app_settings', 'config');
+    const entryDoc  = (d)=> doc(db, 'artifacts', appId, 'users', userId, 'work_entries', d);
 
-    // --- LOGIQUE METIER ---
+    // ====== Gestion des Soldes ======
     function recalculateBalances(){
       let rttUsed = 0;
       let vacationUsed = 0;
+
       workEntries.forEach(e => {
-        if(e.type === 'RTT') rttUsed += 1;
-        else if (e.type === 'VACATION') vacationUsed += 1;
+        if(e.type === 'RTT') {
+          rttUsed += 1;
+        } else if (e.type === 'VACATION') {
+          vacationUsed += 1;
+        }
       });
-      config.currentRttBalance = (config.initialRttDays||0) - rttUsed;
-      config.currentVacationBalance = (config.initialVacationDays||0) - vacationUsed;
+      
+      const initialRtt = config.initialRttDays || 0;
+      const initialVacation = config.initialVacationDays || 0;
+
+      config.currentRttBalance = initialRtt - rttUsed;
+      config.currentVacationBalance = initialVacation - vacationUsed;
+      
       lsSaveConfig(config); 
     }
+    
+    // ====== Modal ======
+    const showModal=(t,m)=>{$('#modal-title').textContent=t; $('#modal-message').innerHTML=m; $('#custom-modal').style.display='flex';};
 
-    function showModal(t,m){$('#modal-title').textContent=t; $('#modal-message').innerHTML=m; $('#custom-modal').style.display='flex';}
+    // ====== Layout (Correction de la hauteur iOS) ======
+    function setAppHeight() {
+      // Sur mobile (iOS Safari en particulier), window.innerHeight donne la hauteur CORRECTE
+      // pour le viewport disponible, même lorsque l'interface utilisateur du navigateur change.
+      const viewportHeight = window.innerHeight; 
+      
+      // Met à jour la variable CSS --app-height sur l'élément racine (<html>)
+      document.documentElement.style.setProperty('--app-height', `${viewportHeight}px`);
+    }
 
+
+    // ====== Onglets ======
     function setActiveTab(name){
-      ['saisie','hebdo','mensuelle','data','reglages'].forEach(id=>{
+      const ids=['saisie','hebdo','mensuelle','data','reglages'];
+      ids.forEach(id=>{
         $('#tab-'+id).style.display = (id===name)? 'block':'none';
         const btn = $('#btn-'+id);
-        if(id===name) btn.classList.add('is-active'); else btn.classList.remove('is-active');
+        if(btn){ if(id===name){btn.classList.add('is-active'); btn.setAttribute('aria-selected','true');}
+                 else {btn.classList.remove('is-active'); btn.setAttribute('aria-selected','false');}}
       });
       if(name==='hebdo') updateWeeklyView();
       if(name==='mensuelle'){ buildMonthOptions(); updateMonthlyView(); }
       if(name==='data') renderDataListView();
       if(name==='reglages') updateSettingsUI();
     }
-
-    // --- UI SAISIE ---
-    function updateEntryUI(date){
-      const e = workEntries.find(x=>x.date===date);
-      $('#entry-date-hidden').value = date;
-      $('#entry-date-display').textContent = dateToFr(date);
-      $('#entry-type-select').value = e?.type || 'WORK';
-      $('#start-time').value = e?.start || '';
-      $('#end-time').value   = e?.end   || '';
-      $('#lunch-duration-manual').value = (e?.lunchDurationMinutes!==undefined && e?.type==='WORK') ? e.lunchDurationMinutes : '';
-      $('#lunch-duration-display').textContent = `${config.lunchDurationMinutes} min`;
-      
-      refreshDayTotal();
-      
-      if(e){
-        $('#delete-entry-btn').style.display = 'block';
-        $('#save-entry-btn').textContent = 'Modifier';
-      } else {
-        $('#delete-entry-btn').style.display = 'none';
-        $('#save-entry-btn').textContent = 'Enregistrer';
+    
+    // ... (Fonctions de l'UI de Saisie) ...
+    function clearEntryUI(clearDate = false){
+      if(clearDate) {
+          const todayYMD = dateToYMD(new Date());
+          $('#entry-date-hidden').value = todayYMD;
+          $('#entry-date-display').textContent = dateToFr(todayYMD);
       }
+      $('#entry-type-select').value = 'WORK';
+      $('#start-time').value = '';
+      $('#end-time').value = '';
+      $('#lunch-duration-manual').value = '';
+      
+      currentEntryDate = null;
+      
+      updateEntryUI($('#entry-date-hidden').value); 
+      refreshDayTotal(); 
     }
 
+    // refreshDayTotal affiche le décompte dynamique
     function refreshDayTotal(){
       const entry = {
         date: $('#entry-date-hidden').value,
         type: $('#entry-type-select').value,
         start: $('#start-time').value,
         end:   $('#end-time').value,
-        lunchDurationMinutes: $('#lunch-duration-manual').value ? parseInt($('#lunch-duration-manual').value) : undefined
+        lunchDurationMinutes: (()=>{
+          const s=$('#lunch-duration-manual').value;
+          return s===''? undefined : Math.max(0, parseInt(s,10)||0);
+        })()
       };
       const mins = calcWorkMinutes(entry);
       let statusText = '';
       
-      const card = $('#work-card');
       if(entry.type==='WORK'){ 
           statusText = fmtMinutes(mins); 
-          card.style.opacity='1'; card.style.pointerEvents='auto'; 
-      } else { 
-          const label = entry.type==='RTT'?'RTT':(entry.type==='VACATION'?'Vacances':'Férié');
-          statusText = `${label} (${fmtMinutes(mins)})`; 
-          card.style.opacity='.5'; card.style.pointerEvents='none'; 
+          $('#work-card').style.opacity='1'; 
+          $('#work-card').style.pointerEvents='auto'; 
       }
+      else if(entry.type==='RTT'){ 
+          statusText = `Jour de RTT (${fmtMinutes(mins)})`; 
+          $('#work-card').style.opacity='.55'; 
+          $('#work-card').style.pointerEvents='none'; 
+      }
+      else if(entry.type==='VACATION'){ 
+          statusText = `Jour de vacances (${fmtMinutes(mins)})`; 
+          $('#work-card').style.opacity='.55'; 
+          $('#work-card').style.pointerEvents='none'; 
+      }
+      else if(entry.type==='HOLIDAY'){ 
+          statusText = `Jour férié (${fmtMinutes(mins)})`; 
+          $('#work-card').style.opacity='.55'; 
+          $('#work-card').style.pointerEvents='none'; 
+      }
+      
       $('#current-day-minutes').textContent = statusText;
     }
+    
+    function updateEntryUI(date){
+      const e = workEntries.find(x=>x.date===date);
+      currentEntryDate = e?.date || null; 
 
-    // --- LISTE DERNIERES SAISIES ---
+      $('#entry-date-hidden').value = date;
+      $('#entry-date-display').textContent = dateToFr(date);
+
+      $('#entry-type-select').value = e?.type || 'WORK';
+      $('#start-time').value = e?.start || '';
+      $('#end-time').value   = e?.end   || '';
+      $('#lunch-duration-manual').value = (e?.lunchDurationMinutes!==undefined && e?.type==='WORK') ? e.lunchDurationMinutes : '';
+      $('#lunch-duration-display').textContent = `${config.lunchDurationMinutes} min`;
+      refreshDayTotal();
+      
+      if(e){
+        $('#delete-entry-btn').style.display = 'block';
+        $('#save-entry-btn').textContent = 'Modifier';
+        $('#save-entry-btn').style.width = 'calc(100% - 106px)';
+      } else {
+        $('#delete-entry-btn').style.display = 'none';
+        $('#save-entry-btn').textContent = 'Enregistrer';
+        $('#save-entry-btn').style.width = 'calc(100% - 56px)';
+      }
+    }
+
+    // ... (Reste des fonctions d'affichage des vues) ...
     function renderLatestList(){
       const container = $('#latest-list');
-      const sorted = [...workEntries].slice(0,5);
+      if(ULTRA_COMPACT){ container.innerHTML = `<div style="font-size:12px; opacity:.75;">(Masqué en mode ultra-compact)</div>`; return; }
+      const sorted = [...workEntries].sort((a,b)=> b.date.localeCompare(a.date) || (b.timestamp||0)-(a.timestamp||0)).slice(0,6);
       container.innerHTML = sorted.map(e=>{
-        let tag = e.type==='WORK' ? fmtMinutes(calcWorkMinutes(e)) : e.type;
-        return `<button data-date="${e.date}" style="display:flex; justify-content:space-between; width:100%; padding:10px; border-radius:10px; background:rgba(255,255,255,0.05); margin-top:6px; border:none; color:white; align-items:center;">
-                  <span style="font-size:14px;">${dateToFr(e.date)}</span>
-                  <span style="font-size:13px; opacity:0.8;">${tag}</span>
+        let tag = '';
+        let info = '';
+        if(e.type==='WORK'){ tag=fmtMinutes(calcWorkMinutes(e)); info=`${e.start||'--:--'} → ${e.end||'--:--'}`;}
+        else if(e.type==='RTT'){ tag='RTT'; info=`Décompté: ${fmtMinutes(calcWorkMinutes(e))}`;}
+        else if(e.type==='VACATION'){ tag='Vacances'; info=`Décompté: ${fmtMinutes(calcWorkMinutes(e))}`;}
+        else if(e.type==='HOLIDAY'){ tag='Férié'; info=`Décompté: ${fmtMinutes(calcWorkMinutes(e))}`;}
+        
+        return `<button data-date="${e.date}" style="display:flex; justify-content:space-between; width:100%; padding:6px 8px; border-radius:8px; background:rgba(255,255,255,0.03); margin-top:4px;">
+                  <div style="display:flex; flex-direction:column;">
+                    <span style="font-size:13px; font-weight:600;">${dateToFr(e.date)}</span>
+                    <span style="font-size:11px; opacity:.75;">${info}</span>
+                  </div>
+                  <span style="font-size:13px;">${tag}</span>
                 </button>`;
-      }).join('') || `<div style="font-size:13px; opacity:.6; padding:4px;">Aucune saisie récente.</div>`;
-      
+      }).join('') || `<div style="font-size:12px; opacity:.75;">Aucune saisie.</div>`;
       container.querySelectorAll('[data-date]').forEach(btn=>{
         btn.addEventListener('click', (ev)=>{
           const d = ev.currentTarget.getAttribute('data-date');
           config.lastSelectedDate = d; lsSaveConfig(config);
-          updateEntryUI(d); setActiveTab('saisie');
+          updateEntryUI(d); setActiveTab('saisie'); $('#pane').scrollTop = 0;
+        });
+      });
+    }
+    
+    function renderDataListView(){
+      const container = $('#data-list-container');
+      const sorted = [...workEntries].sort((a,b)=> b.date.localeCompare(a.date) || (b.timestamp||0)-(a.timestamp||0));
+      container.innerHTML = sorted.map(e=>{
+        let tag = '';
+        let info = '';
+        let tagColor = '';
+        
+        if(e.type==='WORK'){ 
+            tag=fmtMinutes(calcWorkMinutes(e)); 
+            info=`${e.start||'--:--'} → ${e.end||'--:--'} (${e.lunchDurationMinutes??config.lunchDurationMinutes}m pause)`;
+            tagColor='text-emerald-300';
+        }
+        else if(e.type==='RTT'){ 
+            tag='RTT'; 
+            info=`Décompté: ${fmtMinutes(calcWorkMinutes(e))}`; 
+            tagColor='text-blue-300'; 
+        }
+        else if(e.type==='VACATION'){ 
+            tag='Vacances'; 
+            info=`Décompté: ${fmtMinutes(calcWorkMinutes(e))}`; 
+            tagColor='text-fuchsia-300'; 
+        }
+        else if(e.type==='HOLIDAY'){ 
+            tag='Férié'; 
+            info=`Décompté: ${fmtMinutes(calcWorkMinutes(e))}`; 
+            tagColor='text-yellow-300'; 
+        }
+        
+        return `<div data-date="${e.date}" class="card" style="margin-top:8px; padding:10px; display:flex; justify-content:space-between; align-items:center;">
+                  <div style="display:flex; flex-direction:column;">
+                    <span style="font-size:14px; font-weight:600;">${dateToFr(e.date)}</span>
+                    <span style="font-size:11px; opacity:.75;">${info}</span>
+                  </div>
+                  <span style="font-size:14px;" class="${tagColor}">${tag}</span>
+                </div>`;
+      }).join('') || `<div class="card" style="font-size:14px; opacity:.85; text-align:center;">Aucune donnée enregistrée.</div>`;
+
+      container.querySelectorAll('[data-date]').forEach(row=>{
+        row.addEventListener('click', (ev)=>{
+          const d = ev.currentTarget.getAttribute('data-date');
+          config.lastSelectedDate = d; lsSaveConfig(config);
+          updateEntryUI(d); 
+          setActiveTab('saisie'); 
+          $('#pane').scrollTop = 0;
         });
       });
     }
 
-    // --- VUES HEBDO & MENSUELLE & DATA (Simplifiées pour brièveté, logique conservée) ---
     function updateWeeklyView(){
-      // Logique identique à ton code précédent
       const now=new Date(); const today=now.getDay(); const diff=now.getDate()-today+(today===0?-6:1);
       const monday=new Date(now.setDate(diff));
       const names=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
@@ -602,79 +741,120 @@
         const d=new Date(monday); d.setDate(monday.getDate()+i);
         const ymd=dateToYMD(d); 
         const e=workEntries.find(x=>x.date===ymd);
-        let status='-';
+        let status='Non saisi';
+        
         if(e){ 
-          const mins=calcWorkMinutes(e); total+=mins; 
-          status = e.type==='WORK' ? fmtMinutes(mins) : e.type;
+          const mins=calcWorkMinutes(e); 
+          total+=mins; 
+
+          if(e.type==='WORK'){ 
+            status=fmtMinutes(mins); 
+          }
+          else if(e.type==='RTT') status=`RTT (${fmtMinutes(mins)})`; 
+          else if(e.type==='VACATION') status=`Vacances (${fmtMinutes(mins)})`; 
+          else if(e.type==='HOLIDAY') status=`Férié (${fmtMinutes(mins)})`;
         }
-        rows.push(`<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
-                     <div><div style="font-size:14px;">${names[i]}</div><div style="font-size:11px; opacity:.5;">${ymd.split('-').slice(1).reverse().join('/')}</div></div>
-                     <div style="font-size:14px;">${status}</div>
+        rows.push(`<div style="display:flex; justify-content:space-between; padding:6px 6px; border-bottom:1px solid rgba(255,255,255,0.06);">
+                     <div><div style="font-size:13px; font-weight:600;">${names[i]}</div><div style="font-size:11px; opacity:.7;">${ymd}</div></div>
+                     <div style="font-size:13px;">${status}</div>
                    </div>`);
       }
       
+      const dev = total - config.targetWeeklyHours;
+      
       $('#total-weekly-hours').textContent = fmtMinutes(total);
       $('#target-weekly-hours-summary').textContent = fmtMinutes(config.targetWeeklyHours);
-      $('#deviation-weekly-hours').textContent = fmtMinutes(total - config.targetWeeklyHours);
+      $('#deviation-weekly-hours').textContent = fmtMinutes(dev);
       $('#weekly-body').innerHTML = rows.join('');
       
-      const percent = Math.min((total / config.targetWeeklyHours) * 100, 100);
-      $('#weekly-progress-bar').style.width = `${percent}%`;
-      $('#weekly-progress-bar').style.backgroundColor = percent>=100 ? '#10b981' : '#3b82f6';
-      $('#progress-bar-label').textContent = `${Math.round((total / config.targetWeeklyHours) * 100)}%`;
+      // === LOGIC POUR LA BARRE DE PROGRESSION ===
+      const totalTargetMinutes = config.targetWeeklyHours;
+      const progressBarContainer = $('#progress-bar-container');
+      
+      if(totalTargetMinutes > 0) {
+          progressBarContainer.style.display = 'block';
+          const percent = (total / totalTargetMinutes) * 100;
+          const fillBar = $('#weekly-progress-bar');
+          const progressLabel = $('#progress-bar-label');
+          
+          let color = '#10b981'; // Vert (emerald-500)
+          let barText = `${Math.round(percent)}%`;
+          
+          if (percent >= 100) {
+              color = '#ef4444'; // Rouge (red-500) pour dépassement
+          } else if (percent < 50) {
+              color = '#f59e0b'; // Jaune/Orange (amber-500) si moins de 50%
+          } else {
+              color = '#10b981'; // Vert (emerald-500)
+          }
+
+          const clampedWidth = Math.min(100, percent); 
+          
+          fillBar.style.width = `${clampedWidth}%`;
+          fillBar.style.backgroundColor = color;
+          fillBar.style.boxShadow = 'none'; 
+          
+          if (percent > 100) {
+              progressLabel.innerHTML = `<span style="color:${color};"><strong>${barText}</strong></span> (Objectif atteint ! ${fmtMinutes(dev)} en trop)`;
+          } else {
+             progressLabel.innerHTML = `${barText}`;
+          }
+      } else {
+          progressBarContainer.style.display = 'none';
+      }
     }
 
     function buildMonthOptions(){
-        const sel = $('#month-select');
-        const nowYM = new Date().toISOString().substring(0,7);
-        // Génère 12 mois passés et futurs
-        let opts = [];
-        let cur = addMonths(nowYM, -12);
-        for(let i=0; i<24; i++){
-            opts.push(`<option value="${cur}">${monthLabel(cur)}</option>`);
-            cur = addMonths(cur, 1);
-        }
-        sel.innerHTML = opts.reverse().join('');
-        sel.value = config.selectedMonthYM || nowYM;
-    }
+      const sel = $('#month-select'); if(!sel) return;
+      const nowYM = new Date().toISOString().substring(0,7);
+      const months = new Set(); let cur=nowYM;
+      for(let i=0;i<18;i++){ months.add(cur); cur = addMonths(cur,-1); }
+      workEntries.forEach(e=>months.add(e.date.substring(0,7)));
 
+      const list=[...months].sort((a,b)=>b.localeCompare(a));
+      sel.innerHTML = list.map(ym=>`<option value="${ym}">${monthLabel(ym)}</option>`).join('');
+      const target=clampMonth(config.selectedMonthYM||nowYM);
+      sel.value = list.includes(target)? target : nowYM;
+      config.selectedMonthYM = sel.value; lsSaveConfig(config);
+    }
+    
+    // updateMonthlyView utilise la valeur de l'objectif dynamique et affiche les soldes
     function updateMonthlyView(ym=config.selectedMonthYM){
-        ym = clampMonth(ym); config.selectedMonthYM=ym; lsSaveConfig(config);
-        const monthEntries = workEntries.filter(e=>e.date.startsWith(ym));
-        let dW=0,dR=0,dV=0,dH=0,totalMinutesWorked=0;
-        
-        monthEntries.forEach(e=>{
-            const mins = calcWorkMinutes(e); totalMinutesWorked += mins;
-            if(e.type==='WORK') dW++; else if(e.type==='RTT') dR++; else if(e.type==='VACATION') dV++; else if(e.type==='HOLIDAY') dH++;
-        });
-        
-        // Calcul simple pour l'exemple
-        const target = (config.targetWeeklyHours/5) * (dW+dR+dV+dH); 
-        
-        $('#monthly-days-worked').textContent = dW;
-        $('#monthly-rtt-days').textContent = dR;
-        $('#monthly-vacation-days').textContent = dV;
-        $('#monthly-holiday-days').textContent = dH;
-        $('#monthly-total-work-hours').textContent = fmtMinutes(totalMinutesWorked);
-        $('#monthly-deviation-hours').textContent = fmtMinutes(totalMinutesWorked - target);
-        
-        $('#current-rtt-balance').textContent = config.currentRttBalance;
-        $('#current-vacation-balance').textContent = config.currentVacationBalance;
-    }
+      ym = clampMonth(ym); config.selectedMonthYM=ym; lsSaveConfig(config);
+      const monthEntries = workEntries.filter(e=>e.date.startsWith(ym));
 
-    function renderDataListView(){
-         const container = $('#data-list-container');
-         container.innerHTML = workEntries.map(e=> `
-            <div class="card" style="margin-top:8px; padding:12px; display:flex; justify-content:space-between; align-items:center;" onclick="document.getElementById('entry-date-hidden').value='${e.date}'; updateEntryUI('${e.date}'); setActiveTab('saisie');">
-                <div>
-                    <div style="font-weight:600;">${dateToFr(e.date)}</div>
-                    <div style="font-size:12px; opacity:0.7;">${e.type} ${e.start?e.start+' - '+e.end:''}</div>
-                </div>
-                <div style="font-weight:bold;">${fmtMinutes(calcWorkMinutes(e))}</div>
-            </div>
-         `).join('');
-    }
+      let dW=0,dR=0,dV=0,dH=0,totalMinutesWorked=0;
+      
+      monthEntries.forEach(e=>{
+        const mins = calcWorkMinutes(e); 
+        totalMinutesWorked += mins;
 
+        if(e.type==='WORK'){ dW++; }
+        else if(e.type==='RTT'){ dR++; } 
+        else if(e.type==='VACATION'){ dV++; }
+        else if(e.type==='HOLIDAY'){ dH++; }
+      });
+      
+      const dailyTarget = config.targetWeeklyHours/5;
+      const totalDaysConsidered = dW + dR + dV + dH; 
+      const targetForPeriod = dailyTarget * totalDaysConsidered;
+
+      const dev = totalMinutesWorked - targetForPeriod; 
+
+      $('#monthly-days-worked').textContent = dW;
+      $('#monthly-rtt-days').textContent = dR;
+      $('#monthly-vacation-days').textContent = dV;
+      $('#monthly-holiday-days').textContent = dH;
+      $('#monthly-total-work-hours').textContent = fmtMinutes(totalMinutesWorked);
+      $('#monthly-deviation-hours').textContent = fmtMinutes(dev);
+      const sel=$('#month-select'); if(sel && sel.value!==ym) sel.value=ym;
+      
+      // Affichage des soldes
+      $('#current-rtt-balance').textContent = config.currentRttBalance;
+      $('#current-vacation-balance').textContent = config.currentVacationBalance;
+    }
+    
+    // Met à jour l'UI des réglages
     function updateSettingsUI() {
         $('#target-hours').value = (config.targetWeeklyHours / 60).toFixed(1);
         $('#lunch-minutes').value = config.lunchDurationMinutes;
@@ -682,8 +862,428 @@
         $('#initial-vacation-days').value = config.initialVacationDays;
     }
 
-    // --- CALENDRIER ---
-    let currentCalendarMonth = new Date();
+    // ====== Fonctions de Sauvegarde/Synchronisation ======
+    async function upsertEntryAll(entry){
+      lsUpsertEntry(entry);
+      workEntries = lsGetAllEntriesArray();
+      recalculateBalances(); 
+      
+      if(userId && db && !useLocalOnly){
+        try { await setDoc(entryDoc(entry.date), entry); }
+        catch(e){ useLocalOnly = true; }
+      }
+
+      if (entry.date === currentEntryDate) {
+        currentEntryDate = null;
+        $('#entry-date-hidden').value = dateToYMD(new Date());
+      }
+      
+      updateEntryUI(currentEntryDate || $('#entry-date-hidden').value); 
+      refreshAllViews();
+    }
+
+    async function deleteEntry(dateToDelete){
+      lsDeleteEntry(dateToDelete);
+      workEntries = lsGetAllEntriesArray();
+      recalculateBalances();
+      
+      if(userId && db && !useLocalOnly){
+        try{ await deleteDoc(entryDoc(dateToDelete)); }
+        catch(e){ useLocalOnly = true; }
+      }
+      
+      clearEntryUI(true);
+      
+      refreshAllViews();
+      showModal('Succès', `Entrée pour le ${dateToFr(dateToDelete)} supprimée.`);
+    }
+    
+    function refreshAllViews(){
+      renderLatestList();
+      renderDataListView();
+      const activeBtn = document.querySelector('.ios-seg-btn.is-active');
+      if(activeBtn && activeBtn.id==='btn-hebdo') updateWeeklyView();
+      if(activeBtn && activeBtn.id==='btn-mensuelle') updateMonthlyView();
+      if(activeBtn && activeBtn.id==='btn-data') renderDataListView();
+      if(activeBtn && activeBtn.id==='btn-reglages') updateSettingsUI();
+    }
+
+    async function saveConfigAll(){ 
+      lsSaveConfig(config); 
+      if(userId && db && !useLocalOnly){ try{ await setDoc(configDoc(), config, {merge:true}); }catch(_){}} 
+    }
+    
+    async function loadConfig(){
+      const localCfg = lsLoadConfig(); 
+      if(localCfg) config = {...config, ...localCfg};
+      if(userId && db){ try{ const snap=await getDoc(configDoc()); if(snap.exists()) { config={...config, ...snap.data()}; lsSaveConfig(config);} }catch(_){ } }
+    }
+
+    function hydrateLocalFirst(){
+      const localCfg = lsLoadConfig(); 
+      if(localCfg) config = {...config, ...localCfg};
+
+      workEntries = lsGetAllEntriesArray();
+      recalculateBalances(); 
+
+      $('#user-id-display').textContent = userId || (useLocalOnly? 'LOCAL':'N/A');
+      const today = dateToYMD(new Date());
+      
+      $('#entry-date-hidden').value = config.lastSelectedDate;
+      $('#entry-date-display').textContent = dateToFr(config.lastSelectedDate);
+      
+      updateEntryUI(config.lastSelectedDate);
+      renderLatestList();
+      buildMonthOptions();
+      updateMonthlyView();
+      renderDataListView(); 
+      updateSettingsUI();
+    }
+
+    function setupFirestoreListener(){
+      if(!userId || !db) return;
+      const q = query(entriesCol(), orderBy('date','desc'));
+      onSnapshot(q, (snap)=>{
+        const map = lsLoadEntriesMap();
+        snap.forEach(d=>{
+          const remote=d.data(); const local=map[remote.date];
+          if(!local || (local.timestamp||0) < (remote.timestamp||0)) map[remote.date]=remote;
+        });
+        lsSaveEntriesMap(map);
+        workEntries = Object.values(map).sort((a,b)=>b.date.localeCompare(a.date));
+        
+        recalculateBalances(); 
+        
+        buildMonthOptions();
+        updateEntryUI(config.lastSelectedDate);
+        renderLatestList();
+        renderDataListView();
+        const active = document.querySelector('.ios-seg-btn.is-active')?.id;
+        if(active==='btn-hebdo') updateWeeklyView();
+        if(active==='btn-mensuelle') updateMonthlyView();
+        if(active==='btn-data') renderDataListView();
+        if(active==='btn-reglages') updateSettingsUI();
+      }, (_)=>{ useLocalOnly=true; });
+    }
+
+    // === Fonctions export/import CSV (IMPLEMENTEES) ===
+    function exportCSV() {
+      if (workEntries.length === 0) {
+        return showModal('Erreur', 'Aucune donnée à exporter.');
+      }
+
+      const header = "Date;Type;Debut;Fin;Pause_Min;Minutes_Travaillees;Timestamp\n";
+
+      const csvContent = workEntries.map(e => {
+        const date = e.date || '';
+        const type = e.type || '';
+        const start = e.start || '';
+        const end = e.end || '';
+        const lunch = e.lunchDurationMinutes !== undefined ? e.lunchDurationMinutes : config.lunchDurationMinutes;
+        const pauseMin = e.type === 'WORK' ? lunch : '';
+        const minutesWorked = calcWorkMinutes(e);
+        const timestamp = e.timestamp || '';
+
+        // Utiliser le point-virgule comme séparateur
+        return `${date};${type};${start};${end};${pauseMin};${minutesWorked};${timestamp}`;
+      }).join('\n');
+
+      const finalCSV = header + csvContent;
+      const blob = new Blob([finalCSV], { type: 'text/csv;charset=utf-8;' });
+      const filename = `time_tracker_export_${new Date().toISOString().substring(0, 10)}.csv`;
+
+      const link = document.createElement("a");
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showModal('Succès', `L'export **${filename}** a été lancé.`);
+      } else {
+        showModal('Erreur', "Le téléchargement n'est pas supporté par votre navigateur.");
+      }
+    }
+    
+    function importCSVFile(file) {
+      if (!file) return showModal('Erreur', 'Veuillez sélectionner un fichier.');
+
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const content = event.target.result;
+          const lines = content.split('\n').filter(line => line.trim() !== '');
+
+          if (lines.length <= 1) {
+            return showModal('Erreur', 'Le fichier est vide ou ne contient que l\'entête.');
+          }
+
+          const header = lines[0].trim().toLowerCase().split(';'); 
+          
+          if (!header.includes('date') || !header.includes('type')) {
+              return showModal('Erreur', 'Entête CSV invalide. Les colonnes "Date" et "Type" sont requises.');
+          }
+
+          let successCount = 0;
+          let conflictCount = 0;
+          const entryMap = lsLoadEntriesMap();
+
+          for (let i = 1; i < lines.length; i++) {
+            const values = lines[i].trim().split(';');
+            if (values.length < header.length) continue;
+
+            const entry = {};
+            header.forEach((key, index) => {
+              entry[key.trim()] = values[index].trim();
+            });
+            
+            const date = entry.date;
+            const type = entry.type.toUpperCase();
+            
+            if (!date || !type || !['WORK', 'RTT', 'VACATION', 'HOLIDAY'].includes(type)) {
+                console.warn(`Ligne ${i + 1} ignorée (Date ou Type invalide).`);
+                continue; 
+            }
+            
+            const newEntry = {
+              date: date,
+              type: type,
+              timestamp: Date.now() + i
+            };
+            
+            if (type === 'WORK') {
+                newEntry.start = entry.debut || '';
+                newEntry.end = entry.end || '';
+                
+                if (entry.pause_min && !isNaN(parseInt(entry.pause_min, 10))) {
+                    newEntry.lunchDurationMinutes = parseInt(entry.pause_min, 10);
+                }
+            }
+            
+            const existing = entryMap[date];
+            if (existing && existing.timestamp >= newEntry.timestamp) {
+                conflictCount++; 
+                continue;
+            }
+            
+            entryMap[date] = newEntry;
+            successCount++;
+          }
+          
+          lsSaveEntriesMap(entryMap);
+          workEntries = lsGetAllEntriesArray();
+          recalculateBalances(); 
+          refreshAllViews();
+          
+          let message = `Import réussi. **${successCount}** entrée(s) mise(s) à jour ou ajoutée(s).`;
+          if (conflictCount > 0) {
+              message += `<br>**${conflictCount}** entrée(s) plus récente(s) ont été ignorée(s).`;
+          }
+          showModal('Import Succès', message);
+
+        } catch (error) {
+          console.error("Erreur lors du traitement du fichier CSV:", error);
+          showModal('Erreur Import', `Une erreur s'est produite lors de l'import : ${error.message}`);
+        }
+      };
+      
+      reader.onerror = () => {
+        showModal('Erreur', "Impossible de lire le fichier.");
+      };
+
+      reader.readAsText(file, 'utf-8');
+    }
+
+    // === Initialisation et Boot ===
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes tick-tock {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #hour-hand, #minute-hand {
+            animation: tick-tock 2s linear infinite; 
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // NOUVEAU : Fonction pour masquer le splash screen et afficher l'app.
+    function hideSplashScreen() {
+        setAppHeight(); // Assure la bonne hauteur juste avant l'affichage
+        $('#app-shell').style.visibility = 'visible';
+        $('#splash-screen').style.opacity = '0'; 
+        
+        setTimeout(()=>{
+            $('#splash-screen').style.display = 'none'; 
+        }, 500); // Laisse le temps à la transition CSS de s'effectuer
+    }
+
+    function bootLocalOnly(){
+      hydrateLocalFirst();
+    }
+
+    function bootWithAuth(){
+      if(!auth){ bootLocalOnly(); return; }
+      onAuthStateChanged(auth, async (user)=>{
+        if(user){
+          userId=user.uid; hydrateLocalFirst();
+          await loadConfig(); setupFirestoreListener();
+        }else{
+          try{ if(initialAuthToken) await signInWithCustomToken(auth, initialAuthToken); else await signInAnonymously(auth); }
+          catch(_){ useLocalOnly=true; }
+        }
+        
+        // IMPORTANT: La logique de masquage est dans DOMContentLoaded
+        
+      });
+    }
+
+    // ====== Events (COMPLET) ======
+    document.addEventListener('DOMContentLoaded', ()=>{
+      
+      // FIX : Remplacer resizePane par setAppHeight
+      window.addEventListener('resize', setAppHeight);
+      window.addEventListener('orientationchange', setAppHeight);
+      
+      // Onglets
+      $('#btn-saisie').addEventListener('click', ()=>{ setActiveTab('saisie'); });
+      $('#btn-hebdo').addEventListener('click', ()=>{ setActiveTab('hebdo');   });
+      $('#btn-mensuelle').addEventListener('click', ()=>{ setActiveTab('mensuelle'); });
+      $('#btn-data').addEventListener('click', ()=>{ setActiveTab('data'); });
+      $('#btn-reglages').addEventListener('click', ()=>{ setActiveTab('reglages');  });
+
+      // Saisie : Ouverture du Calendrier
+      $('#entry-date-button').addEventListener('click', showCalendarModal);
+      
+      $('#entry-type-select').addEventListener('change', refreshDayTotal);
+      $('#start-time').addEventListener('input', refreshDayTotal);
+      $('#end-time').addEventListener('input', refreshDayTotal);
+      $('#lunch-duration-manual').addEventListener('input', refreshDayTotal);
+      
+      // Calendrier : Navigation
+      $('#calendar-prev').addEventListener('click', () => changeCalendarMonth(-1));
+      $('#calendar-next').addEventListener('click', () => changeCalendarMonth(1));
+      
+      // Fermeture du Calendrier Modal
+      $('#calendar-modal').addEventListener('click', (e) => {
+        if(e.target.id === 'calendar-modal') {
+          $('#calendar-modal').style.display = 'none';
+        }
+      });
+      // Fermeture de la Modale d'info/erreur
+      $('#close-modal-btn').addEventListener('click', ()=>$('#custom-modal').style.display='none');
+
+
+      // Bouton Nettoyer
+      $('#clear-entry-btn').addEventListener('click', ()=>clearEntryUI(false));
+
+      $('#save-entry-btn').addEventListener('click', async ()=>{
+        const date=$('#entry-date-hidden').value, type=$('#entry-type-select').value, start=$('#start-time').value, end=$('#end-time').value;
+        const s=$('#lunch-duration-manual').value; const lunch=(s===''? undefined : Math.max(0, parseInt(s,10)||0));
+        
+        if(type==='WORK'){
+          if(!start||!end) return showModal('Erreur','Renseignez les heures de début et fin pour le Travail.');
+          if(start>=end)    return showModal('Erreur',"L'heure de fin doit être postérieure à l'heure de début.");
+        }
+        
+        const entry={ date, type, ...(type==='WORK'?{start,end}:{}) , ...(type==='WORK'&&lunch!==undefined?{lunchDurationMinutes:lunch}:{}) , timestamp:Date.now() };
+        await upsertEntryAll(entry); config.lastSelectedDate=date; await saveConfigAll();
+        showModal('Succès',`Entrée ${currentEntryDate ? 'modifiée' : 'enregistrée'} pour le ${dateToFr(date)}.`);
+      });
+      
+      // Bouton de suppression
+      $('#delete-entry-btn').addEventListener('click', async ()=>{
+          if(currentEntryDate){
+            if(confirm(`Êtes-vous sûr de vouloir supprimer l'entrée pour le ${dateToFr(currentEntryDate)}?`)){
+              await deleteEntry(currentEntryDate);
+            }
+          }
+      });
+
+      // réglages
+      updateSettingsUI(); 
+
+      $('#save-settings-btn').addEventListener('click', async ()=>{
+        const t=parseFloat($('#target-hours').value); 
+        const l=parseInt($('#lunch-minutes').value,10);
+        
+        const ir = parseInt($('#initial-rtt-days').value, 10);
+        const iv = parseInt($('#initial-vacation-days').value, 10);
+
+        if(isNaN(t)||t<=0||t>48) return showModal('Erreur','Heures hebdo invalides (1–48).');
+        if(isNaN(l)||l<15||l>120) return showModal('Erreur','Pause midi invalide (15–120).');
+        if(isNaN(ir)||ir<0||ir>50) return showModal('Erreur','Capital RTT invalide (0–50).'); 
+        if(isNaN(iv)||iv<0||iv>100) return showModal('Erreur','Capital CP invalide (0–100).'); 
+
+        config.targetWeeklyHours=Math.round(t*60); 
+        config.lunchDurationMinutes=l; 
+        
+        config.initialRttDays = ir;
+        config.initialVacationDays = iv;
+
+        await saveConfigAll(); 
+        
+        recalculateBalances();
+        
+        updateEntryUI(config.lastSelectedDate); 
+        refreshAllViews();
+        showModal('Succès','Réglages enregistrés.');
+      });
+
+      // export
+      $('#export-data-btn').addEventListener('click', exportCSV);
+
+      // import
+      $('#import-data-btn').addEventListener('click', ()=>$('#import-file').click());
+      $('#import-file').addEventListener('change', (e)=> {
+          const file = e.target.files[0];
+          if (file) {
+              importCSVFile(file);
+          }
+          e.target.value = null; // Réinitialise l'input file pour permettre l'import du même fichier
+      });
+
+      // mensuelle
+      $('#month-select').addEventListener('change',(e)=>updateMonthlyView(clampMonth(e.target.value)));
+      $('#month-prev').addEventListener('click',()=>{ const ym=clampMonth(config.selectedMonthYM||new Date().toISOString().substring(0,7)); updateMonthlyView(addMonths(ym,-1)); });
+      $('#month-next').addEventListener('click',()=>{ const ym=clampMonth(config.selectedMonthYM||new Date().toISOString().substring(0,7)); updateMonthlyView(addMonths(ym,+1)); });
+
+      // boot
+      if (useLocalOnly) {
+          bootLocalOnly();
+      } else {
+          bootWithAuth();
+      }
+      
+      // **CORRECTION CRITIQUE** : La logique de masquage du splash-screen est inconditionnelle
+      // après un délai, garantissant que l'application devient visible.
+      setTimeout(hideSplashScreen, 2500); 
+
+      // Appels initiaux pour la hauteur (multiples appels pour contrer le problème iOS)
+      // NOTE: setAppHeight() est déjà appelé SYNCHRONOUSMENT au début du <body>
+      setTimeout(setAppHeight, 100); 
+      setTimeout(setAppHeight, 300);
+      setTimeout(setAppHeight, 1000); 
+      setTimeout(setAppHeight, 3000); // FIX: Appel supplémentaire après le masquage du splash
+    });
+    
+    // === Fonctions calendrier ===
+    function setDateFromCalendar(ymd){
+        const oldYMD = $('#entry-date-hidden').value;
+        if(ymd === oldYMD) return;
+
+        config.lastSelectedDate = ymd;
+        lsSaveConfig(config);
+        
+        $('#entry-date-hidden').value = ymd;
+        $('#entry-date-display').textContent = dateToFr(ymd);
+        
+        updateEntryUI(ymd);
+        $('#calendar-modal').style.display = 'none';
+    }
+
     function renderCalendar(date){
         const todayYMD = dateToYMD(new Date());
         const selectedYMD = $('#entry-date-hidden').value;
@@ -693,120 +1293,57 @@
         $('#calendar-title').textContent = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(date);
         
         const grid = $('#calendar-grid');
-        // Garder les labels, supprimer les jours
         while(grid.children.length > 7) { grid.removeChild(grid.lastChild); }
         
         const firstDayOfMonth = new Date(targetYear, targetMonth, 1);
         const dayOfWeek = (firstDayOfMonth.getDay() + 6) % 7; 
         const startDay = new Date(firstDayOfMonth);
         startDay.setDate(firstDayOfMonth.getDate() - dayOfWeek);
+        
+        const isDisabled = false; 
 
         for(let i = 0; i < 42; i++) {
             const currentDay = new Date(startDay);
             currentDay.setDate(startDay.getDate() + i);
             const currentYMD = dateToYMD(currentDay);
-            const isCurrentMonth = currentDay.getMonth() === targetMonth;
-            
-            const btn = document.createElement('button');
-            btn.className = `calendar-day-btn ${isCurrentMonth?'':'opacity-25'}`;
-            btn.textContent = currentDay.getDate();
-            if(currentYMD === selectedYMD) btn.classList.add('is-selected');
-            if(currentYMD === todayYMD) btn.classList.add('is-today');
+            const dayNum = currentDay.getDate();
 
-            btn.onclick = () => {
-                config.lastSelectedDate = currentYMD; lsSaveConfig(config);
-                updateEntryUI(currentYMD);
-                $('#calendar-modal').style.display = 'none';
-            };
+            const isCurrentMonth = currentDay.getMonth() === targetMonth;
+            const isSelected = currentYMD === selectedYMD;
+            const isToday = currentYMD === todayYMD;
+
+            const btn = document.createElement('button');
+            btn.className = 'calendar-day-btn';
+            btn.textContent = dayNum;
+            btn.setAttribute('data-ymd', currentYMD);
+            
+            if(isCurrentMonth) btn.classList.add('is-current-month');
+            if(isSelected) btn.classList.add('is-selected');
+            if(isToday) btn.classList.add('is-today');
+            if(isDisabled) btn.disabled = true;
+
+            btn.addEventListener('click', (e) => {
+                setDateFromCalendar(e.target.getAttribute('data-ymd'));
+            });
+
             grid.appendChild(btn);
+            
+            if(i >= 28 && currentDay.getDay() === 0 && currentDay.getMonth() !== targetMonth) break; 
         }
     }
-
-    // --- INIT ---
-    document.addEventListener('DOMContentLoaded', ()=>{
-      
-      // Charge la config locale
-      const localCfg = lsLoadConfig(); 
-      if(localCfg) config = {...config, ...localCfg};
-      workEntries = lsGetAllEntriesArray();
-      recalculateBalances();
-      
-      // Events UI
-      $('#btn-saisie').onclick = ()=>setActiveTab('saisie');
-      $('#btn-hebdo').onclick = ()=>setActiveTab('hebdo');
-      $('#btn-mensuelle').onclick = ()=>setActiveTab('mensuelle');
-      $('#btn-data').onclick = ()=>setActiveTab('data');
-      $('#btn-reglages').onclick = ()=>setActiveTab('reglages');
-      
-      $('#entry-date-button').onclick = ()=>{
-          const [y, m] = $('#entry-date-hidden').value.split('-').map(Number);
-          currentCalendarMonth = new Date(y, m - 1, 1);
-          renderCalendar(currentCalendarMonth);
-          $('#calendar-modal').style.display = 'flex';
-      };
-      
-      $('#calendar-prev').onclick = ()=>{ currentCalendarMonth.setMonth(currentCalendarMonth.getMonth()-1); renderCalendar(currentCalendarMonth); };
-      $('#calendar-next').onclick = ()=>{ currentCalendarMonth.setMonth(currentCalendarMonth.getMonth()+1); renderCalendar(currentCalendarMonth); };
-      $('#calendar-modal').onclick = (e)=>{ if(e.target.id==='calendar-modal') $('#calendar-modal').style.display='none'; };
-      
-      $('#close-modal-btn').onclick = ()=>$('#custom-modal').style.display='none';
-      
-      $('#clear-entry-btn').onclick = ()=>{ 
-          $('#entry-type-select').value='WORK'; $('#start-time').value=''; $('#end-time').value=''; 
-          refreshDayTotal(); 
-      };
-
-      $('#save-entry-btn').onclick = ()=>{
-          const date = $('#entry-date-hidden').value;
-          const entry = {
-              date: date,
-              type: $('#entry-type-select').value,
-              start: $('#start-time').value,
-              end: $('#end-time').value,
-              lunchDurationMinutes: parseInt($('#lunch-duration-manual').value) || config.lunchDurationMinutes,
-              timestamp: Date.now()
-          };
-          
-          const map = lsLoadEntriesMap();
-          map[date] = entry;
-          lsSaveEntriesMap(map);
-          workEntries = lsGetAllEntriesArray();
-          recalculateBalances();
-          
-          updateEntryUI(date);
-          showModal('Succès', 'Entrée enregistrée');
-      };
-      
-      $('#save-settings-btn').onclick = ()=>{
-          config.targetWeeklyHours = parseFloat($('#target-hours').value)*60;
-          config.lunchDurationMinutes = parseInt($('#lunch-minutes').value);
-          config.initialRttDays = parseInt($('#initial-rtt-days').value);
-          config.initialVacationDays = parseInt($('#initial-vacation-days').value);
-          lsSaveConfig(config);
-          recalculateBalances();
-          showModal('Réglages', 'Sauvegardé avec succès');
-      };
-
-      $('#entry-type-select').addEventListener('change', refreshDayTotal);
-      $('#start-time').addEventListener('input', refreshDayTotal);
-      $('#end-time').addEventListener('input', refreshDayTotal);
-      $('#month-select').addEventListener('change', (e)=>updateMonthlyView(e.target.value));
-
-      // Boot
-      updateEntryUI(config.lastSelectedDate);
-      renderLatestList();
-      
-      // Animation clock
-      const style = document.createElement('style');
-      style.textContent = `@keyframes tick{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}} #hour-hand,#minute-hand{animation:tick 2s linear infinite;}`;
-      document.head.appendChild(style);
-      
-      setTimeout(()=>{ 
-          $('#splash-screen').style.opacity = '0';
-          $('#app-shell').style.visibility='visible';
-          setTimeout(()=>$('#splash-screen').style.display='none', 500);
-      }, 1500);
-    });
+    
+    function showCalendarModal(){
+        const ymd = $('#entry-date-hidden').value;
+        const [y, m] = ymd.split('-').map(Number);
+        currentCalendarMonth = new Date(y, m - 1, 1);
+        renderCalendar(currentCalendarMonth);
+        $('#calendar-modal').style.display = 'flex';
+    }
+    
+    function changeCalendarMonth(offset) {
+        currentCalendarMonth.setMonth(currentCalendarMonth.getMonth() + offset);
+        renderCalendar(currentCalendarMonth);
+    }
   </script>
 </body>
 </html>
