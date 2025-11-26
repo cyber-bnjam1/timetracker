@@ -401,7 +401,7 @@
       const dailyTargetMinutes = config.targetWeeklyHours / 5;
       if(e?.type!=='WORK') return dailyTargetMinutes; 
       if(!e.start||!e.end) return 0; 
-      const p=t=>{const [h,m]=t.split(':').map(Number);return h*60+m}; 
+      const p=t=>{const [h,m]=t.split(':'.map(Number);return h*60+m}; 
       const lunch=(e.lunchDurationMinutes ?? config.lunchDurationMinutes) || 0; 
       return Math.max(p(e.end)-p(e.start)-lunch,0); 
     };
@@ -452,7 +452,7 @@
       if(name==='reglages') updateSettingsUI();
     }
 
-    // --- FONCTIONS IMPORT/EXPORT CSV (Ajoutées) ---
+    // --- FONCTIONS IMPORT/EXPORT CSV (Mise à jour pour les colonnes de l'utilisateur) ---
     
     /** Exporte toutes les entrées dans un fichier CSV. */
     function exportDataToCsv() {
@@ -461,7 +461,8 @@
             return;
         }
 
-        const headers = ["Date", "Type", "Heure_Debut", "Heure_Fin", "Pause_Minutes_Manuelle", "Timestamp"];
+        // Utilisation des en-têtes demandés par l'utilisateur (sauf la colonne calculée)
+        const headers = ["Date", "Type", "Debut", "Fin", "Pause_min", "Timestamp"];
         
         // Mappage des données
         const rows = workEntries.map(e => [
@@ -469,7 +470,8 @@
             `"${e.type}"`,
             `"${e.start || ''}"`,
             `"${e.end || ''}"`,
-            `"${e.lunchDurationMinutes || ''}"`,
+            // Pause_min
+            `"${e.lunchDurationMinutes !== undefined ? e.lunchDurationMinutes : ''}"`, 
             `"${e.timestamp || ''}"`
         ]);
 
@@ -510,23 +512,26 @@
                 return;
             }
             
+            // En-têtes en minuscules pour la comparaison
             const headers = lines[0].toLowerCase().replace(/"/g, '').split(';');
 
-            // Index des colonnes (pour être robuste si l'ordre change)
+            // Index des colonnes (Adaptation aux colonnes de l'utilisateur : debut, fin, pause_min)
             const dateIndex = headers.indexOf('date');
             const typeIndex = headers.indexOf('type');
-            const startIndex = headers.indexOf('heure_debut') !== -1 ? headers.indexOf('heure_debut') : headers.indexOf('start');
-            const endIndex = headers.indexOf('heure_fin') !== -1 ? headers.indexOf('heure_fin') : headers.indexOf('end');
-            const lunchIndex = headers.indexOf('pause_minutes_manuelle');
-            const tsIndex = headers.indexOf('timestamp');
+            const startIndex = headers.indexOf('debut'); // Mappe 'debut' -> start
+            const endIndex = headers.indexOf('fin');     // Mappe 'fin' -> end
+            const lunchIndex = headers.indexOf('pause_min'); // Mappe 'pause_min' -> lunchDurationMinutes
+            // minutes_travaillees est ignoré.
+            const tsIndex = headers.indexOf('timestamp'); 
 
             if (dateIndex === -1 || typeIndex === -1) {
-                showModal("Erreur d'import", "Le CSV doit contenir les colonnes 'Date' et 'Type'.");
+                showModal("Erreur d'import", "Le CSV doit contenir les colonnes 'date' et 'type'.");
                 return;
             }
 
             for (let i = 1; i < lines.length; i++) {
                 const values = lines[i].replace(/"/g, '').split(';');
+                // Vérification de base pour s'assurer qu'on a assez de colonnes
                 if (values.length < Math.max(dateIndex, typeIndex, startIndex, endIndex, lunchIndex, tsIndex) + 1) continue;
 
                 const date = values[dateIndex]?.trim();
