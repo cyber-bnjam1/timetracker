@@ -79,7 +79,7 @@
 
     /* CORRECTION MAIN CONTENT : Augmenté à 80px pour plus de dégagement */
     #pane {
-        /* Calcule l'offset: hauteur dynamique du header + marge de séparation (70px -> 80px) */
+        /* Calcule l'offset: hauteur dynamique du header + marge de séparation (80px) */
         padding-top: calc(env(safe-area-inset-top) + 80px) !important;
     }
 
@@ -407,7 +407,7 @@
       initialVacationDays: 25,
       currentRttBalance: 10,  
       currentVacationBalance: 25,
-      profilePictureBase64: null, // NOUVEAU : Stockage de la photo de profil
+      profilePictureBase64: null, 
     };
 
     // --- UTILS ---
@@ -948,9 +948,14 @@
       renderLatestList();
       updateProfilePictureDisplay(); // Afficher la photo dès le chargement
 
-      // CORRECTION DU SPLASH SCREEN: Masquer immédiatement après le chargement du DOM
-      $('#splash-screen').style.opacity='0'; 
-      setTimeout(()=>$('#splash-screen').style.display='none', 400); 
+      // MODIFICATION DU SPLASH SCREEN POUR DURER 2 SECONDES (2000ms)
+      setTimeout(() => {
+        $('#splash-screen').style.opacity = '0';
+        // Attend la fin de la transition d'opacité (0.4s) avant de masquer complètement
+        setTimeout(() => {
+            $('#splash-screen').style.display = 'none';
+        }, 400); 
+      }, 2000); // 👈 Démarrage de l'animation après 2000ms
     });
   </script>
 </body>
