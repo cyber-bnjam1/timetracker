@@ -27,7 +27,6 @@
     }
 
     /* CLASSES UTILITAIRES POUR IPHONE */
-    /* La classe safe-top est maintenue mais sera remplacée par .nav-blur pour le header fixe */
     .safe-bottom { 
         padding-bottom: env(safe-area-inset-bottom); 
     }
@@ -70,11 +69,22 @@
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         border-top: 1px solid rgba(255,255,255,0.1);
-        
-        /* CORRECTION ENCOCHE : Ajoute la hauteur de la safe area + 10px de padding */
-        padding-top: calc(env(safe-area-inset-top) + 10px); 
+        /* RETRAIT DU PADDING HAUT ICI pour que la NAV BAR ne soit pas affectée */
     }
     
+    /* CORRECTION DE L'ENCOCHE : Appliqué UNIQUEMENT au HEADER */
+    header.nav-blur {
+        /* Applique le safe area + 10px de padding fixe en plus */
+        padding-top: calc(env(safe-area-inset-top) + 10px); 
+    }
+
+    /* CORRECTION MAIN CONTENT : Appliqué au conteneur principal */
+    #pane {
+        /* Calcule l'offset: (safe-area + 10px) [Header Dynamic] + (12px) [Header pb-3] + (48px) [Header Content estimé] */
+        /* J'utilise 70px pour être sûr de couvrir la hauteur fixe + custom padding. */
+        padding-top: calc(env(safe-area-inset-top) + 70px) !important;
+    }
+
     /* Boutons de navigation */
     .nav-btn {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -143,7 +153,7 @@
     </div>
   </header>
 
-  <main id="pane" class="w-full min-h-screen pt-24 pb-28 px-4">
+  <main id="pane" class="w-full min-h-screen pb-28 px-4">
     
     <section id="tab-saisie" class="tab-content">
       
@@ -417,7 +427,7 @@
 
     const clampMonth = (ym)=>ym.replace(/^(\d{4})-(\d{2}).*$/,(_,y,m)=>`${y}-${m.padStart(2,'0')}`);
     const addMonths = (ym, d)=>{ let [y,m]=ym.split('-').map(Number); const dt=new Date(y,m-1+d,1); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; };
-    const monthLabel = (ym)=>{ const [y,m]=ym.split('-').map(Number); return new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(new Date(y,m-1,1)); };
+    const monthLabel = (ym)=>{ const [y,m]=ym.split('-).map(Number); return new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(new Date(y,m-1,1)); };
 
     // --- LOCAL STORAGE ---
     const LS_KEYS = { entries:`tt_worker_entries`, config:`tt_worker_config` };
