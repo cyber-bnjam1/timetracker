@@ -69,7 +69,6 @@
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         border-top: 1px solid rgba(255,255,255,0.1);
-        /* RETRAIT DU PADDING HAUT ICI pour que la NAV BAR ne soit pas affectée */
     }
     
     /* CORRECTION DE L'ENCOCHE : Appliqué UNIQUEMENT au HEADER */
@@ -80,8 +79,7 @@
 
     /* CORRECTION MAIN CONTENT : Appliqué au conteneur principal */
     #pane {
-        /* Calcule l'offset: (safe-area + 10px) [Header Dynamic] + (12px) [Header pb-3] + (48px) [Header Content estimé] */
-        /* J'utilise 70px pour être sûr de couvrir la hauteur fixe + custom padding. */
+        /* Calcule l'offset: hauteur dynamique du header + marge de séparation */
         padding-top: calc(env(safe-area-inset-top) + 70px) !important;
     }
 
@@ -427,7 +425,8 @@
 
     const clampMonth = (ym)=>ym.replace(/^(\d{4})-(\d{2}).*$/,(_,y,m)=>`${y}-${m.padStart(2,'0')}`);
     const addMonths = (ym, d)=>{ let [y,m]=ym.split('-').map(Number); const dt=new Date(y,m-1+d,1); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; };
-    const monthLabel = (ym)=>{ const [y,m]=ym.split('-).map(Number); return new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(new Date(y,m-1,1)); };
+    // CORRECTION SYNTAXE: J'ai corrigé ym.split('-).map en ym.split('-').map
+    const monthLabel = (ym)=>{ const [y,m]=ym.split('-').map(Number); return new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(new Date(y,m-1,1)); };
 
     // --- LOCAL STORAGE ---
     const LS_KEYS = { entries:`tt_worker_entries`, config:`tt_worker_config` };
