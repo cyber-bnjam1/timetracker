@@ -77,10 +77,10 @@
         padding-top: calc(env(safe-area-inset-top) + 10px); 
     }
 
-    /* CORRECTION MAIN CONTENT : Appliqué au conteneur principal */
+    /* CORRECTION MAIN CONTENT : Augmenté à 80px pour plus de dégagement */
     #pane {
-        /* Calcule l'offset: hauteur dynamique du header + marge de séparation */
-        padding-top: calc(env(safe-area-inset-top) + 70px) !important;
+        /* Calcule l'offset: hauteur dynamique du header + marge de séparation (70px -> 80px) */
+        padding-top: calc(env(safe-area-inset-top) + 80px) !important;
     }
 
     /* Boutons de navigation */
@@ -145,8 +145,8 @@
         <h1 class="text-2xl font-bold tracking-tight text-white">Worker</h1>
         <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Suivi d'activité</p>
       </div>
-      <div class="h-8 w-8 rounded-full bg-gray-800 flex items-center justify-center border border-gray-700">
-        <span class="text-lg">👤</span>
+      <div id="profile-picture-container" class="h-8 w-8 rounded-full bg-gray-800 flex items-center justify-center border border-gray-700 bg-cover bg-center">
+        <span id="profile-initials" class="text-lg">👤</span>
       </div>
     </div>
   </header>
@@ -277,6 +277,18 @@
     </section>
 
     <section id="tab-reglages" class="tab-content" style="display:none;">
+        
+      <div class="bento-card space-y-4">
+        <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Photo de Profil</label>
+        <div class="flex items-center space-x-4">
+          <div id="settings-profile-preview" class="h-12 w-12 rounded-full bg-gray-800 border border-gray-700 bg-cover bg-center flex items-center justify-center text-2xl">👤</div>
+          <div class="flex-grow">
+            <input type="file" id="profile-picture-file" accept="image/*" class="hidden"> 
+            <button id="select-profile-picture-btn" class="w-full h-10 rounded-lg bg-gray-700 text-sm text-white font-medium active:scale-[0.98] transition-transform">Choisir une image</button>
+            <button id="clear-profile-picture-btn" class="w-full h-10 rounded-lg bg-red-700/50 text-sm text-red-300 font-medium mt-2 active:scale-[0.98] transition-transform" style="display:none;">Supprimer la photo</button>
+          </div>
+        </div>
+      </div>
       <div class="bento-card space-y-4">
         <div>
           <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Objectif Hebdo (h)</label>
@@ -299,11 +311,11 @@
         </div>
       </div>
 
-      <button id="save-settings-btn" class="w-full h-[50px] rounded-xl bg-blue-600 text-white font-bold text-lg mb-6">Sauvegarder</button>
+      <button id="save-settings-btn" class="w-full h-[50px] rounded-xl bg-blue-600 text-white font-bold text-lg mb-6 active:scale-[0.98] transition-transform">Sauvegarder</button>
 
       <div class="grid grid-cols-2 gap-3">
-        <button id="export-data-btn" class="h-10 rounded-lg bg-gray-800 text-sm text-gray-300">Exporter CSV</button>
-        <button id="import-data-btn" class="h-10 rounded-lg bg-gray-800 text-sm text-gray-300">Importer CSV</button>
+        <button id="export-data-btn" class="h-10 rounded-lg bg-gray-800 text-sm text-gray-300 active:scale-[0.98] transition-transform">Exporter CSV</button>
+        <button id="import-data-btn" class="h-10 rounded-lg bg-gray-800 text-sm text-gray-300 active:scale-[0.98] transition-transform">Importer CSV</button>
         <input id="import-file" type="file" accept=".csv" class="hidden">
       </div>
       <div class="text-center text-xs text-gray-600 mt-6 pb-4">ID: <span id="user-id-display">Local</span></div>
@@ -395,6 +407,7 @@
       initialVacationDays: 25,
       currentRttBalance: 10,  
       currentVacationBalance: 25,
+      profilePictureBase64: null, // NOUVEAU : Stockage de la photo de profil
     };
 
     // --- UTILS ---
@@ -412,12 +425,10 @@
     };
     const fmtMinutes = m => { const s=m<0?"-":""; const a=Math.abs(m); const h=Math.floor(a/60); const mn=Math.round(a%60); return `${s}${h}h ${mn<10?'0':''}${mn}m`; };
     
-    // CORRECTION CRITIQUE (Évitant le blocage du splash screen)
     const calcWorkMinutes = (e)=>{ 
       const dailyTargetMinutes = config.targetWeeklyHours / 5;
       if(e?.type!=='WORK') return dailyTargetMinutes; 
       if(!e.start||!e.end) return 0; 
-      // Ligne corrigée: .map(Number) doit s'appliquer au résultat de .split(':')
       const p=t=>{const [h,m]=t.split(':').map(Number);return h*60+m}; 
       const lunch=(e.lunchDurationMinutes ?? config.lunchDurationMinutes) || 0; 
       return Math.max(p(e.end)-p(e.start)-lunch,0); 
@@ -425,7 +436,6 @@
 
     const clampMonth = (ym)=>ym.replace(/^(\d{4})-(\d{2}).*$/,(_,y,m)=>`${y}-${m.padStart(2,'0')}`);
     const addMonths = (ym, d)=>{ let [y,m]=ym.split('-').map(Number); const dt=new Date(y,m-1+d,1); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; };
-    // CORRECTION SYNTAXE: J'ai corrigé ym.split('-).map en ym.split('-').map
     const monthLabel = (ym)=>{ const [y,m]=ym.split('-').map(Number); return new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(new Date(y,m-1,1)); };
 
     // --- LOCAL STORAGE ---
@@ -469,6 +479,33 @@
       if(name==='data') renderDataListView();
       if(name==='reglages') updateSettingsUI();
     }
+    
+    // --- NOUVELLE FONCTION POUR L'AFFICHAGE DE LA PHOTO DE PROFIL ---
+    function updateProfilePictureDisplay(){
+        const container = $('#profile-picture-container');
+        const initials = $('#profile-initials');
+        const preview = $('#settings-profile-preview');
+        const clearBtn = $('#clear-profile-picture-btn');
+
+        if(config.profilePictureBase64) {
+            // Header
+            container.style.backgroundImage = `url(${config.profilePictureBase64})`;
+            initials.style.display = 'none';
+            // Preview dans les réglages
+            preview.style.backgroundImage = `url(${config.profilePictureBase64})`;
+            preview.textContent = '';
+            clearBtn.style.display = 'block';
+        } else {
+            // Header
+            container.style.backgroundImage = 'none';
+            initials.style.display = 'block';
+            // Preview dans les réglages
+            preview.style.backgroundImage = 'none';
+            preview.textContent = '👤';
+            clearBtn.style.display = 'none';
+        }
+    }
+    // --- FIN NOUVELLE FONCTION ---
 
     // --- FONCTIONS IMPORT/EXPORT CSV ---
     
@@ -747,6 +784,9 @@
         $('#lunch-minutes').value = config.lunchDurationMinutes;
         $('#initial-rtt-days').value = config.initialRttDays;
         $('#initial-vacation-days').value = config.initialVacationDays;
+        
+        // Mise à jour de l'affichage de la photo
+        updateProfilePictureDisplay(); 
     }
 
     // --- CALENDRIER (Logique identique, nouveau design) ---
@@ -846,9 +886,39 @@
           config.lunchDurationMinutes = parseInt($('#lunch-minutes').value);
           config.initialRttDays = parseInt($('#initial-rtt-days').value);
           config.initialVacationDays = parseInt($('#initial-vacation-days').value);
+          
+          // La photo de profil est déjà mise à jour dans la config par l'événement de fichier.
           lsSaveConfig(config); recalculateBalances();
+          updateProfilePictureDisplay();
           showModal('Réglages', 'Préférences sauvegardées.');
       };
+
+      // LOGIQUE PHOTO DE PROFIL
+      $('#select-profile-picture-btn').onclick = () => $('#profile-picture-file').click();
+      
+      $('#profile-picture-file').onchange = (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = (event) => {
+              // Limiter la taille de l'image Base64 si elle est trop grande (pour ne pas saturer le localStorage)
+              const base64Image = event.target.result;
+              config.profilePictureBase64 = base64Image;
+              
+              // Mettre à jour l'affichage immédiatement (sera sauvegardé au clic sur "Sauvegarder")
+              updateProfilePictureDisplay(); 
+              $('#profile-picture-file').value = null; // Reset l'input file
+          };
+          reader.readAsDataURL(file);
+      };
+
+      $('#clear-profile-picture-btn').onclick = () => {
+          config.profilePictureBase64 = null;
+          lsSaveConfig(config); // Sauvegarde immédiate du clear
+          updateProfilePictureDisplay();
+      };
+      // FIN LOGIQUE PHOTO DE PROFIL
 
       // ÉVÉNEMENTS IMPORT/EXPORT
       $('#export-data-btn').onclick = exportDataToCsv;
@@ -876,6 +946,7 @@
       // Boot
       updateEntryUI(config.lastSelectedDate);
       renderLatestList();
+      updateProfilePictureDisplay(); // Afficher la photo dès le chargement
 
       // CORRECTION DU SPLASH SCREEN: Masquer immédiatement après le chargement du DOM
       $('#splash-screen').style.opacity='0'; 
