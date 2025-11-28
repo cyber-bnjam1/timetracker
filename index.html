@@ -394,7 +394,6 @@
 
   <script type="module">
     // --- VARIABLES (GARDER LA MEME LOGIQUE) ---
-    // Les imports Firebase sont maintenus en mode stub (non utilisés)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -442,7 +441,7 @@
     const fmtMinutes = m => { const s=m<0?"-":""; const a=Math.abs(m); const h=Math.floor(a/60); const mn=Math.round(a%60); return `${s}${h}h ${mn<10?'0':''}${mn}m`; };
     
     const calcWorkMinutes = (e)=>{ 
-      if(e?.type!=='WORK') return config.targetWeeklyHours / 5; // Retourne l'équivalent d'un jour si c'est un jour non travaillé (pour le décompte)
+      if(e?.type!=='WORK') return config.targetWeeklyHours / 5; 
       if(!e.start||!e.end) return 0; 
       const p=t=>{const [h,m]=t.split(':').map(Number);return h*60+m}; 
       const lunch=(e.lunchDurationMinutes ?? config.lunchDurationMinutes) || 0; 
@@ -474,9 +473,121 @@
       lsSaveConfig(config); 
     }
     
-    // Stubs pour éviter les crashs
-    function exportDataToCsv() { showModal('Erreur', 'Fonction d\'exportation non implémentée.'); }
-    function importDataFromCsv(file) { showModal('Erreur', 'Fonction d\'importation non implémentée.'); }
+    // --- FONCTIONS EXPORT/IMPORT RÉELLES ---
+    function exportDataToCsv() {
+        if (workEntries.length === 0) {
+            showModal('Exportation', 'Aucune donnée à exporter.');
+            return;
+        }
+
+        // En-têtes CSV et ligne de données
+        const headers = ["date", "type", "start", "end", "lunchDurationMinutes", "timestamp"];
+        const csvRows = [];
+        csvRows.push(headers.join(';')); // Utilise le point-virgule comme séparateur pour la compatibilité FR
+
+        workEntries.forEach(entry => {
+            const row = headers.map(fieldName => {
+                let value = entry[fieldName] !== undefined ? entry[fieldName] : "";
+                // Assure que les valeurs numériques n'ont pas de virgule pour le CSV
+                if (typeof value === 'number') value = String(value).replace('.', ',');
+                return `"${value}"`; // Encapsule les valeurs entre guillemets pour gérer les caractères spéciaux
+            });
+            csvRows.push(row.join(';'));
+        });
+
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        
+        // Crée un lien de téléchargement temporaire
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        
+        const today = new Date().toISOString().substring(0, 10);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `worker_data_${today}.csv`);
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showModal('Exportation Réussie', `Le fichier <b>worker_data_${today}.csv</b> a été téléchargé. Il contient ${workEntries.length} entrées.`);
+    }
+
+    function importDataFromCsv(file) {
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const csv = e.target.result;
+                const lines = csv.split('\n').filter(line => line.trim() !== '');
+
+                if (lines.length === 0) {
+                    showModal('Erreur d\'Importation', 'Le fichier CSV est vide.');
+                    return;
+                }
+
+                // Utilise le premier délimiteur trouvé ou le point-virgule par défaut
+                const delimiter = lines[0].includes(';') ? ';' : ','; 
+                
+                // En-têtes (première ligne)
+                const headerLine = lines[0].replace(/"/g, '').split(delimiter); 
+                const requiredHeaders = ["date", "type"];
+                if (!requiredHeaders.every(h => headerLine.includes(h))) {
+                    showModal('Erreur d\'Importation', 'Le fichier CSV n\'a pas les en-têtes requis (date, type).');
+                    return;
+                }
+
+                const importedMap = {};
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(delimiter).map(v => v.replace(/"/g, '').trim());
+                    if (values.length !== headerLine.length) continue; // Ignore les lignes mal formées
+
+                    const entry = {};
+                    headerLine.forEach((header, index) => {
+                        let value = values[index];
+                        // Convertit les nombres si nécessaire
+                        if (header === 'lunchDurationMinutes' || header === 'timestamp') {
+                             // Remplace la virgule par le point pour le parsing JavaScript
+                             value = value.replace(',', '.'); 
+                             entry[header] = value ? parseInt(value) : undefined;
+                        } else {
+                            entry[header] = value;
+                        }
+                    });
+                    
+                    // Validation minimale (nécessite au moins date et type)
+                    if (entry.date && entry.type) {
+                        importedMap[entry.date] = entry;
+                    }
+                }
+                
+                const existingMap = lsLoadEntriesMap();
+                const newMap = {...existingMap, ...importedMap}; // Fusionne : les importations écrasent les existantes
+
+                lsSaveEntriesMap(newMap);
+                workEntries = lsGetAllEntriesArray();
+                recalculateBalances();
+                
+                // Rafraîchir l'UI
+                updateEntryUI(config.lastSelectedDate);
+                renderLatestList();
+                renderDataListView();
+
+                showModal('Importation Réussie', `${Object.keys(importedMap).length} entrées ont été importées et fusionnées avec succès.`);
+
+            } catch (error) {
+                console.error("Erreur lors de l'importation:", error);
+                showModal('Erreur Critique', 'Impossible de traiter le fichier. Vérifiez son format CSV.');
+            }
+        };
+
+        reader.onerror = () => {
+            showModal('Erreur de Lecture', 'Impossible de lire le fichier.');
+        };
+
+        reader.readAsText(file, 'UTF-8');
+    }
 
     function showModal(t,m){$('#modal-title').textContent=t; $('#modal-message').innerHTML=m; $('#custom-modal').style.display='flex';}
 
@@ -496,7 +607,6 @@
       if(name==='hebdo') updateWeeklyView();
       if(name==='mensuelle'){ 
           buildMonthOptions(); 
-          // Utilise le mois configuré pour le premier affichage
           updateMonthlyView(config.selectedMonthYM); 
       }
       if(name==='data') renderDataListView();
@@ -530,7 +640,7 @@
 
         try {
             const ctx = document.getElementById('monthly-chart').getContext('2d');
-            const targetHours = config.targetWeeklyHours / 60; // Objectif hebdomadaire en heures
+            const targetHours = config.targetWeeklyHours / 60; 
 
             const [year, month] = yearMonth.split('-').map(Number);
             const firstDayOfMonth = new Date(year, month - 1, 1);
@@ -541,7 +651,6 @@
             for (let d = new Date(firstDayOfMonth); d <= lastDayOfMonth; d.setDate(d.getDate() + 1)) {
                 const currentYMD = dateToYMD(d);
                 
-                // Trouve la date du lundi de la semaine pour l'étiquette
                 const dayOfWeek = (d.getDay() + 6) % 7; 
                 const mondayDate = new Date(d);
                 mondayDate.setDate(d.getDate() - dayOfWeek);
@@ -614,7 +723,7 @@
         }
     }
 
-    // --- UI SAISIE & HEBDO (Reste inchangé) ---
+    // --- UI SAISIE & HEBDO ---
     function updateEntryUI(date){
       const e = workEntries.find(x=>x.date===date);
       $('#entry-date-hidden').value = date;
@@ -732,13 +841,12 @@
       $('#weekly-body').innerHTML = rows.join('');
     }
 
-    // --- LOGIQUE MENSUELLE CORRIGÉE ---
+    // --- LOGIQUE MENSUELLE ---
     function buildMonthOptions(){
         const sel = $('#month-select');
         const nowYM = new Date().toISOString().substring(0,7);
         const targetYM = config.selectedMonthYM || nowYM;
         
-        // On génère toujours 25 mois centrés sur le mois courant (sécurité)
         let cur = addMonths(nowYM, -12); 
         let opts = []; 
         
@@ -747,29 +855,24 @@
             cur = addMonths(cur, 1);
         }
         sel.innerHTML = opts.join('');
-        // On s'assure que la valeur sélectionnée est celle qui est dans la config
         sel.value = targetYM; 
     }
     
     function updateMonthlyView(ym){
-        // 1. Assurer la cohérence des données et du stockage
         ym = clampMonth(ym); 
         config.selectedMonthYM = ym; 
         lsSaveConfig(config);
         
-        // 2. CORRECTION CRITIQUE : Synchroniser le menu déroulant avec la variable
         const sel = $('#month-select');
         if(sel && sel.value !== ym) {
             sel.value = ym;
         }
 
-        // 3. Calcul des statistiques
         const monthEntries = workEntries.filter(e=>e.date.startsWith(ym));
         let dW=0,dR=0,dV=0,dH=0,totalMinutesWorked=0;
         
         monthEntries.forEach(e=>{
             const mins = calcWorkMinutes(e); 
-            // On compte uniquement les minutes travaillées (pas les jours d'absence équivalents) pour ce total.
             if(e.type === 'WORK') totalMinutesWorked += mins; 
 
             if(e.type==='WORK') dW++; 
@@ -778,13 +881,11 @@
             else if(e.type==='HOLIDAY') dH++;
         });
         
-        // 4. Mise à jour de l'UI
         $('#monthly-days-worked').textContent = dW;
         $('#monthly-total-work-hours').textContent = fmtMinutes(totalMinutesWorked);
         $('#current-rtt-balance').textContent = config.currentRttBalance;
         $('#current-vacation-balance').textContent = config.currentVacationBalance;
 
-        // 5. Mise à jour du graphique
         renderMonthlyChart(monthEntries, ym);
     }
     
@@ -867,7 +968,7 @@
           $('#btn-data').onclick = ()=>setActiveTab('data');
           $('#btn-reglages').onclick = ()=>setActiveTab('reglages');
           
-          // --- NAVIGATION MOIS CORRIGÉE ---
+          // --- NAVIGATION MOIS ---
           $('#month-select').addEventListener('change', (e) => updateMonthlyView(e.target.value));
           
           $('#month-prev').onclick = () => {
@@ -881,7 +982,6 @@
               const next = addMonths(current, 1);
               updateMonthlyView(next);
           };
-          // ---------------------------------
           
           // --- CALENDAR & SAISIE & SETTINGS (Autres événements) ---
           $('#entry-date-button').onclick = ()=>{
@@ -950,7 +1050,8 @@
               lsSaveConfig(config); 
               updateProfilePictureDisplay();
           };
-
+          
+          // --- ÉVÉNEMENTS IMPORT/EXPORT IMPLÉMENTÉS ---
           $('#export-data-btn').onclick = exportDataToCsv;
           $('#import-data-btn').onclick = () => $('#import-file').click();
           $('#import-file').onchange = (e) => {
