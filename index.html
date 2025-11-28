@@ -13,6 +13,7 @@
   <link rel="icon" href="favicon.png" type="image/png">
   
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 
@@ -247,6 +248,13 @@
         <button id="month-next" class="w-10 h-10 flex items-center justify-center bg-gray-800 rounded-lg text-white">›</button>
       </div>
 
+      <div class="bento-card mb-4">
+        <h3 class="text-xs text-gray-400 uppercase font-bold mb-3">Performance Hebdomadaire</h3>
+        <div style="height: 200px; width: 100%;">
+            <canvas id="monthly-chart"></canvas>
+        </div>
+      </div>
+
       <div class="grid grid-cols-2 gap-3 mb-4">
         <div class="bento-card flex flex-col items-center justify-center py-6">
            <span id="monthly-days-worked" class="text-3xl font-bold text-green-400">0</span>
@@ -398,6 +406,9 @@
     } catch(e) { console.log('Local Mode'); }
 
     let workEntries = [];
+    // Instance du graphique pour pouvoir le mettre à jour
+    let monthlyChartInstance = null;
+
     let config = {
       targetWeeklyHours: 37 * 60,
       lunchDurationMinutes: 45,
@@ -506,123 +517,113 @@
         }
     }
 
-    // --- FONCTIONS IMPORT/EXPORT CSV ---
-    
-    /** Exporte toutes les entrées dans un fichier CSV. (En-têtes ajustées) */
-    function exportDataToCsv() {
-        if (workEntries.length === 0) {
-            showModal("Erreur d'export", "Aucune donnée à exporter.");
-            return;
+    // --- GRAPHIQUE MENSUEL ---
+    function renderMonthlyChart(entries, yearMonth) {
+        const ctx = document.getElementById('monthly-chart').getContext('2d');
+        const targetHours = config.targetWeeklyHours / 60; // En heures décimales
+
+        // 1. Calculer les semaines du mois
+        const [year, month] = yearMonth.split('-').map(Number);
+        
+        // On détermine le premier et dernier jour du mois
+        const firstDayOfMonth = new Date(year, month - 1, 1);
+        const lastDayOfMonth = new Date(year, month, 0);
+        
+        // On regroupe les données par numéro de semaine (ou date de début de semaine)
+        const weeklyData = {};
+        
+        // On parcourt chaque jour du mois
+        for (let d = new Date(firstDayOfMonth); d <= lastDayOfMonth; d.setDate(d.getDate() + 1)) {
+            const currentYMD = dateToYMD(d);
+            
+            // Trouver le lundi de la semaine courante pour grouper
+            const dayOfWeek = (d.getDay() + 6) % 7; // Lundi = 0
+            const mondayDate = new Date(d);
+            mondayDate.setDate(d.getDate() - dayOfWeek);
+            const mondayYMD = dateToYMD(mondayDate);
+            const label = `Sem ${mondayDate.getDate()}/${mondayDate.getMonth()+1}`;
+
+            if (!weeklyData[label]) {
+                weeklyData[label] = { worked: 0 };
+            }
+
+            // Ajouter les heures si une entrée existe ce jour-là
+            const entry = entries.find(e => e.date === currentYMD);
+            if (entry) {
+                weeklyData[label].worked += calcWorkMinutes(entry);
+            }
         }
 
-        // Utilisation des en-têtes demandés par l'utilisateur
-        const headers = ["Date", "Type", "Debut", "Fin", "Pause_min", "Minutes_travaillees", "Timestamp"];
-        
-        // Mappage des données
-        const rows = workEntries.map(e => [
-            `"${e.date}"`,
-            `"${e.type}"`,
-            `"${e.start || ''}"`,
-            `"${e.end || ''}"`,
-            `"${e.lunchDurationMinutes !== undefined ? e.lunchDurationMinutes : ''}"`, 
-            `"${fmtMinutes(calcWorkMinutes(e)).replace('h ', ':').replace('m', '')}"`, // Ajout de la colonne Minutes_travaillees
-            `"${e.timestamp || ''}"`
-        ]);
+        const labels = Object.keys(weeklyData);
+        const dataWorked = Object.values(weeklyData).map(d => (d.worked / 60).toFixed(1)); // En heures
+        const dataTarget = labels.map(() => targetHours); // Ligne cible constante
 
-        // Création du contenu CSV
-        const csvContent = [
-            headers.join(";"),
-            ...rows.map(row => row.join(";"))
-        ].join("\n");
+        // Destruction de l'ancien graphique s'il existe
+        if (monthlyChartInstance) {
+            monthlyChartInstance.destroy();
+        }
 
-        // Création du Blob et téléchargement
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.setAttribute('href', url);
-        link.setAttribute('download', `worker_data_${new Date().toISOString().substring(0, 10)}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        showModal("Exportation réussie", `Vos ${workEntries.length} entrées ont été exportées en CSV.`);
+        monthlyChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        type: 'line',
+                        label: 'Objectif',
+                        data: dataTarget,
+                        borderColor: '#F87171', // Rouge clair
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        order: 0
+                    },
+                    {
+                        type: 'bar',
+                        label: 'Réalisé',
+                        data: dataWorked,
+                        backgroundColor: (context) => {
+                            const val = context.raw;
+                            // Vert si > objectif, Bleu sinon
+                            return val >= targetHours ? '#10B981' : '#3B82F6';
+                        },
+                        borderRadius: 4,
+                        order: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: { color: '#9CA3AF', font: { size: 10 } }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y + 'h';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#374151' }, // Gris foncé
+                        ticks: { color: '#9CA3AF' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#9CA3AF', font: { size: 10 } }
+                    }
+                }
+            }
+        });
     }
-
-    /** Lit un fichier CSV et importe les entrées. (Colonnes ajustées) */
-    function importDataFromCsv(file) {
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const csvText = event.target.result;
-            let importedCount = 0;
-            const entriesMap = lsLoadEntriesMap();
-
-            const lines = csvText.split('\n').filter(line => line.trim() !== '');
-            if (lines.length < 2) {
-                showModal("Erreur d'import", "Le fichier CSV est vide ou n'a pas de données.");
-                return;
-            }
-            
-            // En-têtes en minuscules pour la comparaison (robustesse)
-            const headers = lines[0].toLowerCase().replace(/"/g, '').split(';');
-
-            // Index des colonnes (Adaptation aux colonnes de l'utilisateur : debut, fin, pause_min)
-            const dateIndex = headers.indexOf('date');
-            const typeIndex = headers.indexOf('type');
-            const startIndex = headers.indexOf('debut');
-            const endIndex = headers.indexOf('fin');
-            const lunchIndex = headers.indexOf('pause_min'); 
-            const tsIndex = headers.indexOf('timestamp'); 
-            // minutes_travaillees est ignorée pour l'import
-
-            if (dateIndex === -1 || typeIndex === -1) {
-                showModal("Erreur d'import", "Le CSV doit contenir les colonnes 'date' et 'type'.");
-                return;
-            }
-
-            for (let i = 1; i < lines.length; i++) {
-                const values = lines[i].replace(/"/g, '').split(';');
-                if (values.length < Math.max(dateIndex, typeIndex, startIndex, endIndex, lunchIndex, tsIndex) + 1) continue;
-
-                const date = values[dateIndex]?.trim();
-                const type = values[typeIndex]?.trim();
-
-                if (!date || !type) continue; 
-                
-                const entry = {
-                    date: date,
-                    type: type,
-                    start: startIndex !== -1 ? values[startIndex]?.trim() : '',
-                    end: endIndex !== -1 ? values[endIndex]?.trim() : '',
-                    lunchDurationMinutes: lunchIndex !== -1 && values[lunchIndex]?.trim() ? parseInt(values[lunchIndex]?.trim()) : undefined,
-                    timestamp: tsIndex !== -1 && values[tsIndex]?.trim() ? parseInt(values[tsIndex]?.trim()) : Date.now()
-                };
-
-                entriesMap[date] = entry;
-                importedCount++;
-            }
-            
-            if (importedCount > 0) {
-                lsSaveEntriesMap(entriesMap);
-                workEntries = lsGetAllEntriesArray();
-                recalculateBalances();
-                updateEntryUI(config.lastSelectedDate); 
-                renderLatestList();
-                showModal("Importation réussie", `${importedCount} entrées importées.`);
-            } else {
-                showModal("Échec de l'import", "Aucune nouvelle entrée valide trouvée dans le fichier.");
-            }
-        };
-
-        reader.onerror = () => {
-            showModal("Erreur", "Impossible de lire le fichier.");
-        };
-
-        reader.readAsText(file);
-    }
-    // --- FIN FONCTIONS IMPORT/EXPORT CSV ---
 
     // --- UI SAISIE ---
     function updateEntryUI(date){
@@ -765,10 +766,15 @@
             const mins = calcWorkMinutes(e); totalMinutesWorked += mins;
             if(e.type==='WORK') dW++; else if(e.type==='RTT') dR++; else if(e.type==='VACATION') dV++; else if(e.type==='HOLIDAY') dH++;
         });
+        
+        // Mise à jour des stats texte
         $('#monthly-days-worked').textContent = dW;
         $('#monthly-total-work-hours').textContent = fmtMinutes(totalMinutesWorked);
         $('#current-rtt-balance').textContent = config.currentRttBalance;
         $('#current-vacation-balance').textContent = config.currentVacationBalance;
+
+        // Mise à jour du graphique
+        renderMonthlyChart(monthEntries, ym);
     }
     function renderDataListView(){
          const container = $('#data-list-container');
