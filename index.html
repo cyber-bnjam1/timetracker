@@ -431,7 +431,7 @@
     };
     const dateToFr = ymd => { const [y,m,d]=ymd.split('-'); return `${d}/${m}/${y}`; };
     const dateToHuman = ymd => { 
-        const d = new Date(ymd + 'T00:00:00'); // Ajout de T00:00:00 pour éviter les problèmes de fuseau horaire
+        const d = new Date(ymd + 'T00:00:00'); // Ajout de T00:00:00 pour éviter les problèmes de fuseau de temps
         return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
     };
     const fmtMinutes = m => { const s=m<0?"-":""; const a=Math.abs(m); const h=Math.floor(a/60); const mn=Math.round(a%60); return `${s}${h}h ${mn<10?'0':''}${mn}m`; };
@@ -470,6 +470,10 @@
       lsSaveConfig(config); 
     }
 
+    // --- STUBS POUR EVITER LES CRASHS LIES A L'EXPORT/IMPORT (Si non implémenté) ---
+    function exportDataToCsv() { showModal('Erreur', 'Fonction d\'exportation non implémentée.'); }
+    function importDataFromCsv(file) { showModal('Erreur', 'Fonction d\'importation non implémentée.'); }
+
     function showModal(t,m){$('#modal-title').textContent=t; $('#modal-message').innerHTML=m; $('#custom-modal').style.display='flex';}
 
     function setActiveTab(name){
@@ -486,7 +490,11 @@
       });
       window.scrollTo(0,0); // Reset scroll on tab change
       if(name==='hebdo') updateWeeklyView();
-      if(name==='mensuelle'){ buildMonthOptions(); updateMonthlyView(); }
+      if(name==='mensuelle'){ 
+          buildMonthOptions(); 
+          // Appel explicite avec le mois sélectionné actuel pour le rechargement
+          updateMonthlyView(config.selectedMonthYM); 
+      }
       if(name==='data') renderDataListView();
       if(name==='reglages') updateSettingsUI();
     }
@@ -524,7 +532,7 @@
 
         try {
             const ctx = document.getElementById('monthly-chart').getContext('2d');
-            const targetHours = config.targetWeeklyHours / 60; // En heures décimales
+            const targetHours = (config.targetWeeklyHours / 60) * 5; // Objectif Hebdo en minutes divisé par 5 jours de travail
 
             // 1. Calculer les semaines du mois
             const [year, month] = yearMonth.split('-').map(Number);
@@ -544,22 +552,24 @@
                 const dayOfWeek = (d.getDay() + 6) % 7; // Lundi = 0
                 const mondayDate = new Date(d);
                 mondayDate.setDate(d.getDate() - dayOfWeek);
-                const label = `Sem ${mondayDate.getDate()}/${mondayDate.getMonth()+1}`;
+                const label = `${mondayDate.getDate()}/${mondayDate.getMonth()+1}`;
 
                 if (!weeklyData[label]) {
-                    weeklyData[label] = { worked: 0 };
+                    weeklyData[label] = { worked: 0, days: 0 };
                 }
 
                 // Ajouter les heures si une entrée existe ce jour-là
                 const entry = entries.find(e => e.date === currentYMD);
-                if (entry) {
+                if (entry && entry.type === 'WORK' && d.getDay() >= 1 && d.getDay() <= 5) { // Compte seulement les jours de travail
                     weeklyData[label].worked += calcWorkMinutes(entry);
+                    weeklyData[label].days += 1;
                 }
             }
 
             const labels = Object.keys(weeklyData);
             const dataWorked = Object.values(weeklyData).map(d => (d.worked / 60).toFixed(1)); // En heures
-            const dataTarget = labels.map(() => targetHours); // Ligne cible constante
+            // Le target est l'objectif hebdomadaire (pas quotidien !)
+            const dataTarget = labels.map(() => config.targetWeeklyHours / 60); 
 
             // Destruction de l'ancien graphique s'il existe
             if (monthlyChartInstance) {
@@ -588,7 +598,7 @@
                             backgroundColor: (context) => {
                                 const val = context.raw;
                                 // Vert si > objectif, Bleu sinon
-                                return val >= targetHours ? '#10B981' : '#3B82F6';
+                                return val >= (config.targetWeeklyHours / 60) ? '#10B981' : '#3B82F6';
                             },
                             borderRadius: 4,
                             order: 1
@@ -608,7 +618,7 @@
                             intersect: false,
                             callbacks: {
                                 label: function(context) {
-                                    return context.dataset.label + ': ' + context.parsed.y + 'h';
+                                    return context.dataset.label + ': ' + parseFloat(context.parsed.y).toFixed(1) + 'h';
                                 }
                             }
                         }
@@ -720,10 +730,16 @@
         let status='-';
         let subStyle = 'text-gray-600';
         
+        // Décompte pour le total hebdomadaire
         if(e){ 
-          const mins=calcWorkMinutes(e); total+=mins; 
+          const mins=calcWorkMinutes(e); 
+          total+=mins; 
           status = e.type==='WORK' ? fmtMinutes(mins) : e.type;
           subStyle = e.type==='WORK' ? 'text-white font-bold' : 'text-blue-400 font-bold';
+        } else if (d.getDay() >= 1 && d.getDay() <= 5) {
+             // Si c'est un jour de travail non saisi, on le met à 0
+             status = '0h 00m';
+             subStyle = 'text-gray-600';
         }
         
         // Indicateur Aujourd'hui
@@ -756,45 +772,62 @@
     function buildMonthOptions(){
         const sel = $('#month-select');
         const nowYM = new Date().toISOString().substring(0,7);
-        let opts = []; let cur = addMonths(nowYM, -12);
-        // Génère une plus grande plage (12 mois avant, 12 mois après) pour éviter les trous
-        for(let i=0; i<24; i++){
+        // Utilise le mois actuellement sélectionné ou le mois courant comme point de départ
+        const startYM = config.selectedMonthYM || nowYM; 
+        
+        let opts = []; 
+        // Commence 12 mois avant le mois actuellement sélectionné
+        let cur = addMonths(startYM, -12); 
+        
+        // Génère 25 mois (12 avant, le mois actuel, 12 après)
+        for(let i=0; i<25; i++){ 
             opts.push(`<option value="${cur}">${monthLabel(cur)}</option>`);
             cur = addMonths(cur, 1);
         }
         sel.innerHTML = opts.reverse().join('');
+        // Tente de remettre la valeur sélectionnée, qui doit maintenant exister
         sel.value = config.selectedMonthYM || nowYM;
     }
     
     function updateMonthlyView(ym){
-        ym = clampMonth(ym); 
-        config.selectedMonthYM = ym; 
-        lsSaveConfig(config);
-        
-        // --- CORRECTIF CRITIQUE POUR LA SÉLECTION ---
-        // Force la mise à jour visuelle du select si la demande vient des boutons < >
-        const sel = $('#month-select');
-        if(sel && sel.value !== ym) {
-            sel.value = ym;
+        try {
+            ym = clampMonth(ym); 
+            config.selectedMonthYM = ym; 
+            lsSaveConfig(config);
+            
+            // 1. Force la mise à jour visuelle du select
+            const sel = $('#month-select');
+            if(sel) sel.value = ym;
+            
+            // 2. Filtre les entrées
+            const monthEntries = workEntries.filter(e=>e.date.startsWith(ym));
+            let dW=0,dR=0,dV=0,dH=0,totalMinutesWorked=0;
+
+            // 3. Calcule les statistiques
+            monthEntries.forEach(e=>{
+                const mins = calcWorkMinutes(e); 
+                totalMinutesWorked += mins; // On compte les minutes équivalentes pour le total
+
+                if(e.type==='WORK') dW++; 
+                else if(e.type==='RTT') dR++; 
+                else if(e.type==='VACATION') dV++; 
+                else if(e.type==='HOLIDAY') dH++;
+            });
+            
+            // 4. Met à jour les éléments UI
+            $('#monthly-days-worked').textContent = dW;
+            $('#monthly-total-work-hours').textContent = fmtMinutes(totalMinutesWorked);
+            $('#current-rtt-balance').textContent = config.currentRttBalance;
+            $('#current-vacation-balance').textContent = config.currentVacationBalance;
+
+            // 5. Met à jour le graphique
+            renderMonthlyChart(monthEntries, ym);
+        } catch (e) {
+            console.error("Erreur dans updateMonthlyView:", e);
+            showModal('Erreur d\'affichage', 'Impossible d\'afficher les données mensuelles. Veuillez vérifier la console du navigateur pour les détails.');
         }
-        // ---------------------------------------------
-
-        const monthEntries = workEntries.filter(e=>e.date.startsWith(ym));
-        let dW=0,dR=0,dV=0,dH=0,totalMinutesWorked=0;
-        monthEntries.forEach(e=>{
-            const mins = calcWorkMinutes(e); totalMinutesWorked += mins;
-            if(e.type==='WORK') dW++; else if(e.type==='RTT') dR++; else if(e.type==='VACATION') dV++; else if(e.type==='HOLIDAY') dH++;
-        });
-        
-        // Mise à jour des stats texte
-        $('#monthly-days-worked').textContent = dW;
-        $('#monthly-total-work-hours').textContent = fmtMinutes(totalMinutesWorked);
-        $('#current-rtt-balance').textContent = config.currentRttBalance;
-        $('#current-vacation-balance').textContent = config.currentVacationBalance;
-
-        // Mise à jour du graphique sécurisée
-        renderMonthlyChart(monthEntries, ym);
     }
+    
     function renderDataListView(){
          const container = $('#data-list-container');
          container.innerHTML = workEntries.map(e=> `
@@ -856,7 +889,6 @@
     document.addEventListener('DOMContentLoaded', ()=>{
       
       // SÉCURITÉ SPLASH SCREEN
-      // On s'assure que le splash screen disparaît même si le code plante
       const forceHideSplash = () => {
           const splash = $('#splash-screen');
           if(splash && splash.style.display !== 'none') {
@@ -923,7 +955,6 @@
           config.initialRttDays = parseInt($('#initial-rtt-days').value);
           config.initialVacationDays = parseInt($('#initial-vacation-days').value);
           
-          // La photo de profil est déjà mise à jour dans la config par l'événement de fichier.
           lsSaveConfig(config); recalculateBalances();
           updateProfilePictureDisplay();
           showModal('Réglages', 'Préférences sauvegardées.');
@@ -954,6 +985,7 @@
       };
 
       // ÉVÉNEMENTS IMPORT/EXPORT
+      // Les fonctions exportDataToCsv et importDataFromCsv sont définies comme stubs
       $('#export-data-btn').onclick = exportDataToCsv;
       $('#import-data-btn').onclick = () => $('#import-file').click();
       $('#import-file').onchange = (e) => {
