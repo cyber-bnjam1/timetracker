@@ -757,6 +757,7 @@
         const sel = $('#month-select');
         const nowYM = new Date().toISOString().substring(0,7);
         let opts = []; let cur = addMonths(nowYM, -12);
+        // Génère une plus grande plage (12 mois avant, 12 mois après) pour éviter les trous
         for(let i=0; i<24; i++){
             opts.push(`<option value="${cur}">${monthLabel(cur)}</option>`);
             cur = addMonths(cur, 1);
@@ -764,14 +765,28 @@
         sel.innerHTML = opts.reverse().join('');
         sel.value = config.selectedMonthYM || nowYM;
     }
-    function updateMonthlyView(ym=config.selectedMonthYM){
-        ym = clampMonth(ym); config.selectedMonthYM=ym; lsSaveConfig(config);
+    
+    function updateMonthlyView(ym){
+        ym = clampMonth(ym); 
+        config.selectedMonthYM = ym; 
+        lsSaveConfig(config);
+        
+        // --- CORRECTIF CRITIQUE POUR LA SÉLECTION ---
+        // Force la mise à jour visuelle du select si la demande vient des boutons < >
+        const sel = $('#month-select');
+        if(sel && sel.value !== ym) {
+            sel.value = ym;
+        }
+        // ---------------------------------------------
+
         const monthEntries = workEntries.filter(e=>e.date.startsWith(ym));
         let dW=0,dR=0,dV=0,dH=0,totalMinutesWorked=0;
         monthEntries.forEach(e=>{
             const mins = calcWorkMinutes(e); totalMinutesWorked += mins;
             if(e.type==='WORK') dW++; else if(e.type==='RTT') dR++; else if(e.type==='VACATION') dV++; else if(e.type==='HOLIDAY') dH++;
         });
+        
+        // Mise à jour des stats texte
         $('#monthly-days-worked').textContent = dW;
         $('#monthly-total-work-hours').textContent = fmtMinutes(totalMinutesWorked);
         $('#current-rtt-balance').textContent = config.currentRttBalance;
@@ -885,88 +900,103 @@
                   end: $('#end-time').value,
                   lunchDurationMinutes: parseInt($('#lunch-duration-manual').value) || config.lunchDurationMinutes,
                   timestamp: Date.now()
-              };
-              const map = lsLoadEntriesMap(); map[date] = entry; lsSaveEntriesMap(map);
-              workEntries = lsGetAllEntriesArray(); recalculateBalances(); updateEntryUI(date); renderLatestList();
-              showModal('Sauvegardé', 'Entrée mise à jour.');
           };
+          const map = lsLoadEntriesMap(); map[date] = entry; lsSaveEntriesMap(map);
+          workEntries = lsGetAllEntriesArray(); recalculateBalances(); updateEntryUI(date); renderLatestList();
+          showModal('Sauvegardé', 'Entrée mise à jour.');
+      };
+      
+      // Delete
+      $('#delete-entry-btn').onclick = ()=>{
+         const date = $('#entry-date-hidden').value;
+         if(confirm("Confirmez-vous la suppression de l'entrée du " + dateToFr(date) + " ?")){
+            const map = lsLoadEntriesMap(); delete map[date]; lsSaveEntriesMap(map);
+            workEntries = lsGetAllEntriesArray(); recalculateBalances(); updateEntryUI(config.lastSelectedDate); renderLatestList();
+            showModal('Supprimé', 'L\'entrée a été supprimée.');
+         }
+      };
+
+      // Settings
+      $('#save-settings-btn').onclick = ()=>{
+          config.targetWeeklyHours = parseFloat($('#target-hours').value)*60;
+          config.lunchDurationMinutes = parseInt($('#lunch-minutes').value);
+          config.initialRttDays = parseInt($('#initial-rtt-days').value);
+          config.initialVacationDays = parseInt($('#initial-vacation-days').value);
           
-          // Delete
-          $('#delete-entry-btn').onclick = ()=>{
-             const date = $('#entry-date-hidden').value;
-             if(confirm("Confirmez-vous la suppression de l'entrée du " + dateToFr(date) + " ?")){
-                const map = lsLoadEntriesMap(); delete map[date]; lsSaveEntriesMap(map);
-                workEntries = lsGetAllEntriesArray(); recalculateBalances(); updateEntryUI(config.lastSelectedDate); renderLatestList();
-                showModal('Supprimé', 'L\'entrée a été supprimée.');
-             }
-          };
-
-          // Settings
-          $('#save-settings-btn').onclick = ()=>{
-              config.targetWeeklyHours = parseFloat($('#target-hours').value)*60;
-              config.lunchDurationMinutes = parseInt($('#lunch-minutes').value);
-              config.initialRttDays = parseInt($('#initial-rtt-days').value);
-              config.initialVacationDays = parseInt($('#initial-vacation-days').value);
-              
-              // La photo de profil est déjà mise à jour dans la config par l'événement de fichier.
-              lsSaveConfig(config); recalculateBalances();
-              updateProfilePictureDisplay();
-              showModal('Réglages', 'Préférences sauvegardées.');
-          };
-
-          // LOGIQUE PHOTO DE PROFIL
-          $('#select-profile-picture-btn').onclick = () => $('#profile-picture-file').click();
-          
-          $('#profile-picture-file').onchange = (e) => {
-              const file = e.target.files[0];
-              if (!file) return;
-
-              const reader = new FileReader();
-              reader.onload = (event) => {
-                  const base64Image = event.target.result;
-                  config.profilePictureBase64 = base64Image;
-                  lsSaveConfig(config); // SAUVEGARDE IMMÉDIATE
-                  updateProfilePictureDisplay(); 
-                  $('#profile-picture-file').value = null; 
-              };
-              reader.readAsDataURL(file);
-          };
-
-          $('#clear-profile-picture-btn').onclick = () => {
-              config.profilePictureBase64 = null;
-              lsSaveConfig(config); 
-              updateProfilePictureDisplay();
-          };
-
-          // ÉVÉNEMENTS IMPORT/EXPORT
-          $('#export-data-btn').onclick = exportDataToCsv;
-          $('#import-data-btn').onclick = () => $('#import-file').click();
-          $('#import-file').onchange = (e) => {
-              if (e.target.files.length > 0) {
-                  importDataFromCsv(e.target.files[0]);
-                  e.target.value = null; 
-              }
-          };
-
-          // Events divers
-          $('#close-modal-btn').onclick = ()=>$('#custom-modal').style.display='none';
-          $('#clear-entry-btn').onclick = ()=>{ 
-              $('#entry-type-select').value='WORK'; $('#start-time').value=''; $('#end-time').value=''; 
-              refreshDayTotal(); 
-          };
-          $('#entry-type-select').addEventListener('change', refreshDayTotal);
-          $('#start-time').addEventListener('input', refreshDayTotal);
-          $('#end-time').addEventListener('input', refreshDayTotal);
-          $('#lunch-duration-manual').addEventListener('input', refreshDayTotal);
-          $('#month-select').addEventListener('change', (e)=>updateMonthlyView(e.target.value));
-          
-          // Boot
-          updateEntryUI(config.lastSelectedDate);
-          renderLatestList();
+          // La photo de profil est déjà mise à jour dans la config par l'événement de fichier.
+          lsSaveConfig(config); recalculateBalances();
           updateProfilePictureDisplay();
+          showModal('Réglages', 'Préférences sauvegardées.');
+      };
 
-          // MODIFICATION DU SPLASH SCREEN POUR DURER 2 SECONDES (2000ms)
-          setTimeout(forceHideSplash, 2000);
+      // LOGIQUE PHOTO DE PROFIL
+      $('#select-profile-picture-btn').onclick = () => $('#profile-picture-file').click();
+      
+      $('#profile-picture-file').onchange = (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = (event) => {
+              const base64Image = event.target.result;
+              config.profilePictureBase64 = base64Image;
+              lsSaveConfig(config); // SAUVEGARDE IMMÉDIATE
+              updateProfilePictureDisplay(); 
+              $('#profile-picture-file').value = null; 
+          };
+          reader.readAsDataURL(file);
+      };
+
+      $('#clear-profile-picture-btn').onclick = () => {
+          config.profilePictureBase64 = null;
+          lsSaveConfig(config); 
+          updateProfilePictureDisplay();
+      };
+
+      // ÉVÉNEMENTS IMPORT/EXPORT
+      $('#export-data-btn').onclick = exportDataToCsv;
+      $('#import-data-btn').onclick = () => $('#import-file').click();
+      $('#import-file').onchange = (e) => {
+          if (e.target.files.length > 0) {
+              importDataFromCsv(e.target.files[0]);
+              e.target.value = null; 
+          }
+      };
+
+      // Events divers
+      $('#close-modal-btn').onclick = ()=>$('#custom-modal').style.display='none';
+      $('#clear-entry-btn').onclick = ()=>{ 
+          $('#entry-type-select').value='WORK'; $('#start-time').value=''; $('#end-time').value=''; 
+          refreshDayTotal(); 
+      };
+      $('#entry-type-select').addEventListener('change', refreshDayTotal);
+      $('#start-time').addEventListener('input', refreshDayTotal);
+      $('#end-time').addEventListener('input', refreshDayTotal);
+      $('#lunch-duration-manual').addEventListener('input', refreshDayTotal);
+      
+      // --- NAVIGATION MOIS CORRIGÉE ---
+      $('#month-select').addEventListener('change', (e) => updateMonthlyView(e.target.value));
+      
+      $('#month-prev').onclick = () => {
+          const current = config.selectedMonthYM || new Date().toISOString().substring(0, 7);
+          const prev = addMonths(current, -1);
+          updateMonthlyView(prev);
+      };
+      
+      $('#month-next').onclick = () => {
+          const current = config.selectedMonthYM || new Date().toISOString().substring(0, 7);
+          const next = addMonths(current, 1);
+          updateMonthlyView(next);
+      };
+      // ---------------------------------
+      
+      // Boot
+      updateEntryUI(config.lastSelectedDate);
+      renderLatestList();
+      updateProfilePictureDisplay();
+
+      // MODIFICATION DU SPLASH SCREEN POUR DURER 2 SECONDES (2000ms)
+      setTimeout(forceHideSplash, 2000);
 
       } catch (err) {
           console.error("Erreur fatale :", err);
