@@ -150,7 +150,7 @@
     <div class="flex justify-between items-end">
       <div>
         <h1 class="text-2xl font-bold tracking-tight text-white">Worker</h1>
-        <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Suivi d'activité</p>
+        <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Suivi d'heures</p>
       </div>
       <div id="profile-picture-container" class="h-8 w-8 rounded-full bg-gray-800 flex items-center justify-center border border-gray-700 bg-cover bg-center">
         <span id="profile-initials" class="text-lg">👤</span>
@@ -165,7 +165,7 @@
       <div class="mb-4">
         <button id="entry-date-button" class="date-hero-btn active:scale-95 transition-transform duration-100">
           <div class="text-left">
-            <div class="text-blue-100 text-sm font-medium opacity-80">Date sélectionnée</div>
+            <div class="text-blue-100 text-sm font-medium opacity-80">Date</div>
             <div id="entry-date-display" class="text-2xl font-bold">Aujourd'hui</div>
           </div>
           <div class="bg-white/20 p-2 rounded-lg text-xl">📅</div>
@@ -174,7 +174,7 @@
       </div>
 
       <div class="bento-card">
-        <label class="text-xs text-gray-400 uppercase font-bold mb-2 block">Type d'activité</label>
+        <label class="text-xs text-gray-400 uppercase font-bold mb-2 block">Type</label>
         <div class="relative">
           <select id="entry-type-select" class="big-input appearance-none">
             <option value="WORK">💼 &nbsp; Travail</option>
@@ -206,7 +206,7 @@
         <div class="mt-4 pt-3 border-t border-gray-700">
            <div class="flex justify-between items-center mb-2">
              <span class="text-sm text-gray-300">Pause midi</span>
-             <span id="lunch-duration-display" class="text-sm font-mono text-blue-400">45m</span>
+             <span id="lunch-duration-display" class="text-sm font-mono text-blue-400">45min (minimum légal)</span>
            </div>
            <input type="number" id="lunch-duration-manual" class="big-input text-right" placeholder="Modifier (min)" inputmode="numeric">
         </div>
@@ -216,7 +216,7 @@
         <button id="clear-entry-btn" class="col-span-1 h-[50px] rounded-xl bg-gray-800 text-gray-400 text-xl border border-gray-700 flex items-center justify-center">↺</button>
         <button id="save-entry-btn" class="col-span-3 h-[50px] rounded-xl bg-blue-600 text-white font-bold text-lg shadow-lg shadow-blue-900/50 active:scale-95 transition-transform">Enregistrer</button>
       </div>
-      <button id="delete-entry-btn" class="w-full mt-3 py-3 text-red-500 text-sm font-medium" style="display:none;">Supprimer cette entrée</button>
+      <button id="delete-entry-btn" class="w-full mt-3 py-3 text-red-500 text-sm font-medium" style="display:none;">Supprimer</button>
 
       <div class="mt-8">
         <h3 class="text-sm font-bold text-gray-500 uppercase mb-3 px-2">Récent</h3>
@@ -299,13 +299,13 @@
           <div class="flex-grow">
             <input type="file" id="profile-picture-file" accept="image/*" class="hidden"> 
             <button id="select-profile-picture-btn" class="w-full h-10 rounded-lg bg-gray-700 text-sm text-white font-medium active:scale-[0.98] transition-transform">Choisir une image</button>
-            <button id="clear-profile-picture-btn" class="w-full h-10 rounded-lg bg-red-700/50 text-sm text-red-300 font-medium mt-2 active:scale-[0.98] transition-transform" style="display:none;">Supprimer la photo</button>
+            <button id="clear-profile-picture-btn" class="w-full h-10 rounded-lg bg-red-700/50 text-sm text-red-300 font-medium mt-2 active:scale-[0.98] transition-transform" style="display:none;">Supprimer</button>
           </div>
         </div>
       </div>
       <div class="bento-card space-y-4">
         <div>
-          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Objectif Hebdo (h)</label>
+          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Objectif Hebdomadaire (h)</label>
           <input type="number" id="target-hours" class="big-input" value="37.0">
         </div>
         <div>
@@ -333,6 +333,7 @@
         <input id="import-file" type="file" accept=".csv" class="hidden">
       </div>
       <div class="text-center text-xs text-gray-600 mt-6 pb-4">ID: <span id="user-id-display">Local</span></div>
+      <div class="text-center text-xs text-gray-600 mt-6 pb-4">Créé par Bnjam1</span></div>
     </section>
   </main>
 
