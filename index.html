@@ -267,28 +267,33 @@
 
       <div class="bento-card bg-gradient-to-br from-purple-800/80 to-pink-800/80 mb-4">
           <div class="flex justify-between items-center mb-3">
-              <h3 class="text-xs text-white uppercase font-bold">Estimation Salariale (Brut + Frais)</h3>
+              <h3 class="text-xs text-white uppercase font-bold">Estimation Salariale</h3>
               <button id="monthly-privacy-toggle" class="text-xl text-white opacity-70">🔒</button>
           </div>
           
           <div id="finance-details-container">
               <div class="flex justify-between items-center py-2 border-b border-white/20">
-                  <span class="text-sm font-medium">Salaire (Base 151.67h)</span>
-                  <span id="monthly-base-salary" class="font-bold text-lg text-white privacy-blur">0.00 €</span>
+                  <span class="text-sm font-medium">Salaire de base BRUT (151.67h)</span>
+                  <span id="monthly-base-salary-gross" class="font-bold text-lg text-white privacy-blur">0.00 €</span>
               </div>
               
               <div class="flex justify-between items-center py-2 border-b border-white/20">
-                  <span class="text-sm font-medium">Indemnités Repas (Jours Bureau + TT)</span>
+                  <span class="text-sm font-medium">Salaire de base NET (Brut -23%)</span>
+                  <span id="monthly-base-salary-net" class="font-bold text-lg text-blue-300 privacy-blur">0.00 €</span>
+              </div>
+              
+              <div class="flex justify-between items-center py-2 border-b border-white/20">
+                  <span class="text-sm font-medium">Indemnités Repas NET (Jours Bureau + TT)</span>
                   <span id="monthly-meal-allowance" class="font-bold text-sm text-pink-300 privacy-blur">0.00 €</span>
               </div>
               
               <div class="flex justify-between items-center py-2 border-b border-white/20">
-                  <span class="text-sm font-medium">Indemnités KM (Jours Bureau)</span>
+                  <span class="text-sm font-medium">Indemnités KM NET (Jours Bureau)</span>
                   <span id="monthly-km-allowance" class="font-bold text-sm text-green-300 privacy-blur">0.00 €</span>
               </div>
 
               <div class="flex justify-between items-center pt-3">
-                  <span class="text-lg font-bold">Total (Est. Brut + Frais)</span>
+                  <span class="text-lg font-bold">Total NET (Est. Sal. Net + Frais Net)</span>
                   <span id="monthly-grand-total" class="font-extrabold text-2xl text-yellow-300 privacy-blur">0.00 €</span>
               </div>
           </div>
@@ -355,11 +360,11 @@
           <input type="number" step="0.01" id="hourly-gross-rate" class="big-input" value="0.00">
         </div>
         <div>
-          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Indemnité Repas (par jour travaillé €)</label>
+          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Indemnité Repas (par jour travaillé €) - NET</label>
           <input type="number" step="0.01" id="daily-meal-allowance" class="big-input" value="0.00">
         </div>
         <div>
-          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Indemnité KM (par jour bureau €)</label>
+          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Indemnité KM (par jour bureau €) - NET</label>
           <input type="number" step="0.01" id="daily-km-allowance" class="big-input" value="0.00">
         </div>
         <div class="flex justify-between items-center pt-3 border-t border-gray-700">
@@ -461,6 +466,8 @@
     // --- CONSTANTES GLOBALES ---
     // Base 35h/semaine pour le calcul du salaire CDI : 151,67 heures/mois
     const CDI_MONTHLY_HOURS = 151.67; 
+    // Taux de déduction estimé pour passer du Brut au Net (charges salariales)
+    const BRUT_TO_NET_DEDUCTION = 0.23; // 23%
 
     // --- VARIABLES (GARDER LA MEME LOGIQUE) ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -492,9 +499,9 @@
       currentRttBalance: 10,  
       currentVacationBalance: 25,
       profilePictureBase64: null,
-      // CHAMPS FINANCES MIS À JOUR
+      // CHAMPS FINANCES
       hourlyGrossRate: 20.00,
-      dailyKmAllowance: 0.00, // Indemnité KM (réintroduite)
+      dailyKmAllowance: 0.00, 
       dailyMealAllowance: 0.00,
       privacyMode: true, // Flou activé par défaut
     };
@@ -908,7 +915,7 @@
         let totalWorkMinutes = 0;
         let daysWorked = 0;
         let remoteDays = 0;
-        let workOfficeDays = 0; // Compteur pour les jours 'WORK' (Bureau)
+        let workOfficeDays = 0; 
         let rttUsedInMonth = 0;
         let vacationUsedInMonth = 0;
 
@@ -922,7 +929,7 @@
                 remoteDays++;
             }
             if(e.type === 'WORK') {
-                workOfficeDays++; // Compte les jours au bureau pour les frais KM
+                workOfficeDays++; 
             }
             if(e.type === 'RTT') rttUsedInMonth++;
             if(e.type === 'VACATION') vacationUsedInMonth++;
@@ -930,23 +937,27 @@
 
         // 1. Calcul du Salaire Base CDI (151.67h/mois)
         const monthlyBaseHours = CDI_MONTHLY_HOURS;
-        const monthlyBaseSalary = monthlyBaseHours * config.hourlyGrossRate;
+        const monthlyBaseSalaryGross = monthlyBaseHours * config.hourlyGrossRate; 
         
-        // 2. Indemnités Repas : pour Jours Bureau (WORK) ET Télétravail (REMOTE)
+        // 1.b NOUVEAU: Calcul du Salaire Net
+        const monthlyBaseSalaryNet = monthlyBaseSalaryGross * (1 - BRUT_TO_NET_DEDUCTION);
+
+        // 2. Indemnités Repas NET : pour Jours Bureau (WORK) ET Télétravail (REMOTE)
         const totalMealDays = workOfficeDays + remoteDays;
-        const monthlyMealAllowance = totalMealDays * config.dailyMealAllowance;
+        const monthlyMealAllowanceNet = totalMealDays * config.dailyMealAllowance;
 
-        // 3. Indemnités KM : pour Jours Bureau (WORK) SEULEMENT
-        const monthlyKmAllowance = workOfficeDays * config.dailyKmAllowance; // Calcul frais KM pour jours bureau
+        // 3. Indemnités KM NET : pour Jours Bureau (WORK) SEULEMENT
+        const monthlyKmAllowanceNet = workOfficeDays * config.dailyKmAllowance; 
 
-        // 4. Total
-        const monthlyGrandTotal = monthlyBaseSalary + monthlyMealAllowance + monthlyKmAllowance;
+        // 4. Total: Salaire Net + Indemnités Net
+        const monthlyGrandTotalNet = monthlyBaseSalaryNet + monthlyMealAllowanceNet + monthlyKmAllowanceNet;
 
         // Mise à jour de l'UI
-        $('#monthly-base-salary').textContent = monthlyBaseSalary.toFixed(2) + ' €';
-        $('#monthly-meal-allowance').textContent = monthlyMealAllowance.toFixed(2) + ' €';
-        $('#monthly-km-allowance').textContent = monthlyKmAllowance.toFixed(2) + ' €'; 
-        $('#monthly-grand-total').textContent = monthlyGrandTotal.toFixed(2) + ' €';
+        $('#monthly-base-salary-gross').textContent = monthlyBaseSalaryGross.toFixed(2) + ' €';
+        $('#monthly-base-salary-net').textContent = monthlyBaseSalaryNet.toFixed(2) + ' €'; // NOUVEAU
+        $('#monthly-meal-allowance').textContent = monthlyMealAllowanceNet.toFixed(2) + ' €';
+        $('#monthly-km-allowance').textContent = monthlyKmAllowanceNet.toFixed(2) + ' €'; 
+        $('#monthly-grand-total').textContent = monthlyGrandTotalNet.toFixed(2) + ' €';
 
         $('#monthly-days-worked').textContent = daysWorked;
         $('#monthly-total-work-hours').textContent = fmtMinutes(totalWorkMinutes);
@@ -984,7 +995,7 @@
       
       $('#hourly-gross-rate').value = config.hourlyGrossRate.toFixed(2);
       $('#daily-meal-allowance').value = config.dailyMealAllowance.toFixed(2);
-      $('#daily-km-allowance').value = config.dailyKmAllowance.toFixed(2); // Récupérer la valeur KM
+      $('#daily-km-allowance').value = config.dailyKmAllowance.toFixed(2); 
       
       const isPrivacy = config.privacyMode;
       $('#toggle-privacy-btn').textContent = isPrivacy ? '🔒' : '🔓';
@@ -1001,11 +1012,11 @@
       
       config.hourlyGrossRate = parseFloat($('#hourly-gross-rate').value || 0);
       config.dailyMealAllowance = parseFloat($('#daily-meal-allowance').value || 0);
-      config.dailyKmAllowance = parseFloat($('#daily-km-allowance').value || 0); // Sauvegarde de la valeur KM
+      config.dailyKmAllowance = parseFloat($('#daily-km-allowance').value || 0); 
 
       lsSaveConfig(config);
-      recalculateBalances(); // Important: Mettre à jour les soldes
-      updateSettingsUI(); // Mettre à jour l'UI des réglages (dont le toggle)
+      recalculateBalances(); 
+      updateSettingsUI(); 
       showModal('Réglages Sauvegardés', 'Vos préférences ont été mises à jour.');
     }
 
@@ -1109,8 +1120,8 @@
           $('#calendar-modal').style.display = 'flex';
       };
       $('#calendar-close-area').onclick = () => $('#calendar-modal').style.display = 'none';
-      $('#calendar-prev').onclick = () => renderCalendar(addMonths(dateToYMD(currentCalDate), -1).substring(0, 10) + 'T00:00:00');
-      $('#calendar-next').onclick = () => renderCalendar(addMonths(dateToYMD(currentCalDate), 1).substring(0, 10) + 'T00:00:00');
+      $('#calendar-prev').onclick = () => renderCalendar(new Date(addMonths(dateToYMD(currentCalDate), -1) + '-01' + 'T00:00:00'));
+      $('#calendar-next').onclick = () => renderCalendar(new Date(addMonths(dateToYMD(currentCalDate), 1) + '-01' + 'T00:00:00'));
 
       // --- ÉVÉNEMENTS SAISIE ---
       $('#save-entry-btn').onclick = () => {
