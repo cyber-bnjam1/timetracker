@@ -132,6 +132,16 @@
     }
     .cal-btn.is-selected { background: #0A84FF; font-weight: 700; }
     .cal-btn.is-today { border: 2px solid #0A84FF; }
+    
+    /* Classe pour le flou de confidentialité */
+    .privacy-blur {
+        filter: blur(6px);
+        user-select: none;
+        transition: filter 0.3s ease;
+    }
+    .privacy-visible {
+        filter: blur(0);
+    }
 
     /* Scrollbar invisible */
     ::-webkit-scrollbar { display: none; }
@@ -255,6 +265,34 @@
         <button id="month-next" class="w-10 h-10 flex items-center justify-center bg-gray-800 rounded-lg text-white">›</button>
       </div>
 
+      <div class="bento-card bg-gradient-to-br from-purple-800/80 to-pink-800/80 mb-4">
+          <div class="flex justify-between items-center mb-3">
+              <h3 class="text-xs text-white uppercase font-bold">Estimation Salariale (Brut + Frais)</h3>
+              <button id="monthly-privacy-toggle" class="text-xl text-white opacity-70">🔒</button>
+          </div>
+          
+          <div id="finance-details-container">
+              <div class="flex justify-between items-center py-2 border-b border-white/20">
+                  <span class="text-sm font-medium">Salaire (Base 151.67h)</span>
+                  <span id="monthly-base-salary" class="font-bold text-lg text-white privacy-blur">0.00 €</span>
+              </div>
+              
+              <div class="flex justify-between items-center py-2 border-b border-white/20">
+                  <span class="text-sm font-medium">Indemnités Repas (Jours Bureau + TT)</span>
+                  <span id="monthly-meal-allowance" class="font-bold text-sm text-pink-300 privacy-blur">0.00 €</span>
+              </div>
+              
+              <div class="flex justify-between items-center py-2 border-b border-white/20">
+                  <span class="text-sm font-medium">Indemnités KM (Jours Bureau)</span>
+                  <span id="monthly-km-allowance" class="font-bold text-sm text-green-300 privacy-blur">0.00 €</span>
+              </div>
+
+              <div class="flex justify-between items-center pt-3">
+                  <span class="text-lg font-bold">Total (Est. Brut + Frais)</span>
+                  <span id="monthly-grand-total" class="font-extrabold text-2xl text-yellow-300 privacy-blur">0.00 €</span>
+              </div>
+          </div>
+      </div>
       <div class="bento-card mb-4">
         <h3 class="text-xs text-gray-400 uppercase font-bold mb-3">Performance Hebdomadaire</h3>
         <div style="height: 200px; width: 100%;">
@@ -308,6 +346,25 @@
             <button id="select-profile-picture-btn" class="w-full h-10 rounded-lg bg-gray-700 text-sm text-white font-medium active:scale-[0.98] transition-transform">Choisir une image</button>
             <button id="clear-profile-picture-btn" class="w-full h-10 rounded-lg bg-red-700/50 text-sm text-red-300 font-medium mt-2 active:scale-[0.98] transition-transform" style="display:none;">Supprimer</button>
           </div>
+        </div>
+      </div>
+      
+      <div class="bento-card space-y-4">
+        <div>
+          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Taux Horaire Brut (€)</label>
+          <input type="number" step="0.01" id="hourly-gross-rate" class="big-input" value="0.00">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Indemnité Repas (par jour travaillé €)</label>
+          <input type="number" step="0.01" id="daily-meal-allowance" class="big-input" value="0.00">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Indemnité KM (par jour bureau €)</label>
+          <input type="number" step="0.01" id="daily-km-allowance" class="big-input" value="0.00">
+        </div>
+        <div class="flex justify-between items-center pt-3 border-t border-gray-700">
+           <label class="text-sm text-gray-300">Activer le flou sur les chiffres du salaire</label>
+           <button id="toggle-privacy-btn" class="text-2xl text-blue-400">🔒</button>
         </div>
       </div>
       <div class="bento-card space-y-4">
@@ -401,6 +458,10 @@
   </div>
 
   <script type="module">
+    // --- CONSTANTES GLOBALES ---
+    // Base 35h/semaine pour le calcul du salaire CDI : 151,67 heures/mois
+    const CDI_MONTHLY_HOURS = 151.67; 
+
     // --- VARIABLES (GARDER LA MEME LOGIQUE) ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -430,7 +491,12 @@
       initialVacationDays: 25,
       currentRttBalance: 10,  
       currentVacationBalance: 25,
-      profilePictureBase64: null, 
+      profilePictureBase64: null,
+      // CHAMPS FINANCES MIS À JOUR
+      hourlyGrossRate: 20.00,
+      dailyKmAllowance: 0.00, // Indemnité KM (réintroduite)
+      dailyMealAllowance: 0.00,
+      privacyMode: true, // Flou activé par défaut
     };
 
     // --- UTILS ---
@@ -485,109 +551,75 @@
     
     // --- FONCTIONS EXPORT/IMPORT RÉELLES ---
     function exportDataToCsv() {
-        if (workEntries.length === 0) {
-            showModal('Exportation', 'Aucune donnée à exporter.');
-            return;
-        }
-
-        const headers = ["date", "type", "start", "end", "lunchDurationMinutes", "timestamp"];
-        const csvRows = [];
-        csvRows.push(headers.join(';')); 
-
-        workEntries.forEach(entry => {
-            const row = headers.map(fieldName => {
-                let value = entry[fieldName] !== undefined ? entry[fieldName] : "";
-                if (typeof value === 'number') value = String(value).replace('.', ',');
-                return `"${value}"`; 
-            });
-            csvRows.push(row.join(';'));
-        });
-
-        const csvString = csvRows.join('\n');
-        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-        
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        
-        const today = new Date().toISOString().substring(0, 10);
-        link.setAttribute("href", url);
-        link.setAttribute("download", `worker_data_${today}.csv`);
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        showModal('Exportation Réussie', `Le fichier <b>worker_data_${today}.csv</b> a été téléchargé. Il contient ${workEntries.length} entrées.`);
+      if (workEntries.length === 0) { showModal('Exportation', 'Aucune donnée à exporter.'); return; }
+      const headers = ["date", "type", "start", "end", "lunchDurationMinutes", "timestamp"];
+      const csvRows = []; csvRows.push(headers.join(';')); 
+      workEntries.forEach(entry => {
+          const row = headers.map(fieldName => {
+              let value = entry[fieldName] !== undefined ? entry[fieldName] : "";
+              if (typeof value === 'number') value = String(value).replace('.', ',');
+              return `"${value}"`; 
+          });
+          csvRows.push(row.join(';'));
+      });
+      const csvString = csvRows.join('\n');
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      const today = new Date().toISOString().substring(0, 10);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `worker_data_${today}.csv`);
+      document.body.appendChild(link); link.click(); document.body.removeChild(link);
+      showModal('Exportation Réussie', `Le fichier <b>worker_data_${today}.csv</b> a été téléchargé. Il contient ${workEntries.length} entrées.`);
     }
 
     function importDataFromCsv(file) {
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const csv = e.target.result;
-                const lines = csv.split('\n').filter(line => line.trim() !== '');
-
-                if (lines.length === 0) {
-                    showModal('Erreur d\'Importation', 'Le fichier CSV est vide.');
-                    return;
-                }
-
-                const delimiter = lines[0].includes(';') ? ';' : ','; 
-                
-                const headerLine = lines[0].replace(/"/g, '').split(delimiter); 
-                const requiredHeaders = ["date", "type"];
-                if (!requiredHeaders.every(h => headerLine.includes(h))) {
-                    showModal('Erreur d\'Importation', 'Le fichier CSV n\'a pas les en-têtes requis (date, type).');
-                    return;
-                }
-
-                const importedMap = {};
-                for (let i = 1; i < lines.length; i++) {
-                    const values = lines[i].split(delimiter).map(v => v.replace(/"/g, '').trim());
-                    if (values.length !== headerLine.length) continue; 
-
-                    const entry = {};
-                    headerLine.forEach((header, index) => {
-                        let value = values[index];
-                        if (header === 'lunchDurationMinutes' || header === 'timestamp') {
-                             value = value.replace(',', '.'); 
-                             entry[header] = value ? parseInt(value) : undefined;
-                        } else {
-                            entry[header] = value;
-                        }
-                    });
-                    
-                    if (entry.date && entry.type) {
-                        importedMap[entry.date] = entry;
-                    }
-                }
-                
-                const existingMap = lsLoadEntriesMap();
-                const newMap = {...existingMap, ...importedMap}; 
-
-                lsSaveEntriesMap(newMap);
-                workEntries = lsGetAllEntriesArray();
-                recalculateBalances();
-                
-                updateEntryUI(config.lastSelectedDate);
-                renderLatestList();
-                renderDataListView();
-
-                showModal('Importation Réussie', `${Object.keys(importedMap).length} entrées ont été importées et fusionnées avec succès.`);
-
-            } catch (error) {
-                console.error("Erreur lors de l'importation:", error);
-                showModal('Erreur Critique', 'Impossible de traiter le fichier. Vérifiez son format CSV.');
-            }
-        };
-
-        reader.onerror = () => {
-            showModal('Erreur de Lecture', 'Impossible de lire le fichier.');
-        };
-
-        reader.readAsText(file, 'UTF-8');
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+          try {
+              const csv = e.target.result;
+              const lines = csv.split('\n').filter(line => line.trim() !== '');
+              if (lines.length === 0) { showModal('Erreur d\'Importation', 'Le fichier CSV est vide.'); return; }
+              const delimiter = lines[0].includes(';') ? ';' : ','; 
+              const headerLine = lines.split('\n')[0].replace(/"/g, '').split(delimiter); 
+              const requiredHeaders = ["date", "type"];
+              if (!requiredHeaders.every(h => headerLine.includes(h))) {
+                  showModal('Erreur d\'Importation', 'Le fichier CSV n\'a pas les en-têtes requis (date, type).');
+                  return;
+              }
+              const importedMap = {};
+              for (let i = 1; i < lines.length; i++) {
+                  const values = lines[i].split(delimiter).map(v => v.replace(/"/g, '').trim());
+                  if (values.length !== headerLine.length) continue; 
+                  const entry = {};
+                  headerLine.forEach((header, index) => {
+                      let value = values[index];
+                      if (header === 'lunchDurationMinutes' || header === 'timestamp') {
+                           value = value.replace(',', '.'); 
+                           entry[header] = value ? parseInt(value) : undefined;
+                      } else {
+                          entry[header] = value;
+                      }
+                  });
+                  if (entry.date && entry.type) { importedMap[entry.date] = entry; }
+              }
+              const existingMap = lsLoadEntriesMap();
+              const newMap = {...existingMap, ...importedMap}; 
+              lsSaveEntriesMap(newMap);
+              workEntries = lsGetAllEntriesArray();
+              recalculateBalances();
+              updateEntryUI(config.lastSelectedDate);
+              renderLatestList();
+              renderDataListView();
+              showModal('Importation Réussie', `${Object.keys(importedMap).length} entrées ont été importées et fusionnées avec succès.`);
+          } catch (error) {
+              console.error("Erreur lors de l'importation:", error);
+              showModal('Erreur Critique', 'Impossible de traiter le fichier. Vérifiez son format CSV.');
+          }
+      };
+      reader.onerror = () => { showModal('Erreur de Lecture', 'Impossible de lire le fichier.'); };
+      reader.readAsText(file, 'UTF-8');
     }
 
     function showModal(t,m){$('#modal-title').textContent=t; $('#modal-message').innerHTML=m; $('#custom-modal').style.display='flex';}
@@ -763,7 +795,6 @@
       };
       
       const workCard = $('#work-card');
-      // On affiche le bloc horaires pour WORK et REMOTE
       if(entry.type === 'WORK' || entry.type === 'REMOTE') {
          workCard.style.display = 'block';
          setTimeout(()=>workCard.style.opacity = '1', 10);
@@ -788,12 +819,16 @@
         const isWork = (e.type === 'WORK' || e.type === 'REMOTE');
         let tag = isWork ? fmtMinutes(calcWorkMinutes(e)) : e.type;
         
-        let colorClass = 'text-blue-400'; // Default RTT etc
+        let colorClass = 'text-blue-400';
         if(e.type === 'WORK') colorClass = 'text-green-400';
         else if(e.type === 'REMOTE') colorClass = 'text-purple-400';
 
         let labelType = e.type === 'REMOTE' ? 'Télétravail' : e.type;
         if(e.type === 'WORK') labelType = 'Travail';
+        else if(e.type === 'RTT') labelType = 'RTT';
+        else if(e.type === 'VACATION') labelType = 'Vacances';
+        else if(e.type === 'HOLIDAY') labelType = 'Férié';
+
 
         return `<div onclick="window.editDate('${e.date}')" class="bento-card py-3 flex justify-between items-center cursor-pointer active:bg-gray-800 transition-colors mb-2">
                   <div>
@@ -823,286 +858,371 @@
           
           if(e.type==='WORK' || e.type==='REMOTE') {
              status = fmtMinutes(mins);
-             subStyle = e.type==='WORK' ? 'text-white font-bold' : 'text-purple-400 font-bold';
+             subStyle = (mins >= config.targetWeeklyHours/5) ? 'text-green-400 font-bold' : 'text-orange-400 font-bold';
           } else {
              status = e.type;
              subStyle = 'text-blue-400 font-bold';
           }
-
-        } else if (d.getDay() >= 1 && d.getDay() <= 5) {
-             status = '0h 00m';
-             subStyle = 'text-gray-600';
         }
         
-        const isToday = (ymd === dateToYMD(new Date()));
-        const bgRow = isToday ? 'bg-blue-900/20' : '';
-
-        rows.push(`<div class="flex justify-between items-center p-3 ${bgRow}">
-                     <div class="flex flex-col">
-                        <span class="text-sm font-medium ${isToday?'text-blue-400':'text-gray-400'}">${names[i]} <span class="text-xs opacity-50 ml-1">${d.getDate()}</span></span>
-                     </div>
-                     <div class="text-sm ${subStyle}">${status}</div>
+        rows.push(`<div class="flex justify-between items-center px-4 py-3 active:bg-gray-800" onclick="window.editDate('${ymd}')">
+                      <div>
+                          <div class="text-sm font-medium">${names[i]} ${d.getDate()}</div>
+                          <div class="text-xs ${subStyle}">${status}</div>
+                      </div>
+                      <div class="text-xl">${e?.type==='WORK' ? '💼' : e?.type==='REMOTE' ? '🏠' : e?.type==='RTT' ? '🏖' : e?.type==='VACATION' ? '✈️' : e?.type==='HOLIDAY' ? '🎉' : '⚪️'}</div>
                    </div>`);
       }
       
-      $('#total-weekly-hours').textContent = fmtMinutes(total);
+      const targetMins = config.targetWeeklyHours;
+      const progress = Math.min(100, (total / targetMins) * 100);
       
-      const percent = Math.min((total / config.targetWeeklyHours) * 100, 100);
-      $('#weekly-progress-bar').style.width = `${percent}%`;
-      
-      let color = 'bg-blue-500';
-      if(percent >= 100) color = 'bg-green-500';
-      else if(percent > 100) color = 'bg-red-500';
-      
-      $('#weekly-progress-bar').className = `h-full transition-all duration-500 ${color}`;
-      $('#progress-bar-label').textContent = `${Math.round((total / config.targetWeeklyHours) * 100)}%`;
       $('#weekly-body').innerHTML = rows.join('');
+      $('#total-weekly-hours').textContent = fmtMinutes(total);
+      $('#target-weekly-hours-summary').textContent = fmtMinutes(targetMins);
+      $('#weekly-progress-bar').style.width = `${progress}%`;
+      $('#progress-bar-label').textContent = `${progress.toFixed(1)}% | ${fmtMinutes(total - targetMins)} restantes`;
     }
 
-    // --- LOGIQUE MENSUELLE ---
+
+    // --- UI MENSUELLE ---
     function buildMonthOptions(){
-        const sel = $('#month-select');
-        const nowYM = new Date().toISOString().substring(0,7);
-        const targetYM = config.selectedMonthYM || nowYM;
-        
-        let cur = addMonths(nowYM, -12); 
-        let opts = []; 
-        
-        for(let i=0; i<25; i++){ 
-            opts.push(`<option value="${cur}">${monthLabel(cur)}</option>`);
-            cur = addMonths(cur, 1);
+        const select = $('#month-select');
+        select.innerHTML = '';
+        const currentYM = new Date().toISOString().substring(0,7);
+        let current = currentYM;
+        for(let i=0; i<12; i++){ 
+            const opt = document.createElement('option');
+            opt.value = current;
+            opt.textContent = monthLabel(current).charAt(0).toUpperCase() + monthLabel(current).slice(1);
+            if(current === config.selectedMonthYM) opt.selected = true;
+            select.appendChild(opt);
+            current = addMonths(current, -1);
         }
-        sel.innerHTML = opts.join('');
-        sel.value = targetYM; 
     }
-    
-    function updateMonthlyView(ym){
-        ym = clampMonth(ym); 
-        config.selectedMonthYM = ym; 
-        lsSaveConfig(config);
-        
-        const sel = $('#month-select');
-        if(sel && sel.value !== ym) {
-            sel.value = ym;
-        }
 
-        const monthEntries = workEntries.filter(e=>e.date.startsWith(ym));
-        let dW=0, dRemote=0, dR=0, dV=0, dH=0, totalMinutesWorked=0;
-        
-        monthEntries.forEach(e=>{
-            const mins = calcWorkMinutes(e); 
-            // On somme les heures pour WORK et REMOTE
-            if(e.type === 'WORK' || e.type === 'REMOTE') totalMinutesWorked += mins; 
+    function updateMonthlyView(yearMonth) {
+        config.selectedMonthYM = yearMonth; lsSaveConfig(config);
+        const filteredEntries = workEntries.filter(e => e.date.startsWith(yearMonth));
 
-            if(e.type==='WORK') dW++; 
-            else if(e.type==='REMOTE') { dRemote++; dW++; } // On incrémente Remote ET Jours Travaillés
-            else if(e.type==='RTT') dR++; 
-            else if(e.type==='VACATION') dV++; 
-            else if(e.type==='HOLIDAY') dH++;
+        let totalWorkMinutes = 0;
+        let daysWorked = 0;
+        let remoteDays = 0;
+        let workOfficeDays = 0; // Compteur pour les jours 'WORK' (Bureau)
+        let rttUsedInMonth = 0;
+        let vacationUsedInMonth = 0;
+
+        filteredEntries.forEach(e => {
+            const mins = calcWorkMinutes(e);
+            if(e.type === 'WORK' || e.type === 'REMOTE') {
+                totalWorkMinutes += mins;
+                daysWorked++;
+            }
+            if(e.type === 'REMOTE') {
+                remoteDays++;
+            }
+            if(e.type === 'WORK') {
+                workOfficeDays++; // Compte les jours au bureau pour les frais KM
+            }
+            if(e.type === 'RTT') rttUsedInMonth++;
+            if(e.type === 'VACATION') vacationUsedInMonth++;
         });
-        
-        $('#monthly-days-worked').textContent = dW;
-        $('#monthly-total-work-hours').textContent = fmtMinutes(totalMinutesWorked);
-        
-        // Mise à jour du nouveau compteur
-        const remoteSpan = $('#monthly-remote-days');
-        if(remoteSpan) remoteSpan.textContent = dRemote;
 
+        // 1. Calcul du Salaire Base CDI (151.67h/mois)
+        const monthlyBaseHours = CDI_MONTHLY_HOURS;
+        const monthlyBaseSalary = monthlyBaseHours * config.hourlyGrossRate;
+        
+        // 2. Indemnités Repas : pour Jours Bureau (WORK) ET Télétravail (REMOTE)
+        const totalMealDays = workOfficeDays + remoteDays;
+        const monthlyMealAllowance = totalMealDays * config.dailyMealAllowance;
+
+        // 3. Indemnités KM : pour Jours Bureau (WORK) SEULEMENT
+        const monthlyKmAllowance = workOfficeDays * config.dailyKmAllowance; // Calcul frais KM pour jours bureau
+
+        // 4. Total
+        const monthlyGrandTotal = monthlyBaseSalary + monthlyMealAllowance + monthlyKmAllowance;
+
+        // Mise à jour de l'UI
+        $('#monthly-base-salary').textContent = monthlyBaseSalary.toFixed(2) + ' €';
+        $('#monthly-meal-allowance').textContent = monthlyMealAllowance.toFixed(2) + ' €';
+        $('#monthly-km-allowance').textContent = monthlyKmAllowance.toFixed(2) + ' €'; 
+        $('#monthly-grand-total').textContent = monthlyGrandTotal.toFixed(2) + ' €';
+
+        $('#monthly-days-worked').textContent = daysWorked;
+        $('#monthly-total-work-hours').textContent = fmtMinutes(totalWorkMinutes);
+        $('#monthly-remote-days').textContent = remoteDays;
+
+        // Mettre à jour les soldes actuels (ils sont recalculés globalement au démarrage et à la sauvegarde)
         $('#current-rtt-balance').textContent = config.currentRttBalance;
         $('#current-vacation-balance').textContent = config.currentVacationBalance;
 
-        renderMonthlyChart(monthEntries, ym);
+        renderMonthlyChart(filteredEntries, yearMonth);
     }
     
+    // --- UI DATA ---
     function renderDataListView(){
-         const container = $('#data-list-container');
-         container.innerHTML = workEntries.map(e=> `
-            <div onclick="window.editDate('${e.date}')" class="bento-card p-3 flex justify-between items-center cursor-pointer active:scale-[0.98] transition-transform">
-                <div><div class="font-bold text-sm">${dateToFr(e.date)}</div><div class="text-xs text-gray-500">${e.type}</div></div>
-                <div class="font-mono text-sm">${fmtMinutes(calcWorkMinutes(e))}</div>
-            </div>`).join('');
-    }
-    function updateSettingsUI() {
-        $('#target-hours').value = (config.targetWeeklyHours / 60).toFixed(1);
-        $('#lunch-minutes').value = config.lunchDurationMinutes;
-        $('#initial-rtt-days').value = config.initialRttDays;
-        $('#initial-vacation-days').value = config.initialVacationDays;
-        updateProfilePictureDisplay(); 
+      const container = $('#data-list-container');
+      container.innerHTML = workEntries.map(e => {
+        const mins = calcWorkMinutes(e);
+        const detail = e.type==='WORK' || e.type==='REMOTE' ? `${e.start} - ${e.end} (${fmtMinutes(mins)})` : e.type;
+        return `<div class="bento-card py-3 flex justify-between items-center active:bg-gray-800 transition-colors cursor-pointer" onclick="window.editDate('${e.date}')">
+                  <div>
+                    <div class="font-bold text-sm">${dateToFr(e.date)}</div>
+                    <div class="text-xs text-gray-500">${e.type}</div>
+                  </div>
+                  <div class="font-mono text-sm text-right">${detail}</div>
+                </div>`;
+      }).join('') || `<div class="text-center text-gray-600 text-sm py-4">L'historique est vide.</div>`;
     }
 
-    // --- CALENDRIER (Fonctionnalités maintenues) ---
-    let currentCalendarMonth = new Date();
-    function renderCalendar(date){
+    // --- UI RÉGLAGES ---
+    function updateSettingsUI(){
+      $('#target-hours').value = (config.targetWeeklyHours / 60).toFixed(1);
+      $('#lunch-minutes').value = config.lunchDurationMinutes;
+      $('#initial-rtt-days').value = config.initialRttDays;
+      $('#initial-vacation-days').value = config.initialVacationDays;
+      
+      $('#hourly-gross-rate').value = config.hourlyGrossRate.toFixed(2);
+      $('#daily-meal-allowance').value = config.dailyMealAllowance.toFixed(2);
+      $('#daily-km-allowance').value = config.dailyKmAllowance.toFixed(2); // Récupérer la valeur KM
+      
+      const isPrivacy = config.privacyMode;
+      $('#toggle-privacy-btn').textContent = isPrivacy ? '🔒' : '🔓';
+      document.querySelectorAll('.privacy-blur').forEach(el => {
+          el.classList.toggle('privacy-visible', !isPrivacy);
+      });
+    }
+
+    function saveSettings(){
+      config.targetWeeklyHours = parseFloat($('#target-hours').value || 0) * 60;
+      config.lunchDurationMinutes = parseInt($('#lunch-minutes').value || 0);
+      config.initialRttDays = parseInt($('#initial-rtt-days').value || 0);
+      config.initialVacationDays = parseInt($('#initial-vacation-days').value || 0);
+      
+      config.hourlyGrossRate = parseFloat($('#hourly-gross-rate').value || 0);
+      config.dailyMealAllowance = parseFloat($('#daily-meal-allowance').value || 0);
+      config.dailyKmAllowance = parseFloat($('#daily-km-allowance').value || 0); // Sauvegarde de la valeur KM
+
+      lsSaveConfig(config);
+      recalculateBalances(); // Important: Mettre à jour les soldes
+      updateSettingsUI(); // Mettre à jour l'UI des réglages (dont le toggle)
+      showModal('Réglages Sauvegardés', 'Vos préférences ont été mises à jour.');
+    }
+
+
+    // --- UI CALENDRIER (omise pour la concision) ---
+    let currentCalDate = new Date(); 
+    function renderCalendar(date) {
+        currentCalDate = date;
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const firstDayOfMonth = new Date(year, month, 1);
+        const lastDayOfMonth = new Date(year, month + 1, 0);
         const todayYMD = dateToYMD(new Date());
-        const selectedYMD = $('#entry-date-hidden').value;
-        const targetMonth = date.getMonth();
-        const targetYear = date.getFullYear();
-        
-        $('#calendar-title').textContent = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(date);
+
+        $('#calendar-title').textContent = new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(date);
         
         const grid = $('#calendar-grid');
         grid.innerHTML = '';
-        
-        const firstDayOfMonth = new Date(targetYear, targetMonth, 1);
-        const dayOfWeek = (firstDayOfMonth.getDay() + 6) % 7; 
-        const startDay = new Date(firstDayOfMonth);
-        startDay.setDate(firstDayOfMonth.getDate() - dayOfWeek);
 
-        for(let i = 0; i < 42; i++) {
-            const currentDay = new Date(startDay);
-            currentDay.setDate(startDay.getDate() + i);
-            const currentYMD = dateToYMD(currentDay);
-            const isCurrentMonth = currentDay.getMonth() === targetMonth;
-            
-            const btn = document.createElement('button');
-            btn.className = `cal-btn ${isCurrentMonth?'':'opacity-20'}`;
-            btn.textContent = currentDay.getDate();
-            if(currentYMD === selectedYMD) btn.classList.add('is-selected');
-            if(currentYMD === todayYMD) btn.classList.add('is-today');
+        // Déterminer le décalage du premier jour (0=dimanche, 1=lundi, ...)
+        let startDay = (firstDayOfMonth.getDay() + 6) % 7; 
 
-            btn.onclick = () => {
-                config.lastSelectedDate = currentYMD; lsSaveConfig(config);
-                updateEntryUI(currentYMD);
-                $('#calendar-modal').style.display = 'none';
-            };
-            grid.appendChild(btn);
+        // Remplir les jours vides avant
+        for (let i = 0; i < startDay; i++) {
+            grid.innerHTML += '<div></div>';
+        }
+
+        // Remplir les jours du mois
+        for (let d = 1; d <= lastDayOfMonth.getDate(); d++) {
+            const currentYMD = dateToYMD(new Date(year, month, d));
+            const entry = workEntries.find(e => e.date === currentYMD);
+            let classes = 'cal-btn';
+            let icon = '';
+
+            if (currentYMD === config.lastSelectedDate) classes += ' is-selected';
+            if (currentYMD === todayYMD) classes += ' is-today';
+
+            if (entry) {
+                switch(entry.type) {
+                    case 'WORK': icon = '💼'; break;
+                    case 'REMOTE': icon = '🏠'; break;
+                    case 'RTT': icon = '🏖'; break;
+                    case 'VACATION': icon = '✈️'; break;
+                    case 'HOLIDAY': icon = '🎉'; break;
+                }
+            }
+
+            grid.innerHTML += `<button class="${classes}" data-date="${currentYMD}" onclick="selectDate('${currentYMD}')">
+                                 <div>${d}</div>
+                                 <div class="text-sm">${icon}</div>
+                               </button>`;
         }
     }
 
-    // --- INIT & ÉCOUTEURS D'ÉVÉNEMENTS ---
-    document.addEventListener('DOMContentLoaded', ()=>{
+    window.selectDate = (ymd) => {
+        $('#calendar-modal').style.display = 'none';
+        editDate(ymd); 
+    };
+    
+    // --- INITIALISATION & ÉVÉNEMENTS ---
+    document.addEventListener('DOMContentLoaded', () => {
       
-      const forceHideSplash = () => {
-          const splash = $('#splash-screen');
-          if(splash && splash.style.display !== 'none') {
-              splash.style.opacity = '0';
-              setTimeout(() => { splash.style.display = 'none'; }, 400);
+      // Essayer de charger la configuration et les données locales
+      const savedConfig = lsLoadConfig();
+      if(savedConfig){ config = {...config, ...savedConfig}; }
+      workEntries = lsGetAllEntriesArray();
+      recalculateBalances();
+
+      // Gestion de la photo de profil
+      const profilePicInput = $('#profile-picture-file');
+      $('#select-profile-picture-btn').onclick = () => profilePicInput.click();
+      $('#clear-profile-picture-btn').onclick = () => {
+          config.profilePictureBase64 = null;
+          lsSaveConfig(config); 
+          updateProfilePictureDisplay();
+      };
+      
+      profilePicInput.onchange = (e) => {
+          const file = e.target.files[0];
+          if (file) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                  config.profilePictureBase64 = e.target.result;
+                  lsSaveConfig(config);
+                  updateProfilePictureDisplay();
+              };
+              reader.readAsDataURL(file);
+          }
+      };
+      
+      // --- ÉVÉNEMENTS TAB BAR ---
+      $('#btn-saisie').onclick = () => setActiveTab('saisie');
+      $('#btn-hebdo').onclick = () => setActiveTab('hebdo');
+      $('#btn-mensuelle').onclick = () => setActiveTab('mensuelle');
+      $('#btn-data').onclick = () => setActiveTab('data');
+      $('#btn-reglages').onclick = () => setActiveTab('reglages');
+      
+      // --- ÉVÉNEMENTS CALENDRIER ---
+      $('#entry-date-button').onclick = () => {
+          renderCalendar(new Date(config.lastSelectedDate + 'T00:00:00'));
+          $('#calendar-modal').style.display = 'flex';
+      };
+      $('#calendar-close-area').onclick = () => $('#calendar-modal').style.display = 'none';
+      $('#calendar-prev').onclick = () => renderCalendar(addMonths(dateToYMD(currentCalDate), -1).substring(0, 10) + 'T00:00:00');
+      $('#calendar-next').onclick = () => renderCalendar(addMonths(dateToYMD(currentCalDate), 1).substring(0, 10) + 'T00:00:00');
+
+      // --- ÉVÉNEMENTS SAISIE ---
+      $('#save-entry-btn').onclick = () => {
+        const date = $('#entry-date-hidden').value;
+        const type = $('#entry-type-select').value;
+        const start = $('#start-time').value;
+        const end = $('#end-time').value;
+        const lunch = $('#lunch-duration-manual').value ? parseInt($('#lunch-duration-manual').value) : undefined;
+        const timestamp = Date.now();
+        
+        const isWorkType = (type === 'WORK' || type === 'REMOTE');
+        if(isWorkType && (!start || !end)) {
+            showModal('Erreur de Saisie', 'Veuillez remplir les heures de début et de fin pour le travail/télétravail.');
+            return;
+        }
+
+        const newEntry = { date, type, timestamp };
+        if(isWorkType){
+            newEntry.start = start;
+            newEntry.end = end;
+            if(lunch !== undefined && lunch !== 0) newEntry.lunchDurationMinutes = lunch;
+        }
+        
+        let entriesMap = lsLoadEntriesMap();
+        entriesMap[date] = newEntry;
+        lsSaveEntriesMap(entriesMap);
+        
+        workEntries = lsGetAllEntriesArray();
+        recalculateBalances();
+        renderLatestList();
+        updateEntryUI(date); // Re-affiche l'entrée mise à jour
+        showModal('Enregistré', `L'entrée pour le ${dateToFr(date)} a été sauvegardée.`);
+      };
+
+      $('#delete-entry-btn').onclick = () => {
+          const date = $('#entry-date-hidden').value;
+          let entriesMap = lsLoadEntriesMap();
+          delete entriesMap[date];
+          lsSaveEntriesMap(entriesMap);
+          workEntries = lsGetAllEntriesArray();
+          recalculateBalances();
+          renderLatestList();
+          
+          // Réinitialiser la date auj. et l'UI
+          config.lastSelectedDate = dateToYMD(new Date()); 
+          lsSaveConfig(config);
+          updateEntryUI(config.lastSelectedDate);
+          
+          showModal('Supprimé', `L'entrée du ${dateToFr(date)} a été supprimée.`);
+      };
+      
+      // --- ÉVÉNEMENTS MENSUELS ---
+      $('#month-select').onchange = (e) => updateMonthlyView(e.target.value);
+      $('#month-prev').onclick = () => {
+          const newYM = addMonths(config.selectedMonthYM, -1);
+          $('#month-select').value = newYM;
+          updateMonthlyView(newYM);
+      };
+      $('#month-next').onclick = () => {
+          const newYM = addMonths(config.selectedMonthYM, 1);
+          $('#month-select').value = newYM;
+          updateMonthlyView(newYM);
+      };
+
+      // --- ÉVÉNEMENTS RÉGLAGES ---
+      $('#save-settings-btn').onclick = saveSettings;
+      
+      $('#toggle-privacy-btn').onclick = () => {
+          config.privacyMode = !config.privacyMode;
+          lsSaveConfig(config);
+          updateSettingsUI();
+          // Force la vue mensuelle à se rafraîchir pour appliquer le flou si elle est active
+          if($('#tab-mensuelle').style.display === 'block') {
+             updateMonthlyView(config.selectedMonthYM);
           }
       };
 
+      // --- ÉVÉNEMENTS IMPORT/EXPORT IMPLÉMENTÉS ---
+      $('#export-data-btn').onclick = exportDataToCsv;
+      $('#import-data-btn').onclick = () => $('#import-file').click();
+      $('#import-file').onchange = (e) => {
+          if (e.target.files.length > 0) {
+              importDataFromCsv(e.target.files[0]);
+              e.target.value = null; 
+          }
+      };
+
+      $('#close-modal-btn').onclick = ()=>$('#custom-modal').style.display='none';
+      $('#clear-entry-btn').onclick = ()=>{ 
+          $('#entry-type-select').value='WORK'; $('#start-time').value=''; $('#end-time').value=''; 
+          refreshDayTotal(); 
+      };
+      $('#entry-type-select').addEventListener('change', refreshDayTotal);
+      $('#start-time').addEventListener('input', refreshDayTotal);
+      $('#end-time').addEventListener('input', refreshDayTotal);
+      $('#lunch-duration-manual').addEventListener('input', refreshDayTotal);
+      
+      // Boot
+      updateEntryUI(config.lastSelectedDate);
+      renderLatestList();
+      updateProfilePictureDisplay();
+      
+      function forceHideSplash(){
+          const splash = $('#splash-screen');
+          if(splash) { 
+              splash.style.opacity = '0'; 
+              setTimeout(() => splash.remove(), 400); 
+          }
+      }
+
       try {
-          const localCfg = lsLoadConfig(); 
-          if(localCfg) config = {...config, ...localCfg};
-          workEntries = lsGetAllEntriesArray();
-          recalculateBalances();
-          
-          // --- NAVIGATION TABS ---
-          $('#btn-saisie').onclick = ()=>setActiveTab('saisie');
-          $('#btn-hebdo').onclick = ()=>setActiveTab('hebdo');
-          $('#btn-mensuelle').onclick = ()=>setActiveTab('mensuelle');
-          $('#btn-data').onclick = ()=>setActiveTab('data');
-          $('#btn-reglages').onclick = ()=>setActiveTab('reglages');
-          
-          // --- NAVIGATION MOIS ---
-          $('#month-select').addEventListener('change', (e) => updateMonthlyView(e.target.value));
-          
-          $('#month-prev').onclick = () => {
-              const current = config.selectedMonthYM || new Date().toISOString().substring(0, 7);
-              const prev = addMonths(current, -1);
-              updateMonthlyView(prev);
-          };
-          
-          $('#month-next').onclick = () => {
-              const current = config.selectedMonthYM || new Date().toISOString().substring(0, 7);
-              const next = addMonths(current, 1);
-              updateMonthlyView(next);
-          };
-          
-          // --- CALENDAR & SAISIE & SETTINGS (Autres événements) ---
-          $('#entry-date-button').onclick = ()=>{
-              const [y, m] = $('#entry-date-hidden').value.split('-').map(Number);
-              currentCalendarMonth = new Date(y, m - 1, 1);
-              renderCalendar(currentCalendarMonth);
-              $('#calendar-modal').style.display = 'flex';
-          };
-          $('#calendar-close-area').onclick = ()=>$('#calendar-modal').style.display='none';
-          $('#calendar-modal').onclick = (e)=>{ if(e.target.id==='calendar-modal')$('#calendar-modal').style.display='none'; };
-          $('#calendar-prev').onclick = ()=>{ currentCalendarMonth.setMonth(currentCalendarMonth.getMonth()-1); renderCalendar(currentCalendarMonth); };
-          $('#calendar-next').onclick = ()=>{ currentCalendarMonth.setMonth(currentCalendarMonth.getMonth()+1); renderCalendar(currentCalendarMonth); };
-          
-          $('#save-entry-btn').onclick = ()=>{
-              const date = $('#entry-date-hidden').value;
-              const entry = {
-                  date: date,
-                  type: $('#entry-type-select').value,
-                  start: $('#start-time').value,
-                  end: $('#end-time').value,
-                  lunchDurationMinutes: parseInt($('#lunch-duration-manual').value) || config.lunchDurationMinutes,
-                  timestamp: Date.now()
-              };
-              const map = lsLoadEntriesMap(); map[date] = entry; lsSaveEntriesMap(map);
-              workEntries = lsGetAllEntriesArray(); recalculateBalances(); updateEntryUI(date); renderLatestList();
-              showModal('Sauvegardé', 'Entrée mise à jour.');
-          };
-          
-          $('#delete-entry-btn').onclick = ()=>{
-             const date = $('#entry-date-hidden').value;
-             if(confirm("Confirmez-vous la suppression de l'entrée du " + dateToFr(date) + " ?")){
-                const map = lsLoadEntriesMap(); delete map[date]; lsSaveEntriesMap(map);
-                workEntries = lsGetAllEntriesArray(); recalculateBalances(); updateEntryUI(config.lastSelectedDate); renderLatestList();
-                showModal('Supprimé', 'L\'entrée a été supprimée.');
-             }
-          };
-
-          $('#save-settings-btn').onclick = ()=>{
-              config.targetWeeklyHours = parseFloat($('#target-hours').value)*60;
-              config.lunchDurationMinutes = parseInt($('#lunch-minutes').value);
-              config.initialRttDays = parseInt($('#initial-rtt-days').value);
-              config.initialVacationDays = parseInt($('#initial-vacation-days').value);
-              
-              lsSaveConfig(config); recalculateBalances();
-              updateProfilePictureDisplay();
-              showModal('Réglages', 'Préférences sauvegardées.');
-          };
-
-          $('#select-profile-picture-btn').onclick = () => $('#profile-picture-file').click();
-          $('#profile-picture-file').onchange = (e) => {
-              const file = e.target.files[0];
-              if (!file) return;
-
-              const reader = new FileReader();
-              reader.onload = (event) => {
-                  config.profilePictureBase64 = event.target.result;
-                  lsSaveConfig(config); 
-                  updateProfilePictureDisplay(); 
-                  $('#profile-picture-file').value = null; 
-              };
-              reader.readAsDataURL(file);
-          };
-
-          $('#clear-profile-picture-btn').onclick = () => {
-              config.profilePictureBase64 = null;
-              lsSaveConfig(config); 
-              updateProfilePictureDisplay();
-          };
-          
-          // --- ÉVÉNEMENTS IMPORT/EXPORT IMPLÉMENTÉS ---
-          $('#export-data-btn').onclick = exportDataToCsv;
-          $('#import-data-btn').onclick = () => $('#import-file').click();
-          $('#import-file').onchange = (e) => {
-              if (e.target.files.length > 0) {
-                  importDataFromCsv(e.target.files[0]);
-                  e.target.value = null; 
-              }
-          };
-
-          $('#close-modal-btn').onclick = ()=>$('#custom-modal').style.display='none';
-          $('#clear-entry-btn').onclick = ()=>{ 
-              $('#entry-type-select').value='WORK'; $('#start-time').value=''; $('#end-time').value=''; 
-              refreshDayTotal(); 
-          };
-          $('#entry-type-select').addEventListener('change', refreshDayTotal);
-          $('#start-time').addEventListener('input', refreshDayTotal);
-          $('#end-time').addEventListener('input', refreshDayTotal);
-          $('#lunch-duration-manual').addEventListener('input', refreshDayTotal);
-          
-          // Boot
-          updateEntryUI(config.lastSelectedDate);
-          renderLatestList();
-          updateProfilePictureDisplay();
-
-          setTimeout(forceHideSplash, 2000);
-
+          setTimeout(forceHideSplash, 1000);
       } catch (err) {
           console.error("Erreur fatale :", err);
           forceHideSplash();
