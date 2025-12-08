@@ -643,7 +643,7 @@
               const lines = csv.split('\n').filter(line => line.trim() !== '');
               if (lines.length === 0) { showModal('Erreur d\'Importation', 'Le fichier CSV est vide.'); return; }
               const delimiter = lines[0].includes(';') ? ';' : ','; 
-              const headerLine = lines.split('\n')[0].replace(/"/g, '').split(delimiter); 
+              const headerLine = lines[0].replace(/"/g, '').split(delimiter); 
               const requiredHeaders = ["date", "type"];
               if (!requiredHeaders.every(h => headerLine.includes(h))) {
                   showModal('Erreur d\'Importation', 'Le fichier CSV n\'a pas les en-têtes requis (date, type).');
@@ -1341,7 +1341,9 @@
       };
 
       // NOUVEAU: Événements de la modal de Preset
+      // C'EST CETTE LIGNE QUI FIXE LE BOUTON DES RÉGLAGES
       $('#open-preset-modal-btn').onclick = openPresetModal;
+      
       $('#close-preset-modal-btn').onclick = () => $('#preset-modal').style.display = 'none';
 
       // NOUVEAU: Événements de la modal de jour unique
