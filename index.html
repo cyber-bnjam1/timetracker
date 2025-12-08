@@ -356,7 +356,7 @@
       </div>
       
       <div class="bento-card space-y-4">
-        <button id="config-preset-btn" class="w-full h-12 rounded-lg bg-blue-600/20 text-blue-400 font-bold active:scale-[0.99] transition-transform">Configurer le pré-remplissage 🗓️</button>
+        <button id="config-preset-btn" class="w-full h-12 rounded-lg **bg-gray-700 text-white** font-bold active:scale-[0.99] transition-transform shadow-md shadow-blue-900/40">Configurer le pré-remplissage 🗓️</button>
         
         <div>
           <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Taux Horaire Brut (€)</label>
@@ -1106,6 +1106,9 @@
 
     // Ouvre et rend l'UI du preset (liste des 7 jours)
     function openPresetModal(isRefresh = false) {
+        // LIGNE DE DÉBOGAGE AJOUTÉE
+        console.log("openPresetModal appelé. Affichage de la modal..."); 
+        
         const container = $('#day-list-container');
         container.innerHTML = '';
         
