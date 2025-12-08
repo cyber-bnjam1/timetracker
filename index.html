@@ -466,15 +466,36 @@
   </div>
 
   <div id="preset-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(5px); z-index:3000; display:none; align-items:center; justify-content:center; padding:20px;">
-    <div class="bg-[#1C1C1E] border border-gray-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl transform scale-100">
-      <h3 class="text-white text-lg font-bold mb-2">Pré-remplissage journalier</h3>
-      <p class="text-gray-400 text-sm mb-6 leading-relaxed">Définissez vos heures de début et de fin par défaut pour chaque jour de la semaine.</p>
+    <div class="bg-[#1C1C1E] border border-gray-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl transform scale-100">
+      <h3 class="text-white text-lg font-bold mb-2">Presets Horaires</h3>
+      <p class="text-gray-400 text-sm mb-6 leading-relaxed">Sélectionnez le jour à configurer.</p>
       
-      <div id="preset-grid" class="space-y-4">
+      <div id="day-list-container" class="space-y-3">
         </div>
 
-      <button id="save-preset-btn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-6">Sauvegarder les Presets</button>
-      <button id="close-preset-modal-btn" class="w-full bg-transparent text-gray-400 font-medium py-2 rounded-xl mt-2">Fermer</button>
+      <button id="close-preset-modal-btn" class="w-full bg-transparent text-gray-400 font-medium py-2 rounded-xl mt-4">Fermer</button>
+    </div>
+  </div>
+
+  <div id="day-preset-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(5px); z-index:4000; display:none; align-items:center; justify-content:center; padding:20px;">
+    <div class="bg-[#1C1C1E] border border-gray-700 rounded-2xl p-6 w-full max-w-xs shadow-2xl transform scale-100">
+        <h3 id="day-preset-title" class="text-white text-lg font-bold mb-2">Configurer Lundi</h3>
+        <p class="text-gray-400 text-sm mb-4 leading-relaxed">Heures par défaut</p>
+        
+        <div class="grid grid-cols-2 gap-3 mb-6">
+            <div>
+                <span class="text-[10px] text-gray-500 uppercase block mb-1 ml-1">Début</span>
+                <input type="time" id="single-day-start" class="big-input text-center"/>
+            </div>
+            <div>
+                <span class="text-[10px] text-gray-500 uppercase block mb-1 ml-1">Fin</span>
+                <input type="time" id="single-day-end" class="big-input text-center"/>
+            </div>
+        </div>
+        
+        <button id="save-single-day-btn" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl">Sauvegarder</button>
+        <button id="close-single-day-btn" class="w-full bg-transparent text-gray-400 font-medium py-2 rounded-xl mt-2">Annuler</button>
+        <input type="hidden" id="current-preset-day-index" />
     </div>
   </div>
 
@@ -521,7 +542,7 @@
       dailyKmAllowance: 0.00, 
       dailyMealAllowance: 0.00,
       privacyMode: true, // Flou activé par défaut
-      // NOUVEAU: Presets d'horaires [0=Lundi, 6=Dimanche]
+      // Presets d'horaires [0=Lundi, 6=Dimanche]
       dailyPresets: [ 
         {start: '09:00', end: '17:30'}, // Lundi (0)
         {start: '09:00', end: '17:30'}, // Mardi (1)
@@ -1057,45 +1078,59 @@
     
     // --- NOUVELLES FONCTIONS DE PRESET (PRÉ-REMPLISSAGE) ---
 
-    // Ouvre et rend l'UI du preset
-    function openPresetModal() {
-        const grid = $('#preset-grid');
-        grid.innerHTML = '';
+    // Ouvre la modal secondaire pour un jour spécifique
+    function openDayPresetModal(dayIndex) {
+        const preset = config.dailyPresets[dayIndex];
+        
+        $('#day-preset-title').textContent = `Configurer ${DAYS_OF_WEEK[dayIndex]}`;
+        $('#single-day-start').value = preset.start || '';
+        $('#single-day-end').value = preset.end || '';
+        $('#current-preset-day-index').value = dayIndex; // Stocke l'index du jour
+        
+        $('#day-preset-modal').style.display = 'flex';
+    }
+
+    // Sauvegarde un seul preset (appelé depuis la modal secondaire)
+    function saveSingleDayPreset() {
+        const index = parseInt($('#current-preset-day-index').value);
+        
+        config.dailyPresets[index].start = $('#single-day-start').value;
+        config.dailyPresets[index].end = $('#single-day-end').value;
+
+        lsSaveConfig(config);
+        $('#day-preset-modal').style.display = 'none';
+        
+        // Rafraîchir la liste des jours dans la modal principale
+        openPresetModal(true); 
+    }
+
+    // Ouvre et rend l'UI du preset (liste des 7 jours)
+    function openPresetModal(isRefresh = false) {
+        const container = $('#day-list-container');
+        container.innerHTML = '';
         
         config.dailyPresets.forEach((preset, index) => {
             const dayName = DAYS_OF_WEEK[index];
-            const div = document.createElement('div');
-            div.className = 'py-3 border-b border-gray-700/50 last:border-b-0';
-            div.innerHTML = `
-                <div class="text-sm font-bold text-white mb-2">${dayName}</div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <span class="text-[10px] text-gray-500 uppercase block mb-1 ml-1">Début</span>
-                        <input type="time" data-day-index="${index}" data-type="start" class="big-input preset-input text-center" value="${preset.start || ''}"/>
-                    </div>
-                    <div>
-                        <span class="text-[10px] text-gray-500 uppercase block mb-1 ml-1">Fin</span>
-                        <input type="time" data-day-index="${index}" data-type="end" class="big-input preset-input text-center" value="${preset.end || ''}"/>
-                    </div>
-                </div>
+            const display = preset.start && preset.end ? 
+                `<span class="text-green-400 font-mono">${preset.start} - ${preset.end}</span>` :
+                `<span class="text-gray-500">Non défini</span>`;
+                
+            const button = document.createElement('button');
+            button.className = 'w-full flex justify-between items-center py-3 px-4 bg-gray-800 rounded-xl active:bg-gray-700 transition-colors';
+            // Clic sur le bouton ouvre la modal du jour
+            button.onclick = () => openDayPresetModal(index);
+            button.innerHTML = `
+                <span class="font-medium">${dayName}</span>
+                ${display}
             `;
-            grid.appendChild(div);
+            container.appendChild(button);
         });
         
-        $('#preset-modal').style.display = 'flex';
+        if (!isRefresh) {
+            $('#preset-modal').style.display = 'flex';
+        }
     }
 
-    // Sauvegarde les presets depuis l'UI
-    function saveDailyPresets() {
-        document.querySelectorAll('.preset-input').forEach(input => {
-            const index = parseInt(input.getAttribute('data-day-index'));
-            const type = input.getAttribute('data-type');
-            config.dailyPresets[index][type] = input.value;
-        });
-        lsSaveConfig(config);
-        $('#preset-modal').style.display = 'none';
-        showModal('Presets Sauvegardés', 'Les horaires par défaut ont été mis à jour.');
-    }
 
     // Applique le preset à la saisie actuelle
     function applyPreset() {
@@ -1307,8 +1342,11 @@
 
       // NOUVEAU: Événements de la modal de Preset
       $('#open-preset-modal-btn').onclick = openPresetModal;
-      $('#save-preset-btn').onclick = saveDailyPresets;
       $('#close-preset-modal-btn').onclick = () => $('#preset-modal').style.display = 'none';
+
+      // NOUVEAU: Événements de la modal de jour unique
+      $('#save-single-day-btn').onclick = saveSingleDayPreset;
+      $('#close-single-day-btn').onclick = () => $('#day-preset-modal').style.display = 'none';
 
       // --- ÉVÉNEMENTS IMPORT/EXPORT IMPLÉMENTÉS ---
       $('#export-data-btn').onclick = exportDataToCsv;
