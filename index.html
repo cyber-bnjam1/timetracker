@@ -116,15 +116,10 @@
     .tab-content { animation: fadeIn 0.2s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* --- MODALES : TRANSITIONS AJOUTÉES/MODIFIÉES --- */
     /* Modal Calendrier Clean */
     #calendar-modal {
         position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
-        z-index: 2000; 
-        display: none; /* Reste à 'none' au début */
-        align-items: flex-end; justify-content: center;
-        opacity: 0; /* Opacité initiale */
-        transition: opacity 0.3s ease; /* Transition pour l'effet de fondu */
+        z-index: 2000; display: none; align-items: flex-end; justify-content: center;
     }
     #calendar-container {
         background: #1C1C1E; width: 100%; border-radius: 24px 24px 0 0;
@@ -137,16 +132,6 @@
     }
     .cal-btn.is-selected { background: #0A84FF; font-weight: 700; }
     .cal-btn.is-today { border: 2px solid #0A84FF; }
-
-    /* Modal Alerte Custom */
-    #custom-modal { 
-      position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(5px); 
-      z-index:3000; 
-      display:none; /* Reste à 'none' au début */
-      align-items:center; justify-content:center; padding:20px;
-      opacity: 0; /* Opacité initiale */
-      transition: opacity 0.3s ease; /* Transition pour l'effet de fondu */
-    }
     
     /* Classe pour le flou de confidentialité */
     .privacy-blur {
@@ -239,8 +224,9 @@
       </div>
 
       <div class="grid grid-cols-4 gap-3 mt-2">
-        <button id="clear-entry-btn" class="col-span-1 h-[50px] rounded-xl bg-gray-800 text-gray-400 text-xl border border-gray-700 flex items-center justify-center">↺</button>
-        <button id="save-entry-btn" class="col-span-3 h-[50px] rounded-xl bg-blue-600 text-white font-bold text-lg shadow-lg shadow-blue-900/50 active:scale-95 transition-transform">Enregistrer</button>
+<button id="auto-fill-btn" class="col-span-1 h-[50px] rounded-xl bg-purple-800/50 text-purple-300 text-xl border border-purple-700 flex items-center justify-center" title="Remplir auto">⚡️</button>
+<button id="clear-entry-btn" class="col-span-1 h-[50px] rounded-xl bg-gray-800 text-gray-400 text-xl border border-gray-700 flex items-center justify-center">↺</button>
+        <button id="save-entry-btn" class="col-span-2 h-[50px] rounded-xl bg-blue-600 text-white font-bold text-lg shadow-lg shadow-blue-900/50 active:scale-95 transition-transform">Enregistrer</button>
       </div>
       <button id="delete-entry-btn" class="w-full mt-3 py-3 text-red-500 text-sm font-medium" style="display:none;">Supprimer</button>
 
@@ -249,7 +235,7 @@
         <div id="latest-list" class="space-y-2"></div>
       </div>
     </section>
-
+    
     <section id="tab-hebdo" class="tab-content" style="display:none;">
       <div class="bento-card bg-gradient-to-br from-slate-800 to-slate-900">
         <div class="flex justify-between items-end mb-4">
@@ -387,7 +373,11 @@
            <button id="toggle-privacy-btn" class="text-2xl text-blue-400">🔒</button>
         </div>
       </div>
-      <div class="bento-card space-y-4">
+      
+<div class="bento-card space-y-4">
+         <button id="open-default-times-btn" class="w-full h-10 rounded-lg bg-blue-700 text-sm text-white font-bold active:scale-[0.98] transition-transform">Pré-remplissage des Horaires</button>
+      </div>
+<div class="bento-card space-y-4">
         <div>
           <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Objectif Hebdomadaire (h)</label>
           <input type="number" id="target-hours" class="big-input" value="37.0">
@@ -477,12 +467,44 @@
     </div>
   </div>
 
-  <script type="module">
+<div id="default-times-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(5px); z-index:3000; display:none; align-items:center; justify-content:center; padding:20px;">
+    <div class="bg-[#1C1C1E] border border-gray-700 rounded-2xl p-6 w-full max-w-xs shadow-2xl">
+      <h3 class="text-white text-lg font-bold mb-4">Pré-remplissage des Horaires</h3>
+      <div id="day-list-container" class="divide-y divide-gray-700/50">
+        </div>
+      <button id="close-default-times-modal-btn" class="w-full bg-gray-700 text-white font-bold py-3 rounded-xl mt-6">Fermer</button>
+    </div>
+  </div>
+
+  <div id="time-picker-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); z-index:4000; display:none; align-items:center; justify-content:center; padding:20px;">
+    <div class="bg-[#1C1C1E] border border-gray-700 rounded-2xl p-6 w-full max-w-xs shadow-2xl">
+        <h3 id="time-picker-title" class="text-white text-xl font-bold mb-4">Horaires pour Lundi</h3>
+        <div class="space-y-4">
+            <div>
+                <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Début</label>
+                <input type="time" id="default-start-time" class="big-input text-center font-bold text-lg" value="09:00"/>
+            </div>
+            <div>
+                <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Fin</label>
+                <input type="time" id="default-end-time" class="big-input text-center font-bold text-lg" value="17:30"/>
+            </div>
+        </div>
+        <button id="save-default-times-btn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-6">Sauvegarder</button>
+        <button id="clear-default-times-btn" class="w-full bg-red-600/50 text-red-300 font-bold py-3 rounded-xl mt-2">Effacer les horaires</button>
+        <button id="cancel-time-picker-btn" class="w-full bg-transparent text-gray-400 font-bold py-3 rounded-xl mt-2">Annuler</button>
+    </div>
+  </div>
+<script type="module">
     // --- CONSTANTES GLOBALES ---
     // Base 35h/semaine pour le calcul du salaire CDI : 151,67 heures/mois
     const CDI_MONTHLY_HOURS = 151.67; 
     // Taux de déduction estimé pour passer du Brut au Net (charges salariales)
     const BRUT_TO_NET_DEDUCTION = 0.23; // 23%
+    
+// DÉBUT MODIFICATION: Ajout de la liste des jours pour la configuration
+    const DAY_NAMES = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+    const DAY_KEYS = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
+// FIN MODIFICATION
 
     // --- VARIABLES (GARDER LA MEME LOGIQUE) ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -519,6 +541,17 @@
       dailyKmAllowance: 0.00, 
       dailyMealAllowance: 0.00,
       privacyMode: true, // Flou activé par défaut
+      // DÉBUT MODIFICATION: Ajout des horaires par défaut
+      defaultTimes: {
+          LUN: { start: '09:00', end: '17:30' },
+          MAR: { start: '09:00', end: '17:30' },
+          MER: { start: '09:00', end: '17:30' },
+          JEU: { start: '09:00', end: '17:30' },
+          VEN: { start: '09:00', end: '17:30' },
+          SAM: { start: null, end: null },
+          DIM: { start: null, end: null },
+      },
+      // FIN MODIFICATION
     };
 
     // --- UTILS ---
@@ -534,6 +567,14 @@
         const d = new Date(ymd + 'T00:00:00'); 
         return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
     };
+// DÉBUT MODIFICATION: Nouvelle fonction pour obtenir le jour de la semaine
+    const getDayOfWeekIndex = (ymd) => {
+        const d = new Date(ymd + 'T00:00:00');
+        // getDay() retourne 0 pour Dimanche, 1 pour Lundi, etc.
+        // On le convertit pour avoir 0=Lun, 6=Dim
+        return (d.getDay() + 6) % 7; 
+    }
+// FIN MODIFICATION
     const fmtMinutes = m => { const s=m<0?"-":""; const a=Math.abs(m); const h=Math.floor(a/60); const mn=Math.round(a%60); return `${s}${h}h ${mn<10?'0':''}${mn}m`; };
     
     const calcWorkMinutes = (e)=>{ 
@@ -604,7 +645,7 @@
               const lines = csv.split('\n').filter(line => line.trim() !== '');
               if (lines.length === 0) { showModal('Erreur d\'Importation', 'Le fichier CSV est vide.'); return; }
               const delimiter = lines[0].includes(';') ? ';' : ','; 
-              const headerLine = lines[0].replace(/"/g, '').split(delimiter); 
+              const headerLine = lines.split('\n')[0].replace(/"/g, '').split(delimiter); 
               const requiredHeaders = ["date", "type"];
               if (!requiredHeaders.every(h => headerLine.includes(h))) {
                   showModal('Erreur d\'Importation', 'Le fichier CSV n\'a pas les en-têtes requis (date, type).');
@@ -644,14 +685,7 @@
       reader.readAsText(file, 'UTF-8');
     }
 
-    /* --- MODIFICATION 3: FONCTION showModal (ajout de la transition) --- */
-    function showModal(t,m){
-      $('#modal-title').textContent=t; 
-      $('#modal-message').innerHTML=m; 
-      $('#custom-modal').style.display='flex'; // Rendre visible pour layout
-      // Petite temporisation pour que le navigateur applique le display:flex avant la transition d'opacité
-      setTimeout(() => { $('#custom-modal').style.opacity = '1'; }, 10);
-    }
+    function showModal(t,m){$('#modal-title').textContent=t; $('#modal-message').innerHTML=m; $('#custom-modal').style.display='flex';}
 
     function setActiveTab(name){
       ['saisie','hebdo','mensuelle','data','reglages'].forEach(id=>{
@@ -696,7 +730,7 @@
         }
     }
 
-    // --- GRAPHIQUE MENSUEL (pas de modification) ---
+    // --- GRAPHIQUE MENSUEL ---
     function renderMonthlyChart(entries, yearMonth) {
         if (typeof Chart === 'undefined') return;
 
@@ -787,31 +821,15 @@
     }
 
     // --- UI SAISIE & HEBDO ---
-    /* --- MODIFICATION 1: updateEntryUI pour le pré-remplissage --- */
     function updateEntryUI(date){
       const e = workEntries.find(x=>x.date===date);
       $('#entry-date-hidden').value = date;
       $('#entry-date-display').textContent = dateToHuman(date);
       $('#entry-date-display').style.textTransform = 'capitalize';
 
-      // 1. Définir le type et les heures
-      if (e) {
-          // Si entrée existante, utiliser ses valeurs
-          $('#entry-type-select').value = e.type || 'WORK';
-          $('#start-time').value = e.start || '';
-          $('#end-time').value   = e.end   || '';
-      } else {
-          // Si pas d'entrée, on pré-remplit pour la saisie
-          $('#entry-type-select').value = 'WORK'; // Par défaut à Travail
-
-          const isToday = date === dateToYMD(new Date());
-          
-          // Pré-remplir 9h-17h pour les jours sans entrée
-          $('#start-time').value = '09:00';
-          // Laisser l'heure de fin vide si c'est aujourd'hui pour un "punch-out"
-          $('#end-time').value   = isToday ? '' : '17:00'; 
-      }
-
+      $('#entry-type-select').value = e?.type || 'WORK';
+      $('#start-time').value = e?.start || '';
+      $('#end-time').value   = e?.end   || '';
       $('#lunch-duration-manual').value = (e?.lunchDurationMinutes!==undefined && (e?.type==='WORK' || e?.type==='REMOTE')) ? e.lunchDurationMinutes : '';
       $('#lunch-duration-display').textContent = `${config.lunchDurationMinutes}m`;
       
@@ -930,7 +948,7 @@
     }
 
 
-    // --- UI MENSUELLE (pas de modification) ---
+    // --- UI MENSUELLE ---
     function buildMonthOptions(){
         const select = $('#month-select');
         select.innerHTML = '';
@@ -1008,7 +1026,7 @@
         renderMonthlyChart(filteredEntries, yearMonth);
     }
     
-    // --- UI DATA (pas de modification) ---
+    // --- UI DATA ---
     function renderDataListView(){
       const container = $('#data-list-container');
       container.innerHTML = workEntries.map(e => {
@@ -1024,7 +1042,7 @@
       }).join('') || `<div class="text-center text-gray-600 text-sm py-4">L'historique est vide.</div>`;
     }
 
-    // --- UI RÉGLAGES (pas de modification) ---
+    // --- UI RÉGLAGES ---
     function updateSettingsUI(){
       $('#target-hours').value = (config.targetWeeklyHours / 60).toFixed(1);
       $('#lunch-minutes').value = config.lunchDurationMinutes;
@@ -1057,9 +1075,82 @@
       updateSettingsUI(); 
       showModal('Réglages Sauvegardés', 'Vos préférences ont été mises à jour.');
     }
+    
+// DÉBUT MODIFICATION: Fonctions pour la nouvelle modale d'horaires par défaut
+    let currentDefaultDayKey = null;
 
+    function renderDefaultTimesList() {
+        const container = $('#day-list-container');
+        container.innerHTML = DAY_KEYS.map((key, index) => {
+            const dayName = DAY_NAMES[index];
+            const times = config.defaultTimes[key];
+            const display = times.start && times.end ? `${times.start} - ${times.end}` : 'Non défini';
+            const colorClass = times.start && times.end ? 'text-blue-400 font-bold' : 'text-gray-500';
+            
+            return `<div class="flex justify-between items-center py-3 cursor-pointer active:bg-gray-800" onclick="openTimePicker('${key}', '${dayName}')">
+                        <span class="text-sm font-medium">${dayName}</span>
+                        <span class="text-sm ${colorClass}">${display}</span>
+                    </div>`;
+        }).join('');
+    }
+    
+    window.openTimePicker = (key, dayName) => {
+        currentDefaultDayKey = key;
+        const times = config.defaultTimes[key];
+        
+        $('#time-picker-title').textContent = `Horaires pour ${dayName}`;
+        $('#default-start-time').value = times.start || '09:00';
+        $('#default-end-time').value = times.end || '17:30';
+        
+        $('#default-times-modal').style.display = 'none';
+        $('#time-picker-modal').style.display = 'flex';
+    };
 
-    // --- UI CALENDRIER (MODIFICATION 3: ajout de la transition) ---
+    function saveDefaultTimes() {
+        if (!currentDefaultDayKey) return;
+
+        config.defaultTimes[currentDefaultDayKey] = {
+            start: $('#default-start-time').value,
+            end: $('#default-end-time').value,
+        };
+        lsSaveConfig(config);
+        
+        $('#time-picker-modal').style.display = 'none';
+        renderDefaultTimesList(); // Mise à jour de la liste
+        $('#default-times-modal').style.display = 'flex'; // Retour à la modale de la liste
+        currentDefaultDayKey = null;
+    }
+    
+    function clearDefaultTimes() {
+        if (!currentDefaultDayKey) return;
+        config.defaultTimes[currentDefaultDayKey] = { start: null, end: null };
+        lsSaveConfig(config);
+        
+        $('#time-picker-modal').style.display = 'none';
+        renderDefaultTimesList();
+        $('#default-times-modal').style.display = 'flex';
+        currentDefaultDayKey = null;
+    }
+    
+    function applyAutoFill() {
+        const date = $('#entry-date-hidden').value;
+        const dayIndex = getDayOfWeekIndex(date); // 0=Lun, 6=Dim
+        const dayKey = DAY_KEYS[dayIndex];
+        const defaultTimes = config.defaultTimes[dayKey];
+        
+        if (defaultTimes && defaultTimes.start && defaultTimes.end) {
+            $('#start-time').value = defaultTimes.start;
+            $('#end-time').value = defaultTimes.end;
+            $('#entry-type-select').value = 'WORK'; // Par défaut, on passe en travail
+            refreshDayTotal();
+            showModal('Remplissage automatique', `Horaires appliqués pour ${DAY_NAMES[dayIndex]}.`);
+        } else {
+            showModal('Remplissage automatique', `Aucun horaire par défaut n'est configuré pour ${DAY_NAMES[dayIndex]}.`);
+        }
+    }
+// FIN MODIFICATION
+
+    // --- UI CALENDRIER (omise pour la concision) ---
     let currentCalDate = new Date(); 
     function renderCalendar(date) {
         currentCalDate = date;
@@ -1110,12 +1201,8 @@
     }
 
     window.selectDate = (ymd) => {
-        // Masquage avec transition
-        $('#calendar-modal').style.opacity = '0';
-        setTimeout(() => {
-          $('#calendar-modal').style.display='none'; 
-          editDate(ymd);
-        }, 300); 
+        $('#calendar-modal').style.display = 'none';
+        editDate(ymd); 
     };
     
     // --- INITIALISATION & ÉVÉNEMENTS ---
@@ -1123,7 +1210,12 @@
       
       // Essayer de charger la configuration et les données locales
       const savedConfig = lsLoadConfig();
-      if(savedConfig){ config = {...config, ...savedConfig}; }
+      if(savedConfig){ 
+          // Permet d'ajouter 'defaultTimes' si l'ancienne config n'en avait pas
+          config = {...config, ...savedConfig, 
+              defaultTimes: {...config.defaultTimes, ...(savedConfig.defaultTimes || {})} 
+          }; 
+      }
       workEntries = lsGetAllEntriesArray();
       recalculateBalances();
 
@@ -1156,49 +1248,38 @@
       $('#btn-data').onclick = () => setActiveTab('data');
       $('#btn-reglages').onclick = () => setActiveTab('reglages');
       
-      // --- ÉVÉNEMENTS CALENDRIER (MODIFICATION 3: ajout de la transition) ---
+      // --- ÉVÉNEMENTS CALENDRIER ---
       $('#entry-date-button').onclick = () => {
           renderCalendar(new Date(config.lastSelectedDate + 'T00:00:00'));
           $('#calendar-modal').style.display = 'flex';
-          setTimeout(() => { $('#calendar-modal').style.opacity = '1'; }, 10);
       };
-      $('#calendar-close-area').onclick = () => {
-          $('#calendar-modal').style.opacity = '0';
-          setTimeout(() => { $('#calendar-modal').style.display='none'; }, 300);
-      };
+      $('#calendar-close-area').onclick = () => $('#calendar-modal').style.display = 'none';
       $('#calendar-prev').onclick = () => renderCalendar(new Date(addMonths(dateToYMD(currentCalDate), -1) + '-01' + 'T00:00:00'));
       $('#calendar-next').onclick = () => renderCalendar(new Date(addMonths(dateToYMD(currentCalDate), 1) + '-01' + 'T00:00:00'));
 
       // --- ÉVÉNEMENTS SAISIE ---
-      /* --- MODIFICATION 2: Logique du bouton "Punch-in" et validation de l'heure --- */
+// DÉBUT MODIFICATION: Ajout de l'événement pour le remplissage automatique
+      $('#auto-fill-btn').onclick = applyAutoFill;
+// FIN MODIFICATION
+
       $('#save-entry-btn').onclick = () => {
         const date = $('#entry-date-hidden').value;
         const type = $('#entry-type-select').value;
-        const start = $('#start-time').value.trim();
-        const end = $('#end-time').value.trim();
+        const start = $('#start-time').value;
+        const end = $('#end-time').value;
         const lunch = $('#lunch-duration-manual').value ? parseInt($('#lunch-duration-manual').value) : undefined;
         const timestamp = Date.now();
         
         const isWorkType = (type === 'WORK' || type === 'REMOTE');
-        
-        // Nouvelle validation pour permettre le "Punch-In" (heure de début seule)
-        if(isWorkType && !start && !end) {
-             showModal('Erreur de Saisie', 'Veuillez remplir au moins l\'heure de début pour enregistrer l\'entrée de travail.');
-             return;
+        if(isWorkType && (!start || !end)) {
+            showModal('Erreur de Saisie', 'Veuillez remplir les heures de début et de fin pour le travail/télétravail.');
+            return;
         }
-
-        // Vérification que l'heure de début est antérieure à l'heure de fin si les deux sont remplies
-        if(start && end && start >= end) {
-             showModal('Erreur d\'Heure', 'L\'heure de début doit être strictement antérieure à l\'heure de fin.');
-             return;
-        }
-
 
         const newEntry = { date, type, timestamp };
         if(isWorkType){
-            // N'enregistrer start/end que si elles ne sont pas vides
-            if(start) newEntry.start = start;
-            if(end) newEntry.end = end;
+            newEntry.start = start;
+            newEntry.end = end;
             if(lunch !== undefined && lunch !== 0) newEntry.lunchDurationMinutes = lunch;
         }
         
@@ -1245,6 +1326,19 @@
 
       // --- ÉVÉNEMENTS RÉGLAGES ---
       $('#save-settings-btn').onclick = saveSettings;
+// DÉBUT MODIFICATION: Événements pour la modale d'horaires par défaut
+      $('#open-default-times-btn').onclick = () => {
+          renderDefaultTimesList();
+          $('#default-times-modal').style.display = 'flex';
+      };
+      $('#close-default-times-modal-btn').onclick = () => $('#default-times-modal').style.display = 'none';
+      $('#save-default-times-btn').onclick = saveDefaultTimes;
+      $('#cancel-time-picker-btn').onclick = () => {
+          $('#time-picker-modal').style.display = 'none';
+          $('#default-times-modal').style.display = 'flex';
+      };
+      $('#clear-default-times-btn').onclick = clearDefaultTimes;
+// FIN MODIFICATION
       
       $('#toggle-privacy-btn').onclick = () => {
           config.privacyMode = !config.privacyMode;
@@ -1256,7 +1350,7 @@
           }
       };
 
-      // --- ÉVÉNEMENTS IMPORT/EXPORT IMPLÉMENTÉS (pas de modification) ---
+      // --- ÉVÉNEMENTS IMPORT/EXPORT IMPLÉMENTÉS ---
       $('#export-data-btn').onclick = exportDataToCsv;
       $('#import-data-btn').onclick = () => $('#import-file').click();
       $('#import-file').onchange = (e) => {
@@ -1266,12 +1360,7 @@
           }
       };
 
-      // --- ÉVÉNEMENT FERMETURE MODAL (MODIFICATION 3: ajout de la transition) ---
-      $('#close-modal-btn').onclick = ()=>{
-          $('#custom-modal').style.opacity = '0';
-          setTimeout(() => { $('#custom-modal').style.display='none'; }, 300); // 300ms est la durée de la transition CSS
-      };
-
+      $('#close-modal-btn').onclick = ()=>$('#custom-modal').style.display='none';
       $('#clear-entry-btn').onclick = ()=>{ 
           $('#entry-type-select').value='WORK'; $('#start-time').value=''; $('#end-time').value=''; 
           refreshDayTotal(); 
