@@ -356,7 +356,7 @@
       </div>
       
       <div class="bento-card space-y-4">
-        <button id="open-preset-modal-btn" class="w-full h-12 rounded-lg bg-blue-600/20 text-blue-400 font-bold active:scale-[0.99] transition-transform">Configurer le pré-remplissage 🗓️</button>
+        <button id="config-preset-btn" class="w-full h-12 rounded-lg bg-blue-600/20 text-blue-400 font-bold active:scale-[0.99] transition-transform">Configurer le pré-remplissage 🗓️</button>
         
         <div>
           <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Taux Horaire Brut (€)</label>
@@ -465,7 +465,7 @@
     </div>
   </div>
 
-  <div id="preset-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(5px); z-index:3000; display:none; align-items:center; justify-content:center; padding:20px;">
+  <div id="preset-config-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(5px); z-index:3000; display:none; align-items:center; justify-content:center; padding:20px;">
     <div class="bg-[#1C1C1E] border border-gray-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl transform scale-100">
       <h3 class="text-white text-lg font-bold mb-2">Presets Horaires</h3>
       <p class="text-gray-400 text-sm mb-6 leading-relaxed">Sélectionnez le jour à configurer.</p>
@@ -473,7 +473,7 @@
       <div id="day-list-container" class="space-y-3">
         </div>
 
-      <button id="close-preset-modal-btn" class="w-full bg-transparent text-gray-400 font-medium py-2 rounded-xl mt-4">Fermer</button>
+      <button id="close-preset-config-btn" class="w-full bg-transparent text-gray-400 font-medium py-2 rounded-xl mt-4">Fermer</button>
     </div>
   </div>
 
@@ -1127,7 +1127,8 @@
         });
         
         if (!isRefresh) {
-            $('#preset-modal').style.display = 'flex';
+            // Utilisation du nouvel ID de modal
+            $('#preset-config-modal').style.display = 'flex';
         }
     }
 
@@ -1340,11 +1341,11 @@
           }
       };
 
-      // NOUVEAU: Événements de la modal de Preset
-      // CECI EST LA LIGNE CLÉ QUI DOIT ÊTRE CORRECTE
-      $('#open-preset-modal-btn').onclick = openPresetModal;
+      // NOUVEAU: Événements de la modal de Preset (AVEC NOUVEL ID)
+      $('#config-preset-btn').onclick = openPresetModal;
       
-      $('#close-preset-modal-btn').onclick = () => $('#preset-modal').style.display = 'none';
+      // Utilisation du nouvel ID de modal
+      $('#close-preset-config-btn').onclick = () => $('#preset-config-modal').style.display = 'none';
 
       // NOUVEAU: Événements de la modal de jour unique
       $('#save-single-day-btn').onclick = saveSingleDayPreset;
