@@ -1345,7 +1345,12 @@
       };
 
       // NOUVEAU: Événements de la modal de Preset (AVEC NOUVEL ID)
-      $('#config-preset-btn').onclick = openPresetModal;
+      const configPresetBtn = $('#config-preset-btn');
+      if (configPresetBtn) {
+          configPresetBtn.onclick = openPresetModal;
+      } else {
+          console.error("Erreur: Le bouton #config-preset-btn n'a pas été trouvé. Problème de sélecteur.");
+      }
       
       // Utilisation du nouvel ID de modal
       $('#close-preset-config-btn').onclick = () => $('#preset-config-modal').style.display = 'none';
