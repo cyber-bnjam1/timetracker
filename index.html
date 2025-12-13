@@ -354,7 +354,20 @@
           </div>
         </div>
       </div>
-      
+
+      <div class="bento-card space-y-4" id="auth-controls">
+        <h3 class="text-xs text-gray-400 uppercase font-bold mb-1 block">Synchronisation Cloud (Firebase)</h3>
+        
+        <button id="google-signin-btn" class="w-full h-12 rounded-xl bg-white text-gray-800 font-bold text-base flex items-center justify-center space-x-2 transition-transform active:scale-[0.98]">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/4/4a/Logo_2013_Google.png" class="h-5 w-5" alt="Google logo">
+            <span>Se connecter avec Google</span>
+        </button>
+        
+        <div id="user-info-display" style="display:none;">
+             <p class="text-sm text-white font-medium mb-2">Connecté en tant que : <br><span id="user-display-email" class="text-blue-400 font-bold"></span></p>
+             <button id="google-signout-btn" class="w-full h-10 rounded-lg bg-red-700/50 text-sm text-red-300 font-medium active:scale-[0.98] transition-transform">Déconnexion</button>
+        </div>
+      </div>
       <div class="bento-card space-y-4">
         <div>
           <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Taux Horaire Brut (€)</label>
@@ -501,30 +514,43 @@
     // Taux de déduction estimé pour passer du Brut au Net (charges salariales)
     const BRUT_TO_NET_DEDUCTION = 0.23; // 23%
     
-// DÉBUT MODIFICATION: Ajout de la liste des jours pour la configuration
     const DAY_NAMES = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
     const DAY_KEYS = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
-// FIN MODIFICATION
 
     // --- VARIABLES (GARDER LA MEME LOGIQUE) ---
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    // MODIFICATION: AJOUT DES MODULES GOOGLE AUTH
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, collection, getDocs, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-analytics.js";
 
-    const firebaseConfig = {}; // Remplacer par la vraie si besoin
-    let app, db, auth, useLocalOnly = true;
+    const firebaseConfig = {
+        apiKey: "AIzaSyAuyub4SOGhETsc_tw-TpSxmXM3m4f45-A",
+        authDomain: "worker-62d43.firebaseapp.com",
+        projectId: "worker-62d43",
+        storageBucket: "worker-62d43.firebasestorage.app",
+        messagingSenderId: "574278234658",
+        appId: "1:574278234658:web:682140b8e7c19d985d907b",
+        measurementId: "G-NG7HCGEEB1"
+    };
+
+    let app, db, auth, analytics, useLocalOnly = true; 
 
     try { 
-        if(Object.keys(firebaseConfig).length > 0) {
+        if(Object.keys(firebaseConfig).length > 0) { 
             app = initializeApp(firebaseConfig); 
             db = getFirestore(app); 
-            auth = getAuth(app); 
-            useLocalOnly = false;
+            auth = getAuth(app); // Initialisation de Auth
+            analytics = getAnalytics(app);
+            useLocalOnly = false; // Initialisation du mode Cloud (en attente d'authentification)
+            console.log("Firebase initialized successfully. Cloud mode enabled, awaiting authentication.");
         }
-    } catch(e) { /* En mode local par défaut */ }
+    } catch(e) { 
+        console.error("Firebase initialization failed, using local storage only:", e);
+    }
 
     let workEntries = [];
-    let monthlyChartInstance = null; // Instance du graphique
+    let monthlyChartInstance = null;
 
     let config = {
       targetWeeklyHours: 37 * 60,
@@ -536,12 +562,10 @@
       currentRttBalance: 10,  
       currentVacationBalance: 25,
       profilePictureBase64: null,
-      // CHAMPS FINANCES
       hourlyGrossRate: 20.00,
       dailyKmAllowance: 0.00, 
       dailyMealAllowance: 0.00,
-      privacyMode: true, // Flou activé par défaut
-      // DÉBUT MODIFICATION: Ajout des horaires par défaut
+      privacyMode: true, 
       defaultTimes: {
           LUN: { start: '09:00', end: '17:30' },
           MAR: { start: '09:00', end: '17:30' },
@@ -551,7 +575,6 @@
           SAM: { start: null, end: null },
           DIM: { start: null, end: null },
       },
-      // FIN MODIFICATION
     };
 
     // --- UTILS ---
@@ -567,18 +590,13 @@
         const d = new Date(ymd + 'T00:00:00'); 
         return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
     };
-// DÉBUT MODIFICATION: Nouvelle fonction pour obtenir le jour de la semaine
     const getDayOfWeekIndex = (ymd) => {
         const d = new Date(ymd + 'T00:00:00');
-        // getDay() retourne 0 pour Dimanche, 1 pour Lundi, etc.
-        // On le convertit pour avoir 0=Lun, 6=Dim
         return (d.getDay() + 6) % 7; 
     }
-// FIN MODIFICATION
     const fmtMinutes = m => { const s=m<0?"-":""; const a=Math.abs(m); const h=Math.floor(a/60); const mn=Math.round(a%60); return `${s}${h}h ${mn<10?'0':''}${mn}m`; };
     
     const calcWorkMinutes = (e)=>{ 
-      // Si ce n'est ni du travail bureau, ni du télétravail, c'est un congé (on met 1/5e de l'objectif pour le graph s'il le faut, ou 0)
       if(e?.type!=='WORK' && e?.type!=='REMOTE') return config.targetWeeklyHours / 5; 
       
       if(!e.start||!e.end) return 0; 
@@ -587,9 +605,188 @@
       return Math.max(p(e.end)-p(e.start)-lunch,0); 
     };
 
-    const clampMonth = (ym)=>ym.replace(/^(\d{4})-(\d{2}).*$/,(_,y,m)=>`${y}-${m.padStart(2,'0')}`);
     const addMonths = (ym, d)=>{ let [y,m]=ym.split('-').map(Number); const dt=new Date(y,m-1+d,1); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; };
     const monthLabel = (ym)=>{ const [y,m]=ym.split('-').map(Number); return new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(new Date(y,m-1,1)); };
+
+
+    // --- FIREBASE / FIRESTORE LOGIC ---
+    
+    // MODIFICATION: Utilise l'UID de l'utilisateur connecté ou l'ID local
+    const getUserId = () => auth?.currentUser?.uid || 'local_user_id'; 
+    
+    async function fbLoadConfig() {
+        if (useLocalOnly || !db) return lsLoadConfig();
+        try {
+            const docRef = doc(db, 'users', getUserId(), 'config', 'app_config');
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                console.log("Config loaded from Firebase.");
+                return docSnap.data();
+            } else {
+                console.log("No config found in Firebase. Using defaults or local.");
+                return lsLoadConfig(); 
+            }
+        } catch (error) {
+            console.error("Error loading config from Firebase. Falling back to local.", error);
+            return lsLoadConfig(); 
+        }
+    }
+
+    async function fbSaveConfig(cfg) {
+        if (useLocalOnly || !db) return lsSaveConfig(cfg);
+        try {
+            const docRef = doc(db, 'users', getUserId(), 'config', 'app_config');
+            await setDoc(docRef, cfg, { merge: true }); 
+            console.log("Config saved to Firebase.");
+        } catch (error) {
+            console.error("Error saving config to Firebase:", error);
+            lsSaveConfig(cfg); 
+        }
+    }
+    
+    async function fbGetAllEntriesArray() {
+        if (useLocalOnly || !db) return lsGetAllEntriesArray();
+        try {
+            const entriesRef = collection(db, 'users', getUserId(), 'entries');
+            const q = query(entriesRef, orderBy('date', 'desc'));
+            const querySnapshot = await getDocs(q);
+            const entries = [];
+            querySnapshot.forEach((doc) => {
+                entries.push(doc.data());
+            });
+            console.log(`Loaded ${entries.length} entries from Firebase.`);
+            return entries;
+        } catch (error) {
+            console.error("Error loading entries from Firebase. Falling back to local.", error);
+            return lsGetAllEntriesArray(); 
+        }
+    }
+
+    async function fbSaveEntry(entry) {
+        if (useLocalOnly || !db) {
+            let entriesMap = lsLoadEntriesMap();
+            entriesMap[entry.date] = entry;
+            lsSaveEntriesMap(entriesMap);
+            return;
+        }
+        try {
+            const docRef = doc(db, 'users', getUserId(), 'entries', entry.date);
+            await setDoc(docRef, entry); 
+            console.log(`Entry for ${entry.date} saved to Firebase.`);
+        } catch (error) {
+            console.error("Error saving entry to Firebase:", error);
+        }
+    }
+    
+    async function fbDeleteEntry(date) {
+        if (useLocalOnly || !db) {
+            let entriesMap = lsLoadEntriesMap();
+            delete entriesMap[date];
+            lsSaveEntriesMap(entriesMap);
+            return;
+        }
+        try {
+            const docRef = doc(db, 'users', getUserId(), 'entries', date);
+            await deleteDoc(docRef);
+            console.log(`Entry for ${date} deleted from Firebase.`);
+        } catch (error) {
+            console.error("Error deleting entry from Firebase:", error);
+        }
+    }
+    
+    async function saveEntryWrapper(entry) {
+        await fbSaveEntry(entry);
+        workEntries = await fbGetAllEntriesArray(); 
+        recalculateBalances();
+        renderLatestList();
+        updateEntryUI(entry.date);
+        showModal('Enregistré', `L'entrée pour le ${dateToFr(entry.date)} a été sauvegardée.`);
+    }
+
+    async function deleteEntryWrapper(date) {
+        await fbDeleteEntry(date);
+        workEntries = await fbGetAllEntriesArray(); 
+        recalculateBalances();
+        renderLatestList();
+        
+        config.lastSelectedDate = dateToYMD(new Date()); 
+        await fbSaveConfig(config); 
+        updateEntryUI(config.lastSelectedDate);
+        
+        showModal('Supprimé', `L'entrée du ${dateToFr(date)} a été supprimée.`);
+    }
+
+    // --- AUTHENTIFICATION GOOGLE ---
+
+    async function signInWithGoogle() {
+        if (!auth) {
+            showModal('Erreur Cloud', 'Le service Firebase Auth n\'est pas disponible.');
+            return;
+        }
+        const provider = new GoogleAuthProvider();
+        try {
+            await signInWithPopup(auth, provider);
+        } catch (error) {
+            console.error("Google Sign-in failed:", error);
+            // Gérer les erreurs de pop-up ou de refus de l'utilisateur
+            showModal('Erreur de Connexion', `Impossible de se connecter avec Google : ${error.message}`);
+        }
+    }
+
+    async function signOutUser() {
+        if (!auth) return;
+        try {
+            await signOut(auth);
+            // L'écouteur onAuthStateChanged gère le changement d'état
+        } catch (error) {
+            console.error("Sign-out failed:", error);
+            showModal('Erreur de Déconnexion', `Impossible de se déconnecter : ${error.message}`);
+        }
+    }
+    
+    // Fonction principale de gestion de l'état d'authentification
+    async function handleAuthState(user) {
+        if (!user) {
+            console.log("User signed out or not logged in. Using local ID.");
+            useLocalOnly = true;
+            $('#google-signin-btn').style.display = 'flex';
+            $('#user-info-display').style.display = 'none';
+            $('#user-id-display').textContent = 'Local (Non Connecté)';
+            $('#profile-initials').textContent = '👤';
+            $('#profile-picture-container').title = 'Utilisateur Local';
+        } else {
+            console.log("User signed in:", user.email, "UID:", user.uid);
+            useLocalOnly = false;
+            $('#google-signin-btn').style.display = 'none';
+            $('#user-info-display').style.display = 'block';
+            $('#user-display-email').textContent = user.email;
+            $('#user-id-display').textContent = user.uid.substring(0, 8) + '...';
+            $('#profile-initials').textContent = user.email ? user.email.charAt(0).toUpperCase() : 'U';
+            $('#profile-picture-container').title = user.email;
+        }
+        
+        // Charger les données de l'utilisateur (authentifié ou local)
+        await loadUserDataAndRefreshUI();
+    }
+    
+    // Nouvelle fonction pour charger les données et rafraîchir l'interface
+    async function loadUserDataAndRefreshUI() {
+        const savedConfig = await fbLoadConfig();
+        if(savedConfig){ 
+            config = {...config, ...savedConfig, 
+                defaultTimes: {...config.defaultTimes, ...(savedConfig.defaultTimes || {})} 
+            }; 
+        }
+        workEntries = await fbGetAllEntriesArray(); 
+        recalculateBalances(); 
+
+        updateEntryUI(config.lastSelectedDate);
+        renderLatestList();
+        updateProfilePictureDisplay();
+        
+        forceHideSplash();
+    }
+
 
     // --- LOCAL STORAGE ---
     const LS_KEYS = { entries:`tt_worker_entries`, config:`tt_worker_config` };
@@ -600,7 +797,7 @@
     const lsLoadConfig = ()=>{ try{return JSON.parse(localStorage.getItem(LS_KEYS.config)||'null')}catch{return null} };
 
     // --- LOGIQUE METIER ---
-    function recalculateBalances(){
+    function recalculateBalances(){ 
       let rttUsed = 0;
       let vacationUsed = 0;
       workEntries.forEach(e => {
@@ -609,10 +806,13 @@
       });
       config.currentRttBalance = (config.initialRttDays||0) - rttUsed;
       config.currentVacationBalance = (config.initialVacationDays||0) - vacationUsed;
-      lsSaveConfig(config); 
+      fbSaveConfig(config); 
     }
     
-    // --- FONCTIONS EXPORT/IMPORT RÉELLES ---
+    // ... (Reste des fonctions exportDataToCsv, importDataFromCsv, showModal, setActiveTab, etc.)
+    
+    // --- OMITTED FUNCTIONS FOR BREVITY --- (Same as previous step)
+    
     function exportDataToCsv() {
       if (workEntries.length === 0) { showModal('Exportation', 'Aucune donnée à exporter.'); return; }
       const headers = ["date", "type", "start", "end", "lunchDurationMinutes", "timestamp"];
@@ -645,7 +845,7 @@
               const lines = csv.split('\n').filter(line => line.trim() !== '');
               if (lines.length === 0) { showModal('Erreur d\'Importation', 'Le fichier CSV est vide.'); return; }
               const delimiter = lines[0].includes(';') ? ';' : ','; 
-              const headerLine = lines.split('\n')[0].replace(/"/g, '').split(delimiter); 
+              const headerLine = lines[0].replace(/"/g, '').split(delimiter); 
               const requiredHeaders = ["date", "type"];
               if (!requiredHeaders.every(h => headerLine.includes(h))) {
                   showModal('Erreur d\'Importation', 'Le fichier CSV n\'a pas les en-têtes requis (date, type).');
@@ -670,12 +870,32 @@
               const existingMap = lsLoadEntriesMap();
               const newMap = {...existingMap, ...importedMap}; 
               lsSaveEntriesMap(newMap);
+              
+              if (!useLocalOnly && db) {
+                  // Si Firebase est actif, on essaie d'uploader les données importées
+                  const importPromises = Object.values(importedMap).map(entry => fbSaveEntry(entry));
+                  Promise.all(importPromises).then(async () => {
+                      workEntries = await fbGetAllEntriesArray();
+                      recalculateBalances();
+                      updateEntryUI(config.lastSelectedDate);
+                      renderLatestList();
+                      renderDataListView();
+                      showModal('Importation Réussie', `${Object.keys(importedMap).length} entrées ont été importées et fusionnées avec succès. (Données Cloud mises à jour)`);
+                  }).catch(err => {
+                      console.error("Erreur lors de l'upload Firebase après import:", err);
+                      showModal('Erreur Cloud', 'Importation locale réussie, mais échec de la synchronisation Cloud.');
+                  });
+                  return; 
+              }
+              
+              // Logique de rafraîchissement locale (si useLocalOnly est vrai)
               workEntries = lsGetAllEntriesArray();
               recalculateBalances();
               updateEntryUI(config.lastSelectedDate);
               renderLatestList();
               renderDataListView();
               showModal('Importation Réussie', `${Object.keys(importedMap).length} entrées ont été importées et fusionnées avec succès.`);
+
           } catch (error) {
               console.error("Erreur lors de l'importation:", error);
               showModal('Erreur Critique', 'Impossible de traiter le fichier. Vérifiez son format CSV.');
@@ -725,12 +945,11 @@
             container.style.backgroundImage = 'none';
             initials.style.display = 'block';
             preview.style.backgroundImage = 'none';
-            preview.textContent = '👤';
+            preview.textContent = initials.textContent; // Utilise l'initiale de l'utilisateur (gérée par handleAuthState)
             clearBtn.style.display = 'none';
         }
     }
 
-    // --- GRAPHIQUE MENSUEL ---
     function renderMonthlyChart(entries, yearMonth) {
         if (typeof Chart === 'undefined') return;
 
@@ -756,8 +975,7 @@
                     weeklyData[label] = { worked: 0 };
                 }
 
-                const entry = entries.find(e => e.date === currentYMD);
-                // On inclut WORK et REMOTE dans le graphique
+                const entry = workEntries.find(e => e.date === currentYMD);
                 if (entry && (entry.type === 'WORK' || entry.type === 'REMOTE')) { 
                     weeklyData[label].worked += calcWorkMinutes(entry);
                 }
@@ -820,7 +1038,6 @@
         }
     }
 
-    // --- UI SAISIE & HEBDO ---
     function updateEntryUI(date){
       const e = workEntries.find(x=>x.date===date);
       $('#entry-date-hidden').value = date;
@@ -829,7 +1046,7 @@
 
       $('#entry-type-select').value = e?.type || 'WORK';
       $('#start-time').value = e?.start || '';
-      $('#end-time').value   = e?.end   || '';
+      $('#end-time').value = e?.end || '';
       $('#lunch-duration-manual').value = (e?.lunchDurationMinutes!==undefined && (e?.type==='WORK' || e?.type==='REMOTE')) ? e.lunchDurationMinutes : '';
       $('#lunch-duration-display').textContent = `${config.lunchDurationMinutes}m`;
       
@@ -870,8 +1087,8 @@
       $('#current-day-minutes').textContent = fmtMinutes(mins);
     }
     
-    window.editDate = (d) => {
-         config.lastSelectedDate = d; lsSaveConfig(config);
+    window.editDate = (d) => { 
+         config.lastSelectedDate = d; fbSaveConfig(config); 
          updateEntryUI(d); setActiveTab('saisie');
     };
     
@@ -948,7 +1165,6 @@
     }
 
 
-    // --- UI MENSUELLE ---
     function buildMonthOptions(){
         const select = $('#month-select');
         select.innerHTML = '';
@@ -965,15 +1181,13 @@
     }
 
     function updateMonthlyView(yearMonth) {
-        config.selectedMonthYM = yearMonth; lsSaveConfig(config);
+        config.selectedMonthYM = yearMonth; fbSaveConfig(config); 
         const filteredEntries = workEntries.filter(e => e.date.startsWith(yearMonth));
 
         let totalWorkMinutes = 0;
         let daysWorked = 0;
         let remoteDays = 0;
         let workOfficeDays = 0; 
-        let rttUsedInMonth = 0;
-        let vacationUsedInMonth = 0;
 
         filteredEntries.forEach(e => {
             const mins = calcWorkMinutes(e);
@@ -987,30 +1201,22 @@
             if(e.type === 'WORK') {
                 workOfficeDays++; 
             }
-            if(e.type === 'RTT') rttUsedInMonth++;
-            if(e.type === 'VACATION') vacationUsedInMonth++;
         });
 
-        // 1. Calcul du Salaire Base CDI (151.67h/mois)
         const monthlyBaseHours = CDI_MONTHLY_HOURS;
         const monthlyBaseSalaryGross = monthlyBaseHours * config.hourlyGrossRate; 
         
-        // 1.b NOUVEAU: Calcul du Salaire Net
         const monthlyBaseSalaryNet = monthlyBaseSalaryGross * (1 - BRUT_TO_NET_DEDUCTION);
 
-        // 2. Indemnités Repas NET : pour Jours Bureau (WORK) ET Télétravail (REMOTE)
         const totalMealDays = workOfficeDays + remoteDays;
         const monthlyMealAllowanceNet = totalMealDays * config.dailyMealAllowance;
 
-        // 3. Indemnités KM NET : pour Jours Bureau (WORK) SEULEMENT
         const monthlyKmAllowanceNet = workOfficeDays * config.dailyKmAllowance; 
 
-        // 4. Total: Salaire Net + Indemnités Net
         const monthlyGrandTotalNet = monthlyBaseSalaryNet + monthlyMealAllowanceNet + monthlyKmAllowanceNet;
 
-        // Mise à jour de l'UI
         $('#monthly-base-salary-gross').textContent = monthlyBaseSalaryGross.toFixed(2) + ' €';
-        $('#monthly-base-salary-net').textContent = monthlyBaseSalaryNet.toFixed(2) + ' €'; // NOUVEAU
+        $('#monthly-base-salary-net').textContent = monthlyBaseSalaryNet.toFixed(2) + ' €'; 
         $('#monthly-meal-allowance').textContent = monthlyMealAllowanceNet.toFixed(2) + ' €';
         $('#monthly-km-allowance').textContent = monthlyKmAllowanceNet.toFixed(2) + ' €'; 
         $('#monthly-grand-total').textContent = monthlyGrandTotalNet.toFixed(2) + ' €';
@@ -1019,14 +1225,12 @@
         $('#monthly-total-work-hours').textContent = fmtMinutes(totalWorkMinutes);
         $('#monthly-remote-days').textContent = remoteDays;
 
-        // Mettre à jour les soldes actuels (ils sont recalculés globalement au démarrage et à la sauvegarde)
         $('#current-rtt-balance').textContent = config.currentRttBalance;
         $('#current-vacation-balance').textContent = config.currentVacationBalance;
 
         renderMonthlyChart(filteredEntries, yearMonth);
     }
     
-    // --- UI DATA ---
     function renderDataListView(){
       const container = $('#data-list-container');
       container.innerHTML = workEntries.map(e => {
@@ -1042,7 +1246,6 @@
       }).join('') || `<div class="text-center text-gray-600 text-sm py-4">L'historique est vide.</div>`;
     }
 
-    // --- UI RÉGLAGES ---
     function updateSettingsUI(){
       $('#target-hours').value = (config.targetWeeklyHours / 60).toFixed(1);
       $('#lunch-minutes').value = config.lunchDurationMinutes;
@@ -1060,7 +1263,7 @@
       });
     }
 
-    function saveSettings(){
+    function saveSettings(){ 
       config.targetWeeklyHours = parseFloat($('#target-hours').value || 0) * 60;
       config.lunchDurationMinutes = parseInt($('#lunch-minutes').value || 0);
       config.initialRttDays = parseInt($('#initial-rtt-days').value || 0);
@@ -1070,13 +1273,12 @@
       config.dailyMealAllowance = parseFloat($('#daily-meal-allowance').value || 0);
       config.dailyKmAllowance = parseFloat($('#daily-km-allowance').value || 0); 
 
-      lsSaveConfig(config);
+      fbSaveConfig(config); 
       recalculateBalances(); 
       updateSettingsUI(); 
       showModal('Réglages Sauvegardés', 'Vos préférences ont été mises à jour.');
     }
     
-// DÉBUT MODIFICATION: Fonctions pour la nouvelle modale d'horaires par défaut
     let currentDefaultDayKey = null;
 
     function renderDefaultTimesList() {
@@ -1106,25 +1308,25 @@
         $('#time-picker-modal').style.display = 'flex';
     };
 
-    function saveDefaultTimes() {
+    function saveDefaultTimes() { 
         if (!currentDefaultDayKey) return;
 
         config.defaultTimes[currentDefaultDayKey] = {
             start: $('#default-start-time').value,
             end: $('#default-end-time').value,
         };
-        lsSaveConfig(config);
+        fbSaveConfig(config); 
         
         $('#time-picker-modal').style.display = 'none';
-        renderDefaultTimesList(); // Mise à jour de la liste
-        $('#default-times-modal').style.display = 'flex'; // Retour à la modale de la liste
+        renderDefaultTimesList(); 
+        $('#default-times-modal').style.display = 'flex'; 
         currentDefaultDayKey = null;
     }
     
-    function clearDefaultTimes() {
+    function clearDefaultTimes() { 
         if (!currentDefaultDayKey) return;
         config.defaultTimes[currentDefaultDayKey] = { start: null, end: null };
-        lsSaveConfig(config);
+        fbSaveConfig(config); 
         
         $('#time-picker-modal').style.display = 'none';
         renderDefaultTimesList();
@@ -1134,23 +1336,21 @@
     
     function applyAutoFill() {
         const date = $('#entry-date-hidden').value;
-        const dayIndex = getDayOfWeekIndex(date); // 0=Lun, 6=Dim
+        const dayIndex = getDayOfWeekIndex(date); 
         const dayKey = DAY_KEYS[dayIndex];
         const defaultTimes = config.defaultTimes[dayKey];
         
         if (defaultTimes && defaultTimes.start && defaultTimes.end) {
             $('#start-time').value = defaultTimes.start;
             $('#end-time').value = defaultTimes.end;
-            $('#entry-type-select').value = 'WORK'; // Par défaut, on passe en travail
+            $('#entry-type-select').value = 'WORK'; 
             refreshDayTotal();
             showModal('Remplissage automatique', `Horaires appliqués pour ${DAY_NAMES[dayIndex]}.`);
         } else {
             showModal('Remplissage automatique', `Aucun horaire par défaut n'est configuré pour ${DAY_NAMES[dayIndex]}.`);
         }
     }
-// FIN MODIFICATION
 
-    // --- UI CALENDRIER (omise pour la concision) ---
     let currentCalDate = new Date(); 
     function renderCalendar(date) {
         currentCalDate = date;
@@ -1165,15 +1365,12 @@
         const grid = $('#calendar-grid');
         grid.innerHTML = '';
 
-        // Déterminer le décalage du premier jour (0=dimanche, 1=lundi, ...)
         let startDay = (firstDayOfMonth.getDay() + 6) % 7; 
 
-        // Remplir les jours vides avant
         for (let i = 0; i < startDay; i++) {
             grid.innerHTML += '<div></div>';
         }
 
-        // Remplir les jours du mois
         for (let d = 1; d <= lastDayOfMonth.getDate(); d++) {
             const currentYMD = dateToYMD(new Date(year, month, d));
             const entry = workEntries.find(e => e.date === currentYMD);
@@ -1205,26 +1402,39 @@
         editDate(ymd); 
     };
     
-    // --- INITIALISATION & ÉVÉNEMENTS ---
-    document.addEventListener('DOMContentLoaded', () => {
-      
-      // Essayer de charger la configuration et les données locales
-      const savedConfig = lsLoadConfig();
-      if(savedConfig){ 
-          // Permet d'ajouter 'defaultTimes' si l'ancienne config n'en avait pas
-          config = {...config, ...savedConfig, 
-              defaultTimes: {...config.defaultTimes, ...(savedConfig.defaultTimes || {})} 
-          }; 
-      }
-      workEntries = lsGetAllEntriesArray();
-      recalculateBalances();
+    function forceHideSplash(){
+        const splash = $('#splash-screen');
+        if(splash) { 
+            splash.style.opacity = '0'; 
+            setTimeout(() => splash.remove(), 400); 
+        }
+    }
 
-      // Gestion de la photo de profil
+    // --- INITIALISATION & ÉVÉNEMENTS ---
+    document.addEventListener('DOMContentLoaded', async () => { 
+      
+      // DÉBUT MODIFICATION: L'écouteur d'état remplace le chargement initial des données
+      if (!useLocalOnly) {
+        onAuthStateChanged(auth, async (user) => {
+            // Cette fonction s'exécute à chaque changement (connexion, déconnexion)
+            await handleAuthState(user);
+        });
+      } else {
+        // Mode local pur : chargement immédiat des données locales
+        await loadUserDataAndRefreshUI();
+      }
+      
+      // NOUVEAU: Événements de connexion/déconnexion
+      $('#google-signin-btn').onclick = signInWithGoogle;
+      $('#google-signout-btn').onclick = signOutUser;
+      
+      // ... (Reste des événements du DOM)
+      
       const profilePicInput = $('#profile-picture-file');
       $('#select-profile-picture-btn').onclick = () => profilePicInput.click();
       $('#clear-profile-picture-btn').onclick = () => {
           config.profilePictureBase64 = null;
-          lsSaveConfig(config); 
+          fbSaveConfig(config); 
           updateProfilePictureDisplay();
       };
       
@@ -1234,7 +1444,7 @@
               const reader = new FileReader();
               reader.onload = (e) => {
                   config.profilePictureBase64 = e.target.result;
-                  lsSaveConfig(config);
+                  fbSaveConfig(config); 
                   updateProfilePictureDisplay();
               };
               reader.readAsDataURL(file);
@@ -1258,11 +1468,9 @@
       $('#calendar-next').onclick = () => renderCalendar(new Date(addMonths(dateToYMD(currentCalDate), 1) + '-01' + 'T00:00:00'));
 
       // --- ÉVÉNEMENTS SAISIE ---
-// DÉBUT MODIFICATION: Ajout de l'événement pour le remplissage automatique
       $('#auto-fill-btn').onclick = applyAutoFill;
-// FIN MODIFICATION
 
-      $('#save-entry-btn').onclick = () => {
+      $('#save-entry-btn').onclick = async () => {
         const date = $('#entry-date-hidden').value;
         const type = $('#entry-type-select').value;
         const start = $('#start-time').value;
@@ -1283,32 +1491,12 @@
             if(lunch !== undefined && lunch !== 0) newEntry.lunchDurationMinutes = lunch;
         }
         
-        let entriesMap = lsLoadEntriesMap();
-        entriesMap[date] = newEntry;
-        lsSaveEntriesMap(entriesMap);
-        
-        workEntries = lsGetAllEntriesArray();
-        recalculateBalances();
-        renderLatestList();
-        updateEntryUI(date); // Re-affiche l'entrée mise à jour
-        showModal('Enregistré', `L'entrée pour le ${dateToFr(date)} a été sauvegardée.`);
+        await saveEntryWrapper(newEntry);
       };
 
-      $('#delete-entry-btn').onclick = () => {
+      $('#delete-entry-btn').onclick = async () => {
           const date = $('#entry-date-hidden').value;
-          let entriesMap = lsLoadEntriesMap();
-          delete entriesMap[date];
-          lsSaveEntriesMap(entriesMap);
-          workEntries = lsGetAllEntriesArray();
-          recalculateBalances();
-          renderLatestList();
-          
-          // Réinitialiser la date auj. et l'UI
-          config.lastSelectedDate = dateToYMD(new Date()); 
-          lsSaveConfig(config);
-          updateEntryUI(config.lastSelectedDate);
-          
-          showModal('Supprimé', `L'entrée du ${dateToFr(date)} a été supprimée.`);
+          await deleteEntryWrapper(date);
       };
       
       // --- ÉVÉNEMENTS MENSUELS ---
@@ -1326,7 +1514,7 @@
 
       // --- ÉVÉNEMENTS RÉGLAGES ---
       $('#save-settings-btn').onclick = saveSettings;
-// DÉBUT MODIFICATION: Événements pour la modale d'horaires par défaut
+      
       $('#open-default-times-btn').onclick = () => {
           renderDefaultTimesList();
           $('#default-times-modal').style.display = 'flex';
@@ -1338,19 +1526,17 @@
           $('#default-times-modal').style.display = 'flex';
       };
       $('#clear-default-times-btn').onclick = clearDefaultTimes;
-// FIN MODIFICATION
       
       $('#toggle-privacy-btn').onclick = () => {
           config.privacyMode = !config.privacyMode;
-          lsSaveConfig(config);
+          fbSaveConfig(config); 
           updateSettingsUI();
-          // Force la vue mensuelle à se rafraîchir pour appliquer le flou si elle est active
           if($('#tab-mensuelle').style.display === 'block') {
              updateMonthlyView(config.selectedMonthYM);
           }
       };
 
-      // --- ÉVÉNEMENTS IMPORT/EXPORT IMPLÉMENTÉS ---
+      // --- ÉVÉNEMENTS IMPORT/EXPORT ---
       $('#export-data-btn').onclick = exportDataToCsv;
       $('#import-data-btn').onclick = () => $('#import-file').click();
       $('#import-file').onchange = (e) => {
@@ -1370,25 +1556,6 @@
       $('#end-time').addEventListener('input', refreshDayTotal);
       $('#lunch-duration-manual').addEventListener('input', refreshDayTotal);
       
-      // Boot
-      updateEntryUI(config.lastSelectedDate);
-      renderLatestList();
-      updateProfilePictureDisplay();
-      
-      function forceHideSplash(){
-          const splash = $('#splash-screen');
-          if(splash) { 
-              splash.style.opacity = '0'; 
-              setTimeout(() => splash.remove(), 400); 
-          }
-      }
-
-      try {
-          setTimeout(forceHideSplash, 1000);
-      } catch (err) {
-          console.error("Erreur fatale :", err);
-          forceHideSplash();
-      }
     });
   </script>
 </body>
