@@ -889,8 +889,8 @@
         let labelType = e.type === 'REMOTE' ? 'Télétravail' : e.type;
         if(e.type === 'WORK') labelType = 'Travail';
         else if(e.type === 'RTT') labelType = 'RTT';
-        else if(e.type === 'VACANCES') labelType = 'Vacances';
-        else if(e.type === 'FERIE') labelType = 'Férié';
+        else if(e.type === 'VACATION') labelType = 'Vacances';
+        else if(e.type === 'HOLIDAY') labelType = 'Férié';
 
 
         return `<div onclick="window.editDate('${e.date}')" class="bento-card py-3 flex justify-between items-center cursor-pointer active:bg-gray-800 transition-colors mb-2">
