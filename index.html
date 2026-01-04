@@ -304,15 +304,12 @@
     <section id="tab-reglages" class="tab-content" style="display:none;">
         
       <div class="bento-card mb-4" id="cloud-section">
-          <h3 class="text-xs text-gray-400 uppercase font-bold mb-3">Cloud Sync ☁️</h3>
+          <h3 class="text-xs text-gray-400 uppercase font-bold mb-3">Sauvegarde Cloud ☁️</h3>
           
           <div id="logged-out-view">
-            <p class="text-sm text-gray-400 mb-3">Synchronisez vos heures sur tous vos appareils.</p>
-            <button id="btn-login-apple" class="w-full h-[44px] rounded-xl bg-white text-black font-bold text-sm mb-2 flex items-center justify-center gap-2">
-              <span class="text-lg"></span> Continuer avec Apple
-            </button>
-            <button id="btn-login-google" class="w-full h-[44px] rounded-xl bg-[#4285F4] text-white font-bold text-sm flex items-center justify-center gap-2">
-              <span>G</span> Continuer avec Google
+            <p class="text-sm text-gray-400 mb-3">Connectez-vous pour synchroniser vos données et ne jamais les perdre.</p>
+            <button id="btn-login-google" class="w-full h-[44px] rounded-xl bg-[#4285F4] text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
+              <span class="bg-white text-transparent bg-clip-text text-lg" style="-webkit-text-fill-color: white;">G</span> Continuer avec Google
             </button>
           </div>
 
@@ -479,9 +476,9 @@
   </div>
 
 <script type="module">
-  // --- IMPORTS FIREBASE & CONFIG ---
+  // --- IMPORTS FIREBASE & CONFIG (VERSION NETTOYÉE) ---
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-  import { getAuth, signInWithPopup, signOut, onAuthStateChanged, OAuthProvider, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+  import { getAuth, signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -519,7 +516,7 @@
       selectedMonthYM: new Date().toISOString().substring(0, 7),
       userProfilePic: null,
       privacyMode: false,
-      defaultTimes: {} // Format: { 'LUN': {start: '09:00', end: '17:30'}, ... }
+      defaultTimes: {}
   };
   let monthlyChartInstance = null;
   let currentCalDate = new Date();
@@ -574,12 +571,11 @@
     return new Date(y,m-1,1).toLocaleString('fr-FR', { month:'long', year:'numeric' });
   };
 
-  // --- LOGIQUE CLOUD & SYNC ---
-  const appleProvider = new OAuthProvider('apple.com');
+  // --- LOGIQUE CLOUD & SYNC (UNIQUEMENT GOOGLE) ---
   const googleProvider = new GoogleAuthProvider();
 
   function setupAuthListeners() {
-      $('#btn-login-apple').addEventListener('click', () => signInWithCloud(appleProvider));
+      // Un seul bouton désormais
       $('#btn-login-google').addEventListener('click', () => signInWithCloud(googleProvider));
       $('#btn-logout').addEventListener('click', () => signOut(auth));
       $('#btn-force-sync').addEventListener('click', () => syncData(true));
@@ -589,7 +585,14 @@
       try {
           await signInWithPopup(auth, provider);
       } catch (error) {
-          showModal("Erreur connexion", error.message);
+          console.error("Auth Error:", error);
+          let msg = error.message;
+          if (error.code === 'auth/operation-not-allowed') {
+             msg = "La connexion Google n'est pas activée dans la console Firebase.";
+          } else if (error.code === 'auth/unauthorized-domain') {
+             msg = "Le domaine actuel n'est pas autorisé dans Firebase Authentication.";
+          }
+          showModal("Erreur connexion", msg);
       }
   }
 
@@ -751,7 +754,6 @@
 
   function renderLatestList(){
     const container = $('#latest-list');
-    // Sort desc date
     const sorted = [...workEntries].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
     
     container.innerHTML = sorted.map(e=>{
@@ -845,22 +847,11 @@
   function renderMonthlyChart(entries, yearMonth) {
      const ctx = document.getElementById('monthly-chart').getContext('2d');
      const targetHours = config.targetWeeklyHours / 60; 
-     // Simplification : objectif journalier moyen = hebdo / 5
      const dailyTarget = targetHours / 5;
 
      const [y, m] = yearMonth.split('-').map(Number);
      const daysInMonth = new Date(y, m, 0).getDate();
      
-     const labels = [];
-     const dataWorked = [];
-     
-     // Agrégation par semaine pour simplifier l'affichage mobile
-     // Ou jour par jour ? Le code original semblait faire par semaine.
-     // Faisons jour par jour pour la précision, ou semaine si trop dense.
-     // Le code original : "weeklyData[label]" -> semblait grouper par semaine.
-     // Reconstituons une vue simple jour par jour des jours travaillés
-     
-     // Approche simplifiée : Barre par jour travaillé
      const workedEntries = entries.filter(e => e.type === 'WORK' || e.type === 'REMOTE').sort((a,b)=>a.date.localeCompare(b.date));
      
      const chartLabels = workedEntries.map(e => e.date.substring(8)); // Juste le jour
@@ -1049,6 +1040,19 @@
      $('#calendar-next').onclick = () => renderCalendar(addMonthToDate(currentCalDate, 1));
      $('#close-calendar-btn').onclick = () => $('#calendar-modal').style.display = 'none';
      $('#close-modal-btn').onclick = () => $('#custom-modal').style.display = 'none';
+     
+     // Auto Fill Button
+     $('#auto-fill-btn').onclick = applyAutoFill;
+
+     // Setup Default Times Modal
+     $('#open-default-times-btn').onclick = () => {
+         renderDefaultTimesList();
+         $('#default-times-modal').style.display = 'flex';
+     };
+     $('#close-default-times-btn').onclick = () => $('#default-times-modal').style.display = 'none';
+     
+     // Time Picker Modal Logic
+     $('#cancel-time-picker-btn').onclick = () => $('#time-picker-modal').style.display = 'none';
 
      // Expose editDate globally
      window.editDate = (date) => {
@@ -1086,8 +1090,8 @@
       const sel = $('#month-select');
       sel.innerHTML = '';
       let cur = new Date().toISOString().substring(0,7);
-      cur = addMonths(cur, 1); // Future month
-      for(let i=0; i<24; i++) { // 2 years back
+      cur = addMonths(cur, 1); 
+      for(let i=0; i<24; i++) { 
           cur = addMonths(cur, -1);
           const opt = document.createElement('option');
           opt.value = cur;
@@ -1106,10 +1110,8 @@
       const grid = $('#calendar-grid');
       grid.innerHTML = '';
       
-      const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+      const firstDay = new Date(year, month, 1).getDay(); 
       const daysInMonth = new Date(year, month+1, 0).getDate();
-      
-      // Offset for Monday start (Mon=0... Sun=6)
       const offset = (firstDay + 6) % 7; 
       
       for(let i=0; i<offset; i++) grid.innerHTML += '<div></div>';
@@ -1118,7 +1120,6 @@
           const ymd = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
           const entry = getEntry(ymd);
           let cls = 'cal-btn hover:bg-gray-700';
-          let txt = d;
           
           if(ymd === config.lastSelectedDate) cls += ' is-selected';
           if(ymd === dateToYMD(new Date())) cls += ' is-today';
@@ -1144,6 +1145,63 @@
       newD.setMonth(newD.getMonth() + n);
       return newD;
   }
+  
+  // --- DEFAULT TIMES LOGIC ---
+  function renderDefaultTimesList() {
+      const container = $('#day-list-container');
+      container.innerHTML = '';
+      
+      DAY_NAMES.forEach((name, index) => {
+          const key = DAY_KEYS[index];
+          const def = config.defaultTimes[key];
+          const timeStr = (def && def.start) ? `${def.start} - ${def.end}` : 'Non défini';
+          const color = (def && def.start) ? 'text-blue-400' : 'text-gray-500';
+          
+          const div = document.createElement('div');
+          div.className = "flex justify-between items-center p-3 bg-[#2C2C2E] rounded-xl active:scale-[0.98] transition-transform";
+          div.innerHTML = `
+             <span class="text-white font-medium">${name}</span>
+             <span class="text-sm ${color} font-mono">${timeStr}</span>
+          `;
+          div.onclick = () => openTimePicker(index);
+          container.appendChild(div);
+      });
+  }
+
+  let currentEditingDayIndex = -1;
+
+  function openTimePicker(dayIndex) {
+      currentEditingDayIndex = dayIndex;
+      const key = DAY_KEYS[dayIndex];
+      const def = config.defaultTimes[key];
+      
+      $('#time-picker-title').textContent = DAY_NAMES[dayIndex];
+      $('#default-start-time').value = (def && def.start) ? def.start : '09:00';
+      $('#default-end-time').value = (def && def.end) ? def.end : '17:30';
+      
+      $('#time-picker-modal').style.display = 'flex';
+  }
+
+  $('#save-default-times-btn').onclick = () => {
+      if(currentEditingDayIndex === -1) return;
+      const key = DAY_KEYS[currentEditingDayIndex];
+      const start = $('#default-start-time').value;
+      const end = $('#default-end-time').value;
+      
+      config.defaultTimes[key] = { start, end };
+      lsSaveConfig(config);
+      renderDefaultTimesList();
+      $('#time-picker-modal').style.display = 'none';
+  };
+
+  $('#clear-default-times-btn').onclick = () => {
+       if(currentEditingDayIndex === -1) return;
+       const key = DAY_KEYS[currentEditingDayIndex];
+       delete config.defaultTimes[key];
+       lsSaveConfig(config);
+       renderDefaultTimesList();
+       $('#time-picker-modal').style.display = 'none';
+  };
 </script>
 </body>
 </html>
