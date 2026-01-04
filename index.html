@@ -24,30 +24,22 @@
       background-color: #000000; /* Fond noir OLED */
       color: #ffffff;
       -webkit-tap-highlight-color: transparent;
-      overscroll-behavior-y: none; /* Empêche le rebond élastique global */
+      overscroll-behavior-y: none;
     }
 
-    /* CLASSES UTILITAIRES POUR IPHONE */
-    .safe-bottom { 
-        padding-bottom: env(safe-area-inset-bottom); 
-    }
-    
-    /* INPUTS : On force 16px pour éviter le zoom iOS */
-    input, select, textarea, button {
-        font-size: 16px !important; 
-        outline: none;
-    }
+    .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+    input, select, textarea, button { font-size: 16px !important; outline: none; }
 
     /* Style des cartes "Bento" */
     .bento-card {
-        background-color: #1C1C1E; /* Gris iOS natif */
+        background-color: #1C1C1E;
         border-radius: 18px;
         padding: 16px;
         margin-bottom: 12px;
         border: 1px solid #2C2C2E;
     }
 
-    /* Style des inputs modernisés */
+    /* Style des inputs */
     .big-input {
         background: #2C2C2E;
         border-radius: 12px;
@@ -64,13 +56,9 @@
         border-color: #0A84FF;
     }
     
-    /* Style spécifique pour le select du mois */
-    #month-select {
-        text-align-last: center; /* Centre le texte dans le select */
-    }
+    #month-select { text-align-last: center; }
 
-
-    /* Barre de navigation style iOS "Blur" */
+    /* Nav Blur */
     .nav-blur {
         background: rgba(28, 28, 30, 0.85);
         backdrop-filter: blur(20px);
@@ -78,19 +66,10 @@
         border-top: 1px solid rgba(255,255,255,0.1);
     }
     
-    /* CORRECTION DE L'ENCOCHE : Appliqué UNIQUEMENT au HEADER */
-    header.nav-blur {
-        /* Applique le safe area + 10px de padding fixe en plus */
-        padding-top: calc(env(safe-area-inset-top) + 10px); 
-    }
+    header.nav-blur { padding-top: calc(env(safe-area-inset-top) + 10px); }
+    #pane { padding-top: calc(env(safe-area-inset-top) + 80px) !important; }
 
-    /* CORRECTION MAIN CONTENT : Augmenté à 80px pour plus de dégagement */
-    #pane {
-        /* Calcule l'offset: hauteur dynamique du header + marge de séparation (80px) */
-        padding-top: calc(env(safe-area-inset-top) + 80px) !important;
-    }
-
-    /* Boutons de navigation */
+    /* Boutons Nav */
     .nav-btn {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         width: 100%; height: 100%; background: transparent; border: none;
@@ -100,23 +79,19 @@
     .nav-icon { font-size: 22px; margin-bottom: -2px; }
     .nav-label { font-size: 10px; font-weight: 500; }
 
-    /* Bouton Date Géant */
+    /* Hero Button */
     .date-hero-btn {
         background: linear-gradient(135deg, #0A84FF 0%, #007AFF 100%);
         color: white;
-        width: 100%;
-        padding: 20px;
-        border-radius: 20px;
+        width: 100%; padding: 20px; border-radius: 20px;
         display: flex; justify-content: space-between; align-items: center;
-        border: none;
-        box-shadow: 0 4px 15px rgba(10, 132, 255, 0.3);
+        border: none; box-shadow: 0 4px 15px rgba(10, 132, 255, 0.3);
     }
 
-    /* Switch Tabs Animation */
     .tab-content { animation: fadeIn 0.2s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Modal Calendrier Clean */
+    /* Calendrier Modal */
     #calendar-modal {
         position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
         z-index: 2000; display: none; align-items: flex-end; justify-content: center;
@@ -133,17 +108,8 @@
     .cal-btn.is-selected { background: #0A84FF; font-weight: 700; }
     .cal-btn.is-today { border: 2px solid #0A84FF; }
     
-    /* Classe pour le flou de confidentialité */
-    .privacy-blur {
-        filter: blur(6px);
-        user-select: none;
-        transition: filter 0.3s ease;
-    }
-    .privacy-visible {
-        filter: blur(0);
-    }
-
-    /* Scrollbar invisible */
+    .privacy-blur { filter: blur(6px); user-select: none; transition: filter 0.3s ease; }
+    .privacy-visible { filter: blur(0); }
     ::-webkit-scrollbar { display: none; }
   </style>
 </head>
@@ -171,7 +137,6 @@
   <main id="pane" class="w-full min-h-screen pb-28 px-4">
     
     <section id="tab-saisie" class="tab-content">
-      
       <div class="mb-4">
         <button id="entry-date-button" class="date-hero-btn active:scale-95 transition-transform duration-100">
           <div class="text-left">
@@ -224,8 +189,8 @@
       </div>
 
       <div class="grid grid-cols-4 gap-3 mt-2">
-<button id="auto-fill-btn" class="col-span-1 h-[50px] rounded-xl bg-purple-800/50 text-purple-300 text-xl border border-purple-700 flex items-center justify-center" title="Remplir auto">⚡️</button>
-<button id="clear-entry-btn" class="col-span-1 h-[50px] rounded-xl bg-gray-800 text-gray-400 text-xl border border-gray-700 flex items-center justify-center">↺</button>
+        <button id="auto-fill-btn" class="col-span-1 h-[50px] rounded-xl bg-purple-800/50 text-purple-300 text-xl border border-purple-700 flex items-center justify-center" title="Remplir auto">⚡️</button>
+        <button id="clear-entry-btn" class="col-span-1 h-[50px] rounded-xl bg-gray-800 text-gray-400 text-xl border border-gray-700 flex items-center justify-center">↺</button>
         <button id="save-entry-btn" class="col-span-2 h-[50px] rounded-xl bg-blue-600 text-white font-bold text-lg shadow-lg shadow-blue-900/50 active:scale-95 transition-transform">Enregistrer</button>
       </div>
       <button id="delete-entry-btn" class="w-full mt-3 py-3 text-red-500 text-sm font-medium" style="display:none;">Supprimer</button>
@@ -256,7 +221,7 @@
       </div>
 
       <div id="weekly-body" class="bento-card divide-y divide-gray-700/50 p-0 overflow-hidden">
-        </div>
+      </div>
     </section>
 
     <section id="tab-mensuelle" class="tab-content" style="display:none;">
@@ -277,28 +242,25 @@
                   <span class="text-sm font-medium">Salaire de base BRUT (151.67h)</span>
                   <span id="monthly-base-salary-gross" class="font-bold text-lg text-white privacy-blur">0.00 €</span>
               </div>
-              
               <div class="flex justify-between items-center py-2 border-b border-white/20">
                   <span class="text-sm font-medium">Salaire de base NET (Brut -23%)</span>
                   <span id="monthly-base-salary-net" class="font-bold text-lg text-blue-300 privacy-blur">0.00 €</span>
               </div>
-              
               <div class="flex justify-between items-center py-2 border-b border-white/20">
-                  <span class="text-sm font-medium">Indemnités Repas NET (Jours Bureau + TT)</span>
+                  <span class="text-sm font-medium">Indemnités Repas NET</span>
                   <span id="monthly-meal-allowance" class="font-bold text-sm text-pink-300 privacy-blur">0.00 €</span>
               </div>
-              
               <div class="flex justify-between items-center py-2 border-b border-white/20">
-                  <span class="text-sm font-medium">Indemnités KM NET (Jours Bureau)</span>
+                  <span class="text-sm font-medium">Indemnités KM NET</span>
                   <span id="monthly-km-allowance" class="font-bold text-sm text-green-300 privacy-blur">0.00 €</span>
               </div>
-
               <div class="flex justify-between items-center pt-3">
-                  <span class="text-lg font-bold">Total NET (Est. Sal. Net + Frais Net)</span>
+                  <span class="text-lg font-bold">Total NET</span>
                   <span id="monthly-grand-total" class="font-extrabold text-2xl text-yellow-300 privacy-blur">0.00 €</span>
               </div>
           </div>
       </div>
+
       <div class="bento-card mb-4">
         <h3 class="text-xs text-gray-400 uppercase font-bold mb-3">Performance Hebdomadaire</h3>
         <div style="height: 200px; width: 100%;">
@@ -319,12 +281,10 @@
 
       <div class="bento-card">
         <h3 class="text-xs text-gray-400 uppercase font-bold mb-3">Compteurs</h3>
-        
         <div class="flex justify-between items-center py-2 border-b border-gray-700/50">
            <span>Jours Télétravail</span>
            <span id="monthly-remote-days" class="font-bold text-purple-400 text-lg">0</span>
         </div>
-        
         <div class="flex justify-between items-center py-2 border-b border-gray-700/50">
           <span>Solde RTT</span>
           <span id="current-rtt-balance" class="font-bold text-blue-400 text-lg">0</span>
@@ -343,6 +303,35 @@
 
     <section id="tab-reglages" class="tab-content" style="display:none;">
         
+      <div class="bento-card mb-4" id="cloud-section">
+          <h3 class="text-xs text-gray-400 uppercase font-bold mb-3">Cloud Sync ☁️</h3>
+          
+          <div id="logged-out-view">
+            <p class="text-sm text-gray-400 mb-3">Synchronisez vos heures sur tous vos appareils.</p>
+            <button id="btn-login-apple" class="w-full h-[44px] rounded-xl bg-white text-black font-bold text-sm mb-2 flex items-center justify-center gap-2">
+              <span class="text-lg"></span> Continuer avec Apple
+            </button>
+            <button id="btn-login-google" class="w-full h-[44px] rounded-xl bg-[#4285F4] text-white font-bold text-sm flex items-center justify-center gap-2">
+              <span>G</span> Continuer avec Google
+            </button>
+          </div>
+
+          <div id="logged-in-view" class="hidden">
+            <div class="flex items-center gap-3 mb-3">
+              <div id="user-avatar" class="w-10 h-10 rounded-full bg-gray-700 bg-cover bg-center"></div>
+              <div class="overflow-hidden">
+                <div id="user-name" class="text-sm font-bold text-white truncate">Utilisateur</div>
+                <div id="user-email" class="text-xs text-gray-500 truncate">email@test.com</div>
+              </div>
+            </div>
+            <div class="flex gap-2">
+                <button id="btn-force-sync" class="flex-1 h-[36px] rounded-lg bg-blue-600/30 text-blue-400 text-xs font-bold border border-blue-600/50">Forcer Sync ↻</button>
+                <button id="btn-logout" class="h-[36px] px-4 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold border border-red-600/30">Déconnexion</button>
+            </div>
+            <p id="last-sync-msg" class="text-[10px] text-gray-500 mt-2 text-center">Dernière sync: Jamais</p>
+          </div>
+      </div>
+
       <div class="bento-card space-y-4">
         <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Photo de Profil</label>
         <div class="flex items-center space-x-4">
@@ -361,23 +350,24 @@
           <input type="number" step="0.01" id="hourly-gross-rate" class="big-input" value="0.00">
         </div>
         <div>
-          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Indemnité Repas (par jour travaillé €) - NET</label>
+          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Indemnité Repas (NET €)</label>
           <input type="number" step="0.01" id="daily-meal-allowance" class="big-input" value="0.00">
         </div>
         <div>
-          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Indemnité KM (par jour bureau €) - NET</label>
+          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Indemnité KM (NET €)</label>
           <input type="number" step="0.01" id="daily-km-allowance" class="big-input" value="0.00">
         </div>
         <div class="flex justify-between items-center pt-3 border-t border-gray-700">
-           <label class="text-sm text-gray-300">Activer le flou sur les chiffres du salaire</label>
+           <label class="text-sm text-gray-300">Activer le flou sur les chiffres</label>
            <button id="toggle-privacy-btn" class="text-2xl text-blue-400">🔒</button>
         </div>
       </div>
       
-<div class="bento-card space-y-4">
+      <div class="bento-card space-y-4">
          <button id="open-default-times-btn" class="w-full h-10 rounded-lg bg-blue-700 text-sm text-white font-bold active:scale-[0.98] transition-transform">Pré-remplissage des Horaires</button>
       </div>
-<div class="bento-card space-y-4">
+
+      <div class="bento-card space-y-4">
         <div>
           <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Objectif Hebdomadaire (h)</label>
           <input type="number" id="target-hours" class="big-input" value="37.0">
@@ -406,32 +396,27 @@
         <button id="import-data-btn" class="h-10 rounded-lg bg-gray-800 text-sm text-gray-300 active:scale-[0.98] transition-transform">Importer CSV</button>
         <input id="import-file" type="file" accept=".csv" class="hidden">
       </div>
+      
       <div class="text-center text-xs text-gray-600 mt-6 pb-4">ID: <span id="user-id-display">Local</span></div>
-      <div class="text-center text-xs text-gray-600 mt-6 pb-4">Créé par Bnjam1</span></div>
     </section>
   </main>
 
   <nav id="tabbar" class="fixed bottom-0 left-0 right-0 z-50 nav-blur safe-bottom">
     <div class="flex justify-around items-center h-[60px] max-w-md mx-auto">
       <button id="btn-saisie" class="nav-btn is-active">
-        <span class="nav-icon">✏️</span>
-        <span class="nav-label">Saisie</span>
+        <span class="nav-icon">✏️</span> <span class="nav-label">Saisie</span>
       </button>
       <button id="btn-hebdo" class="nav-btn">
-        <span class="nav-icon">📊</span>
-        <span class="nav-label">Hebdo</span>
+        <span class="nav-icon">📊</span> <span class="nav-label">Hebdo</span>
       </button>
       <button id="btn-mensuelle" class="nav-btn">
-        <span class="nav-icon">🗓</span>
-        <span class="nav-label">Mois</span>
+        <span class="nav-icon">🗓</span> <span class="nav-label">Mois</span>
       </button>
       <button id="btn-data" class="nav-btn">
-        <span class="nav-icon">📂</span>
-        <span class="nav-label">Data</span>
+        <span class="nav-icon">📂</span> <span class="nav-label">Data</span>
       </button>
       <button id="btn-reglages" class="nav-btn">
-        <span class="nav-icon">⚙️</span>
-        <span class="nav-label">Réglages</span>
+        <span class="nav-icon">⚙️</span> <span class="nav-label">Réglages</span>
       </button>
     </div>
   </nav>
@@ -451,7 +436,6 @@
          <span id="calendar-title" class="text-white font-bold text-lg capitalize">Mois</span>
          <button id="calendar-next" class="text-blue-500 text-lg p-2 font-bold">Suiv.</button>
        </div>
-       
        <div class="grid grid-cols-7 gap-1 text-center mb-2">
          <div class="text-xs text-gray-500 font-bold">L</div>
          <div class="text-xs text-gray-500 font-bold">M</div>
@@ -461,25 +445,24 @@
          <div class="text-xs text-gray-500 font-bold">S</div>
          <div class="text-xs text-gray-500 font-bold">D</div>
        </div>
-       <div id="calendar-grid" class="grid grid-cols-7 gap-2 place-items-center">
-         </div>
-       <button id="calendar-close-area" class="w-full mt-6 py-3 text-gray-500 text-sm">Fermer</button>
+       <div id="calendar-grid" class="grid grid-cols-7 gap-2"></div>
+       <button id="close-calendar-btn" class="w-full bg-gray-800 text-white font-bold py-4 rounded-xl mt-6">Fermer</button>
     </div>
   </div>
 
-<div id="default-times-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(5px); z-index:3000; display:none; align-items:center; justify-content:center; padding:20px;">
-    <div class="bg-[#1C1C1E] border border-gray-700 rounded-2xl p-6 w-full max-w-xs shadow-2xl">
-      <h3 class="text-white text-lg font-bold mb-4">Pré-remplissage des Horaires</h3>
-      <div id="day-list-container" class="divide-y divide-gray-700/50">
-        </div>
-      <button id="close-default-times-modal-btn" class="w-full bg-gray-700 text-white font-bold py-3 rounded-xl mt-6">Fermer</button>
+  <div id="default-times-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(5px); z-index:2500; display:none; align-items:center; justify-content:center; padding:20px;">
+    <div class="bg-[#1C1C1E] border border-gray-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl h-[80vh] overflow-y-auto">
+        <h3 class="text-white text-xl font-bold mb-4">Horaires par défaut</h3>
+        <p class="text-gray-400 text-xs mb-4">Définissez vos horaires types pour le remplissage automatique.</p>
+        <div id="day-list-container" class="space-y-3 mb-4"></div>
+        <button id="close-default-times-btn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl">Fermer</button>
     </div>
   </div>
 
-  <div id="time-picker-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); z-index:4000; display:none; align-items:center; justify-content:center; padding:20px;">
-    <div class="bg-[#1C1C1E] border border-gray-700 rounded-2xl p-6 w-full max-w-xs shadow-2xl">
-        <h3 id="time-picker-title" class="text-white text-xl font-bold mb-4">Horaires pour Lundi</h3>
-        <div class="space-y-4">
+  <div id="time-picker-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:2600; display:none; align-items:center; justify-content:center; padding:20px;">
+      <div class="bg-[#2C2C2E] border border-gray-600 rounded-2xl p-6 w-full max-w-xs shadow-2xl">
+        <h3 id="time-picker-title" class="text-white text-lg font-bold mb-4 text-center">Lundi</h3>
+        <div class="grid grid-cols-2 gap-4 mb-4">
             <div>
                 <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Début</label>
                 <input type="time" id="default-start-time" class="big-input text-center font-bold text-lg" value="09:00"/>
@@ -492,904 +475,675 @@
         <button id="save-default-times-btn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-6">Sauvegarder</button>
         <button id="clear-default-times-btn" class="w-full bg-red-600/50 text-red-300 font-bold py-3 rounded-xl mt-2">Effacer les horaires</button>
         <button id="cancel-time-picker-btn" class="w-full bg-transparent text-gray-400 font-bold py-3 rounded-xl mt-2">Annuler</button>
-    </div>
+      </div>
   </div>
+
 <script type="module">
-    // --- CONSTANTES GLOBALES ---
-    // Base 35h/semaine pour le calcul du salaire CDI : 151,67 heures/mois
-    const CDI_MONTHLY_HOURS = 151.67; 
-    // Taux de déduction estimé pour passer du Brut au Net (charges salariales)
-    const BRUT_TO_NET_DEDUCTION = 0.23; // 23%
-    
-// DÉBUT MODIFICATION: Ajout de la liste des jours pour la configuration
-    const DAY_NAMES = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
-    const DAY_KEYS = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
-// FIN MODIFICATION
+  // --- IMPORTS FIREBASE & CONFIG ---
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+  import { getAuth, signInWithPopup, signOut, onAuthStateChanged, OAuthProvider, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-    // --- VARIABLES (GARDER LA MEME LOGIQUE) ---
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyCT9BmVNesMSNdodA3d2gI_JWS9XptD5bY",
+    authDomain: "worker-7526f.firebaseapp.com",
+    projectId: "worker-7526f",
+    storageBucket: "worker-7526f.firebasestorage.app",
+    messagingSenderId: "1063639159692",
+    appId: "1:1063639159692:web:7f8fa02e3c4e112e3a3ca9"
+  };
 
-    const firebaseConfig = {}; // Remplacer par la vraie si besoin
-    let app, db, auth, useLocalOnly = true;
+  // Initialisation Firebase
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  let currentUser = null;
 
-    try { 
-        if(Object.keys(firebaseConfig).length > 0) {
-            app = initializeApp(firebaseConfig); 
-            db = getFirestore(app); 
-            auth = getAuth(app); 
-            useLocalOnly = false;
-        }
-    } catch(e) { /* En mode local par défaut */ }
+  // --- CONSTANTES ---
+  const CDI_MONTHLY_HOURS = 151.67;
+  const BRUT_TO_NET_DEDUCTION = 0.23;
+  const DAY_NAMES = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+  const DAY_KEYS = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
 
-    let workEntries = [];
-    let monthlyChartInstance = null; // Instance du graphique
-
-    let config = {
+  // --- VARIABLES ---
+  let workEntries = [];
+  let config = {
       targetWeeklyHours: 37 * 60,
       lunchDurationMinutes: 45,
-      lastSelectedDate: new Date().toISOString().substring(0,10),
-      selectedMonthYM: new Date().toISOString().substring(0,7),
+      hourlyGrossRate: 0,
+      dailyMealAllowance: 0,
+      dailyKmAllowance: 0,
       initialRttDays: 10,
       initialVacationDays: 25,
-      currentRttBalance: 10,  
-      currentVacationBalance: 25,
-      profilePictureBase64: null,
-      // CHAMPS FINANCES
-      hourlyGrossRate: 20.00,
-      dailyKmAllowance: 0.00, 
-      dailyMealAllowance: 0.00,
-      privacyMode: true, // Flou activé par défaut
-      // DÉBUT MODIFICATION: Ajout des horaires par défaut
-      defaultTimes: {
-          LUN: { start: '09:00', end: '17:30' },
-          MAR: { start: '09:00', end: '17:30' },
-          MER: { start: '09:00', end: '17:30' },
-          JEU: { start: '09:00', end: '17:30' },
-          VEN: { start: '09:00', end: '17:30' },
-          SAM: { start: null, end: null },
-          DIM: { start: null, end: null },
-      },
-      // FIN MODIFICATION
-    };
+      lastSelectedDate: new Date().toISOString().substring(0, 10),
+      selectedMonthYM: new Date().toISOString().substring(0, 7),
+      userProfilePic: null,
+      privacyMode: false,
+      defaultTimes: {} // Format: { 'LUN': {start: '09:00', end: '17:30'}, ... }
+  };
+  let monthlyChartInstance = null;
+  let currentCalDate = new Date();
 
-    // --- UTILS ---
-    const $ = (s)=>document.querySelector(s);
-    const dateToYMD = d => {
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${day}`;
-    };
-    const dateToFr = ymd => { const [y,m,d]=ymd.split('-'); return `${d}/${m}/${y}`; };
-    const dateToHuman = ymd => { 
-        const d = new Date(ymd + 'T00:00:00'); 
-        return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-    };
-// DÉBUT MODIFICATION: Nouvelle fonction pour obtenir le jour de la semaine
-    const getDayOfWeekIndex = (ymd) => {
-        const d = new Date(ymd + 'T00:00:00');
-        // getDay() retourne 0 pour Dimanche, 1 pour Lundi, etc.
-        // On le convertit pour avoir 0=Lun, 6=Dim
-        return (d.getDay() + 6) % 7; 
-    }
-// FIN MODIFICATION
-    const fmtMinutes = m => { const s=m<0?"-":""; const a=Math.abs(m); const h=Math.floor(a/60); const mn=Math.round(a%60); return `${s}${h}h ${mn<10?'0':''}${mn}m`; };
-    
-    const calcWorkMinutes = (e)=>{ 
-      // Si ce n'est ni du travail bureau, ni du télétravail, c'est un congé (on met 1/5e de l'objectif pour le graph s'il le faut, ou 0)
-      if(e?.type!=='WORK' && e?.type!=='REMOTE') return config.targetWeeklyHours / 5; 
-      
-      if(!e.start||!e.end) return 0; 
-      const p=t=>{const [h,m]=t.split(':').map(Number);return h*60+m}; 
-      const lunch=(e.lunchDurationMinutes ?? config.lunchDurationMinutes) || 0; 
-      return Math.max(p(e.end)-p(e.start)-lunch,0); 
-    };
+  // --- HELPERS DOM ---
+  const $ = q => document.querySelector(q);
 
-    const clampMonth = (ym)=>ym.replace(/^(\d{4})-(\d{2}).*$/,(_,y,m)=>`${y}-${m.padStart(2,'0')}`);
-    const addMonths = (ym, d)=>{ let [y,m]=ym.split('-').map(Number); const dt=new Date(y,m-1+d,1); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; };
-    const monthLabel = (ym)=>{ const [y,m]=ym.split('-').map(Number); return new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(new Date(y,m-1,1)); };
+  // --- HELPERS DATE & CALCUL ---
+  const dateToYMD = d => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const formatFrDate = ymd => {
+    if(!ymd) return '';
+    const [y,m,d]=ymd.split('-');
+    return `${d}/${m}/${y}`;
+  };
+  const dateToHuman = ymd => {
+    const d = new Date(ymd + 'T00:00:00');
+    return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  };
+  const getDayOfWeekIndex = (ymd) => {
+    const d = new Date(ymd + 'T00:00:00');
+    return (d.getDay() + 6) % 7; 
+  }
+  const fmtMinutes = m => {
+    const s=m<0?"-":"";
+    const a=Math.abs(m);
+    const h=Math.floor(a/60);
+    const mn=Math.round(a%60);
+    return `${s}${h}h ${mn<10?'0':''}${mn}m`;
+  };
+  const calcWorkMinutes = (e)=>{
+    if(e?.type!=='WORK' && e?.type!=='REMOTE') return config.targetWeeklyHours / 5; 
+    if(!e.start||!e.end) return 0;
+    const p=t=>{const [h,m]=t.split(':').map(Number);return h*60+m};
+    const lunch=(e.lunchDurationMinutes ?? config.lunchDurationMinutes) || 0;
+    return Math.max(p(e.end)-p(e.start)-lunch,0);
+  };
+  const clampMonth = (ym)=>ym.replace(/^(\d{4})-(\d{2}).*$/,(_,y,m)=>`${y}-${m.padStart(2,'0')}`);
+  const addMonths = (ym, d)=>{
+    let [y,m]=ym.split('-').map(Number);
+    m+=d;
+    while(m>12){m-=12;y++;}
+    while(m<1){m+=12;y--;}
+    return `${y}-${String(m).padStart(2,'0')}`;
+  };
+  const monthLabel = (ym) => {
+    const [y,m]=ym.split('-').map(Number);
+    return new Date(y,m-1,1).toLocaleString('fr-FR', { month:'long', year:'numeric' });
+  };
 
-    // --- LOCAL STORAGE ---
-    const LS_KEYS = { entries:`tt_worker_entries`, config:`tt_worker_config` };
-    const lsLoadEntriesMap = ()=>{ try{return JSON.parse(localStorage.getItem(LS_KEYS.entries)||'{}')}catch{return{}} };
-    const lsSaveEntriesMap = (map)=>{ try{localStorage.setItem(LS_KEYS.entries, JSON.stringify(map))}catch{} };
-    const lsGetAllEntriesArray = ()=>Object.values(lsLoadEntriesMap()).sort((a,b)=>b.date.localeCompare(a.date));
-    const lsSaveConfig = (cfg)=>{ try{localStorage.setItem(LS_KEYS.config, JSON.stringify(cfg))}catch{} };
-    const lsLoadConfig = ()=>{ try{return JSON.parse(localStorage.getItem(LS_KEYS.config)||'null')}catch{return null} };
+  // --- LOGIQUE CLOUD & SYNC ---
+  const appleProvider = new OAuthProvider('apple.com');
+  const googleProvider = new GoogleAuthProvider();
 
-    // --- LOGIQUE METIER ---
-    function recalculateBalances(){
-      let rttUsed = 0;
-      let vacationUsed = 0;
-      workEntries.forEach(e => {
-        if(e.type === 'RTT') rttUsed += 1;
-        else if (e.type === 'VACATION') vacationUsed += 1;
-      });
-      config.currentRttBalance = (config.initialRttDays||0) - rttUsed;
-      config.currentVacationBalance = (config.initialVacationDays||0) - vacationUsed;
-      lsSaveConfig(config); 
-    }
-    
-    // --- FONCTIONS EXPORT/IMPORT RÉELLES ---
-    function exportDataToCsv() {
-      if (workEntries.length === 0) { showModal('Exportation', 'Aucune donnée à exporter.'); return; }
-      const headers = ["date", "type", "start", "end", "lunchDurationMinutes", "timestamp"];
-      const csvRows = []; csvRows.push(headers.join(';')); 
-      workEntries.forEach(entry => {
-          const row = headers.map(fieldName => {
-              let value = entry[fieldName] !== undefined ? entry[fieldName] : "";
-              if (typeof value === 'number') value = String(value).replace('.', ',');
-              return `"${value}"`; 
-          });
-          csvRows.push(row.join(';'));
-      });
-      const csvString = csvRows.join('\n');
-      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      const today = new Date().toISOString().substring(0, 10);
-      link.setAttribute("href", url);
-      link.setAttribute("download", `worker_data_${today}.csv`);
-      document.body.appendChild(link); link.click(); document.body.removeChild(link);
-      showModal('Exportation Réussie', `Le fichier <b>worker_data_${today}.csv</b> a été téléchargé. Il contient ${workEntries.length} entrées.`);
-    }
+  function setupAuthListeners() {
+      $('#btn-login-apple').addEventListener('click', () => signInWithCloud(appleProvider));
+      $('#btn-login-google').addEventListener('click', () => signInWithCloud(googleProvider));
+      $('#btn-logout').addEventListener('click', () => signOut(auth));
+      $('#btn-force-sync').addEventListener('click', () => syncData(true));
+  }
 
-    function importDataFromCsv(file) {
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-          try {
-              const csv = e.target.result;
-              const lines = csv.split('\n').filter(line => line.trim() !== '');
-              if (lines.length === 0) { showModal('Erreur d\'Importation', 'Le fichier CSV est vide.'); return; }
-              const delimiter = lines[0].includes(';') ? ';' : ','; 
-              const headerLine = lines.split('\n')[0].replace(/"/g, '').split(delimiter); 
-              const requiredHeaders = ["date", "type"];
-              if (!requiredHeaders.every(h => headerLine.includes(h))) {
-                  showModal('Erreur d\'Importation', 'Le fichier CSV n\'a pas les en-têtes requis (date, type).');
-                  return;
-              }
-              const importedMap = {};
-              for (let i = 1; i < lines.length; i++) {
-                  const values = lines[i].split(delimiter).map(v => v.replace(/"/g, '').trim());
-                  if (values.length !== headerLine.length) continue; 
-                  const entry = {};
-                  headerLine.forEach((header, index) => {
-                      let value = values[index];
-                      if (header === 'lunchDurationMinutes' || header === 'timestamp') {
-                           value = value.replace(',', '.'); 
-                           entry[header] = value ? parseInt(value) : undefined;
-                      } else {
-                          entry[header] = value;
-                      }
-                  });
-                  if (entry.date && entry.type) { importedMap[entry.date] = entry; }
-              }
-              const existingMap = lsLoadEntriesMap();
-              const newMap = {...existingMap, ...importedMap}; 
-              lsSaveEntriesMap(newMap);
-              workEntries = lsGetAllEntriesArray();
-              recalculateBalances();
-              updateEntryUI(config.lastSelectedDate);
-              renderLatestList();
-              renderDataListView();
-              showModal('Importation Réussie', `${Object.keys(importedMap).length} entrées ont été importées et fusionnées avec succès.`);
-          } catch (error) {
-              console.error("Erreur lors de l'importation:", error);
-              showModal('Erreur Critique', 'Impossible de traiter le fichier. Vérifiez son format CSV.');
-          }
-      };
-      reader.onerror = () => { showModal('Erreur de Lecture', 'Impossible de lire le fichier.'); };
-      reader.readAsText(file, 'UTF-8');
-    }
-
-    function showModal(t,m){$('#modal-title').textContent=t; $('#modal-message').innerHTML=m; $('#custom-modal').style.display='flex';}
-
-    function setActiveTab(name){
-      ['saisie','hebdo','mensuelle','data','reglages'].forEach(id=>{
-        const el = $('#tab-'+id);
-        const btn = $('#btn-'+id);
-        if(id===name) {
-            el.style.display = 'block';
-            btn.classList.add('is-active');
-        } else {
-            el.style.display = 'none';
-            btn.classList.remove('is-active');
-        }
-      });
-      window.scrollTo(0,0); 
-      if(name==='hebdo') updateWeeklyView();
-      if(name==='mensuelle'){ 
-          buildMonthOptions(); 
-          updateMonthlyView(config.selectedMonthYM); 
+  async function signInWithCloud(provider) {
+      try {
+          await signInWithPopup(auth, provider);
+      } catch (error) {
+          showModal("Erreur connexion", error.message);
       }
-      if(name==='data') renderDataListView();
-      if(name==='reglages') updateSettingsUI();
-    }
-    
-    function updateProfilePictureDisplay(){
-        const container = $('#profile-picture-container');
-        const initials = $('#profile-initials');
-        const preview = $('#settings-profile-preview');
-        const clearBtn = $('#clear-profile-picture-btn');
+  }
 
-        if(config.profilePictureBase64) {
-            container.style.backgroundImage = `url(${config.profilePictureBase64})`;
-            initials.style.display = 'none';
-            preview.style.backgroundImage = `url(${config.profilePictureBase64})`;
-            preview.textContent = '';
-            clearBtn.style.display = 'block';
-        } else {
-            container.style.backgroundImage = 'none';
-            initials.style.display = 'block';
-            preview.style.backgroundImage = 'none';
-            preview.textContent = '👤';
-            clearBtn.style.display = 'none';
-        }
-    }
+  onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      const loginView = $('#logged-in-view');
+      const logoutView = $('#logged-out-view');
 
-    // --- GRAPHIQUE MENSUEL ---
-    function renderMonthlyChart(entries, yearMonth) {
-        if (typeof Chart === 'undefined') return;
-
-        try {
-            const ctx = document.getElementById('monthly-chart').getContext('2d');
-            const targetHours = config.targetWeeklyHours / 60; 
-
-            const [year, month] = yearMonth.split('-').map(Number);
-            const firstDayOfMonth = new Date(year, month - 1, 1);
-            const lastDayOfMonth = new Date(year, month, 0);
-            
-            const weeklyData = {};
-            
-            for (let d = new Date(firstDayOfMonth); d <= lastDayOfMonth; d.setDate(d.getDate() + 1)) {
-                const currentYMD = dateToYMD(d);
-                
-                const dayOfWeek = (d.getDay() + 6) % 7; 
-                const mondayDate = new Date(d);
-                mondayDate.setDate(d.getDate() - dayOfWeek);
-                const label = `${mondayDate.getDate()}/${mondayDate.getMonth()+1}`;
-
-                if (!weeklyData[label]) {
-                    weeklyData[label] = { worked: 0 };
-                }
-
-                const entry = entries.find(e => e.date === currentYMD);
-                // On inclut WORK et REMOTE dans le graphique
-                if (entry && (entry.type === 'WORK' || entry.type === 'REMOTE')) { 
-                    weeklyData[label].worked += calcWorkMinutes(entry);
-                }
-            }
-
-            const labels = Object.keys(weeklyData);
-            const dataWorked = Object.values(weeklyData).map(d => (d.worked / 60).toFixed(1)); 
-            const dataTarget = labels.map(() => targetHours); 
-
-            if (monthlyChartInstance) {
-                monthlyChartInstance.destroy();
-            }
-
-            monthlyChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            type: 'line',
-                            label: 'Objectif',
-                            data: dataTarget,
-                            borderColor: '#F87171',
-                            borderWidth: 2,
-                            borderDash: [5, 5],
-                            pointRadius: 0,
-                            order: 0
-                        },
-                        {
-                            type: 'bar',
-                            label: 'Réalisé',
-                            data: dataWorked,
-                            backgroundColor: (context) => {
-                                const val = context.raw;
-                                return val >= targetHours ? '#10B981' : '#3B82F6';
-                            },
-                            borderRadius: 4,
-                            order: 1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: true, labels: { color: '#9CA3AF', font: { size: 10 } } },
-                        tooltip: { mode: 'index', intersect: false, callbacks: {
-                                label: (context) => context.dataset.label + ': ' + parseFloat(context.parsed.y).toFixed(1) + 'h'
-                            }
-                        }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: '#374151' }, ticks: { color: '#9CA3AF' } },
-                        x: { grid: { display: false }, ticks: { color: '#9CA3AF', font: { size: 10 } } }
-                    }
-                }
-            });
-        } catch(e) {
-            console.error("Erreur Chart.js :", e);
-        }
-    }
-
-    // --- UI SAISIE & HEBDO ---
-    function updateEntryUI(date){
-      const e = workEntries.find(x=>x.date===date);
-      $('#entry-date-hidden').value = date;
-      $('#entry-date-display').textContent = dateToHuman(date);
-      $('#entry-date-display').style.textTransform = 'capitalize';
-
-      $('#entry-type-select').value = e?.type || 'WORK';
-      $('#start-time').value = e?.start || '';
-      $('#end-time').value   = e?.end   || '';
-      $('#lunch-duration-manual').value = (e?.lunchDurationMinutes!==undefined && (e?.type==='WORK' || e?.type==='REMOTE')) ? e.lunchDurationMinutes : '';
-      $('#lunch-duration-display').textContent = `${config.lunchDurationMinutes}m`;
-      
-      refreshDayTotal();
-      
-      if(e){
-        $('#delete-entry-btn').style.display = 'block';
-        $('#save-entry-btn').textContent = 'Mettre à jour';
-        $('#save-entry-btn').classList.remove('bg-blue-600');
-        $('#save-entry-btn').classList.add('bg-green-600');
-      } else {
-        $('#delete-entry-btn').style.display = 'none';
-        $('#save-entry-btn').textContent = 'Enregistrer';
-        $('#save-entry-btn').classList.add('bg-blue-600');
-        $('#save-entry-btn').classList.remove('bg-green-600');
-      }
-    }
-
-    function refreshDayTotal(){
-      const entry = {
-        date: $('#entry-date-hidden').value,
-        type: $('#entry-type-select').value,
-        start: $('#start-time').value,
-        end:   $('#end-time').value,
-        lunchDurationMinutes: $('#lunch-duration-manual').value ? parseInt($('#lunch-duration-manual').value) : undefined
-      };
-      
-      const workCard = $('#work-card');
-      if(entry.type === 'WORK' || entry.type === 'REMOTE') {
-         workCard.style.display = 'block';
-         setTimeout(()=>workCard.style.opacity = '1', 10);
-      } else {
-         workCard.style.opacity = '0';
-         setTimeout(()=>workCard.style.display = 'none', 300);
-      }
-
-      const mins = calcWorkMinutes(entry);
-      $('#current-day-minutes').textContent = fmtMinutes(mins);
-    }
-    
-    window.editDate = (d) => {
-         config.lastSelectedDate = d; lsSaveConfig(config);
-         updateEntryUI(d); setActiveTab('saisie');
-    };
-    
-    function renderLatestList(){
-      const container = $('#latest-list');
-      const sorted = [...workEntries].slice(0,5);
-      container.innerHTML = sorted.map(e=>{
-        const isWork = (e.type === 'WORK' || e.type === 'REMOTE');
-        let tag = isWork ? fmtMinutes(calcWorkMinutes(e)) : e.type;
-        
-        let colorClass = 'text-blue-400';
-        if(e.type === 'WORK') colorClass = 'text-green-400';
-        else if(e.type === 'REMOTE') colorClass = 'text-purple-400';
-
-        let labelType = e.type === 'REMOTE' ? 'Télétravail' : e.type;
-        if(e.type === 'WORK') labelType = 'Travail';
-        else if(e.type === 'RTT') labelType = 'RTT';
-        else if(e.type === 'VACATION') labelType = 'Vacances';
-        else if(e.type === 'HOLIDAY') labelType = 'Férié';
-
-
-        return `<div onclick="window.editDate('${e.date}')" class="bento-card py-3 flex justify-between items-center cursor-pointer active:bg-gray-800 transition-colors mb-2">
-                  <div>
-                    <div class="font-bold text-sm capitalize">${dateToHuman(e.date)}</div>
-                    <div class="text-xs text-gray-500">${labelType}</div>
-                  </div>
-                  <div class="font-mono font-bold ${colorClass}">${tag}</div>
-                </div>`;
-      }).join('') || `<div class="text-center text-gray-600 text-sm py-4">Rien de récent.</div>`;
-    }
-
-    function updateWeeklyView(){
-      const now=new Date(); const today=now.getDay(); const diff=now.getDate()-today+(today===0?-6:1);
-      const monday=new Date(now.setDate(diff));
-      const names=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
-      let total=0; const rows=[];
-      
-      for(let i=0;i<7;i++){ 
-        const d=new Date(monday); d.setDate(monday.getDate()+i);
-        const ymd=dateToYMD(d); 
-        const e=workEntries.find(x=>x.date===ymd);
-        let status='-';
-        let subStyle = 'text-gray-600';
-        
-        if(e){ 
-          const mins=calcWorkMinutes(e); total+=mins; 
+      if (user) {
+          logoutView.classList.add('hidden');
+          loginView.classList.remove('hidden');
+          $('#user-name').textContent = user.displayName || 'Utilisateur';
+          $('#user-email').textContent = user.email;
+          $('#user-id-display').textContent = user.uid.substring(0,8)+'...';
+          if(user.photoURL) $('#user-avatar').style.backgroundImage = `url(${user.photoURL})`;
           
-          if(e.type==='WORK' || e.type==='REMOTE') {
-             status = fmtMinutes(mins);
-             subStyle = (mins >= config.targetWeeklyHours/5) ? 'text-green-400 font-bold' : 'text-orange-400 font-bold';
+          await loadFromCloud();
+      } else {
+          loginView.classList.add('hidden');
+          logoutView.classList.remove('hidden');
+          $('#user-id-display').textContent = "Local";
+      }
+  });
+
+  async function loadFromCloud() {
+      if (!currentUser) return;
+      $('#last-sync-msg').textContent = "Chargement...";
+      
+      try {
+          const docRef = doc(db, "users", currentUser.uid);
+          const docSnap = await getDoc(docRef);
+
+          if (docSnap.exists()) {
+              const data = docSnap.data();
+              if (data.workEntries) workEntries = JSON.parse(data.workEntries);
+              if (data.config) config = { ...config, ...JSON.parse(data.config) };
+
+              // Sauvegarde locale
+              localStorage.setItem('worker_entries', JSON.stringify(workEntries));
+              localStorage.setItem('worker_config', JSON.stringify(config));
+
+              // Refresh UI
+              updateMonthlyView(config.selectedMonthYM);
+              updateSettingsUI();
+              renderLatestList();
+              if(config.lastSelectedDate) updateEntryUI(config.lastSelectedDate);
+              
+              $('#last-sync-msg').textContent = "Données chargées ✅";
           } else {
-             status = e.type;
-             subStyle = 'text-blue-400 font-bold';
+              // Premier login : push data locale
+              await syncData(true);
           }
-        }
-        
-        rows.push(`<div class="flex justify-between items-center px-4 py-3 active:bg-gray-800" onclick="window.editDate('${ymd}')">
-                      <div>
-                          <div class="text-sm font-medium">${names[i]} ${d.getDate()}</div>
-                          <div class="text-xs ${subStyle}">${status}</div>
-                      </div>
-                      <div class="text-xl">${e?.type==='WORK' ? '💼' : e?.type==='REMOTE' ? '🏠' : e?.type==='RTT' ? '🏖' : e?.type==='VACATION' ? '✈️' : e?.type==='HOLIDAY' ? '🎉' : '⚪️'}</div>
-                   </div>`);
+      } catch (e) {
+          console.error("Erreur load:", e);
+          $('#last-sync-msg').textContent = "Erreur chargement ❌";
       }
+  }
+
+  async function syncData(force = false) {
+      if (!currentUser) return;
+      $('#last-sync-msg').textContent = "Synchronisation...";
       
-      const targetMins = config.targetWeeklyHours;
-      const progress = Math.min(100, (total / targetMins) * 100);
-      
-      $('#weekly-body').innerHTML = rows.join('');
-      $('#total-weekly-hours').textContent = fmtMinutes(total);
-      $('#target-weekly-hours-summary').textContent = fmtMinutes(targetMins);
-      $('#weekly-progress-bar').style.width = `${progress}%`;
-      $('#progress-bar-label').textContent = `${progress.toFixed(1)}% | ${fmtMinutes(total - targetMins)} restantes`;
-    }
+      try {
+          await setDoc(doc(db, "users", currentUser.uid), {
+              workEntries: JSON.stringify(workEntries),
+              config: JSON.stringify(config),
+              lastUpdated: Timestamp.now()
+          }, { merge: true });
+          
+          const now = new Date();
+          const timeStr = `${now.getHours()}:${now.getMinutes().toString().padStart(2,'0')}`;
+          $('#last-sync-msg').textContent = `Sync: ${timeStr} ✅`;
+      } catch (e) {
+          console.error("Erreur sync:", e);
+          $('#last-sync-msg').textContent = "Erreur synchro ❌";
+      }
+  }
 
 
-    // --- UI MENSUELLE ---
-    function buildMonthOptions(){
-        const select = $('#month-select');
-        select.innerHTML = '';
-        const currentYM = new Date().toISOString().substring(0,7);
-        let current = currentYM;
-        for(let i=0; i<12; i++){ 
-            const opt = document.createElement('option');
-            opt.value = current;
-            opt.textContent = monthLabel(current).charAt(0).toUpperCase() + monthLabel(current).slice(1);
-            if(current === config.selectedMonthYM) opt.selected = true;
-            select.appendChild(opt);
-            current = addMonths(current, -1);
-        }
-    }
+  // --- STORAGE LOCAL ---
+  function lsLoadEntriesMap() {
+    const raw = localStorage.getItem('worker_entries');
+    if(!raw) return {};
+    const arr = JSON.parse(raw);
+    workEntries = Array.isArray(arr) ? arr : [];
+    const map = {};
+    workEntries.forEach(e => map[e.date] = e);
+    return map;
+  }
+  function lsSaveConfig(cfg) {
+    localStorage.setItem('worker_config', JSON.stringify(cfg));
+    syncData(); // Hook Cloud
+  }
+  function saveWorkEntriesLocally() {
+    localStorage.setItem('worker_entries', JSON.stringify(workEntries));
+    syncData(); // Hook Cloud
+  }
 
-    function updateMonthlyView(yearMonth) {
-        config.selectedMonthYM = yearMonth; lsSaveConfig(config);
-        const filteredEntries = workEntries.filter(e => e.date.startsWith(yearMonth));
+  // --- MODAL SYSTEM ---
+  function showModal(title, msg) {
+    $('#modal-title').textContent = title;
+    $('#modal-message').innerHTML = msg;
+    $('#custom-modal').style.display = 'flex';
+  }
 
-        let totalWorkMinutes = 0;
-        let daysWorked = 0;
-        let remoteDays = 0;
-        let workOfficeDays = 0; 
-        let rttUsedInMonth = 0;
-        let vacationUsedInMonth = 0;
-
-        filteredEntries.forEach(e => {
-            const mins = calcWorkMinutes(e);
-            if(e.type === 'WORK' || e.type === 'REMOTE') {
-                totalWorkMinutes += mins;
-                daysWorked++;
-            }
-            if(e.type === 'REMOTE') {
-                remoteDays++;
-            }
-            if(e.type === 'WORK') {
-                workOfficeDays++; 
-            }
-            if(e.type === 'RTT') rttUsedInMonth++;
-            if(e.type === 'VACATION') vacationUsedInMonth++;
-        });
-
-        // 1. Calcul du Salaire Base CDI (151.67h/mois)
-        const monthlyBaseHours = CDI_MONTHLY_HOURS;
-        const monthlyBaseSalaryGross = monthlyBaseHours * config.hourlyGrossRate; 
-        
-        // 1.b NOUVEAU: Calcul du Salaire Net
-        const monthlyBaseSalaryNet = monthlyBaseSalaryGross * (1 - BRUT_TO_NET_DEDUCTION);
-
-        // 2. Indemnités Repas NET : pour Jours Bureau (WORK) ET Télétravail (REMOTE)
-        const totalMealDays = workOfficeDays + remoteDays;
-        const monthlyMealAllowanceNet = totalMealDays * config.dailyMealAllowance;
-
-        // 3. Indemnités KM NET : pour Jours Bureau (WORK) SEULEMENT
-        const monthlyKmAllowanceNet = workOfficeDays * config.dailyKmAllowance; 
-
-        // 4. Total: Salaire Net + Indemnités Net
-        const monthlyGrandTotalNet = monthlyBaseSalaryNet + monthlyMealAllowanceNet + monthlyKmAllowanceNet;
-
-        // Mise à jour de l'UI
-        $('#monthly-base-salary-gross').textContent = monthlyBaseSalaryGross.toFixed(2) + ' €';
-        $('#monthly-base-salary-net').textContent = monthlyBaseSalaryNet.toFixed(2) + ' €'; // NOUVEAU
-        $('#monthly-meal-allowance').textContent = monthlyMealAllowanceNet.toFixed(2) + ' €';
-        $('#monthly-km-allowance').textContent = monthlyKmAllowanceNet.toFixed(2) + ' €'; 
-        $('#monthly-grand-total').textContent = monthlyGrandTotalNet.toFixed(2) + ' €';
-
-        $('#monthly-days-worked').textContent = daysWorked;
-        $('#monthly-total-work-hours').textContent = fmtMinutes(totalWorkMinutes);
-        $('#monthly-remote-days').textContent = remoteDays;
-
-        // Mettre à jour les soldes actuels (ils sont recalculés globalement au démarrage et à la sauvegarde)
-        $('#current-rtt-balance').textContent = config.currentRttBalance;
-        $('#current-vacation-balance').textContent = config.currentVacationBalance;
-
-        renderMonthlyChart(filteredEntries, yearMonth);
+  // --- LOGIQUE METIER ---
+  function getEntry(date) { return workEntries.find(e => e.date === date); }
+  
+  function updateEntryUI(date) {
+    const human = dateToHuman(date);
+    $('#entry-date-display').textContent = human;
+    $('#entry-date-hidden').value = date;
+    
+    const entry = getEntry(date);
+    if(entry) {
+      $('#entry-type-select').value = entry.type;
+      $('#start-time').value = entry.start || '';
+      $('#end-time').value = entry.end || '';
+      $('#lunch-duration-manual').value = entry.lunchDurationMinutes ?? '';
+      $('#delete-entry-btn').style.display = 'block';
+      $('#save-entry-btn').textContent = 'Modifier';
+      $('#save-entry-btn').classList.remove('bg-blue-600');
+      $('#save-entry-btn').classList.add('bg-green-600');
+    } else {
+      $('#entry-type-select').value = 'WORK';
+      $('#start-time').value = '';
+      $('#end-time').value = '';
+      $('#lunch-duration-manual').value = '';
+      $('#delete-entry-btn').style.display = 'none';
+      $('#save-entry-btn').textContent = 'Enregistrer';
+      $('#save-entry-btn').classList.add('bg-blue-600');
+      $('#save-entry-btn').classList.remove('bg-green-600');
     }
     
-    // --- UI DATA ---
-    function renderDataListView(){
-      const container = $('#data-list-container');
-      container.innerHTML = workEntries.map(e => {
-        const mins = calcWorkMinutes(e);
-        const detail = e.type==='WORK' || e.type==='REMOTE' ? `${e.start} - ${e.end} (${fmtMinutes(mins)})` : e.type;
-        return `<div class="bento-card py-3 flex justify-between items-center active:bg-gray-800 transition-colors cursor-pointer" onclick="window.editDate('${e.date}')">
-                  <div>
-                    <div class="font-bold text-sm">${dateToFr(e.date)}</div>
-                    <div class="text-xs text-gray-500">${e.type}</div>
-                  </div>
-                  <div class="font-mono text-sm text-right">${detail}</div>
-                </div>`;
-      }).join('') || `<div class="text-center text-gray-600 text-sm py-4">L'historique est vide.</div>`;
-    }
+    refreshDayTotal();
+    renderLatestList();
+  }
 
-    // --- UI RÉGLAGES ---
-    function updateSettingsUI(){
-      $('#target-hours').value = (config.targetWeeklyHours / 60).toFixed(1);
-      $('#lunch-minutes').value = config.lunchDurationMinutes;
-      $('#initial-rtt-days').value = config.initialRttDays;
-      $('#initial-vacation-days').value = config.initialVacationDays;
-      
-      $('#hourly-gross-rate').value = config.hourlyGrossRate.toFixed(2);
-      $('#daily-meal-allowance').value = config.dailyMealAllowance.toFixed(2);
-      $('#daily-km-allowance').value = config.dailyKmAllowance.toFixed(2); 
-      
-      const isPrivacy = config.privacyMode;
-      $('#toggle-privacy-btn').textContent = isPrivacy ? '🔒' : '🔓';
-      document.querySelectorAll('.privacy-blur').forEach(el => {
-          el.classList.toggle('privacy-visible', !isPrivacy);
+  function refreshDayTotal(){
+    const type = $('#entry-type-select').value;
+    const start = $('#start-time').value;
+    const end = $('#end-time').value;
+    const lunch = $('#lunch-duration-manual').value ? parseInt($('#lunch-duration-manual').value) : undefined;
+    
+    const entry = { type, start, end, lunchDurationMinutes: lunch };
+    
+    const workCard = $('#work-card');
+    if(type === 'WORK' || type === 'REMOTE') {
+       workCard.style.display = 'block';
+       setTimeout(()=>workCard.style.opacity = '1', 10);
+    } else {
+       workCard.style.opacity = '0';
+       setTimeout(()=>workCard.style.display = 'none', 300);
+    }
+    
+    const mins = calcWorkMinutes(entry);
+    $('#current-day-minutes').textContent = fmtMinutes(mins);
+  }
+
+  function renderLatestList(){
+    const container = $('#latest-list');
+    // Sort desc date
+    const sorted = [...workEntries].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+    
+    container.innerHTML = sorted.map(e=>{
+       const isWork = (e.type === 'WORK' || e.type === 'REMOTE');
+       let rightText = isWork ? fmtMinutes(calcWorkMinutes(e)) : '';
+       let colorClass = 'text-blue-400';
+       let labelType = e.type;
+
+       if(e.type === 'WORK') { labelType = 'Travail'; colorClass = 'text-green-400'; }
+       else if(e.type === 'REMOTE') { labelType = 'Télétravail'; colorClass = 'text-purple-400'; }
+       else if(e.type === 'RTT') { labelType = 'RTT'; colorClass = 'text-blue-300'; rightText = '1j'; }
+       else if(e.type === 'VACATION') { labelType = 'Congé'; colorClass = 'text-pink-400'; rightText = '1j'; }
+       else if(e.type === 'HOLIDAY') { labelType = 'Férié'; colorClass = 'text-yellow-400'; rightText = '1j'; }
+
+       return `
+        <div onclick="window.editDate('${e.date}')" class="flex justify-between items-center p-3 bg-[#2C2C2E] rounded-xl active:scale-[0.98] transition-transform">
+           <div>
+              <div class="text-xs text-gray-400">${formatFrDate(e.date)}</div>
+              <div class="font-bold text-sm text-white">${labelType}</div>
+           </div>
+           <div class="font-bold text-sm ${colorClass}">${rightText}</div>
+        </div>
+       `;
+    }).join('');
+  }
+
+  function applyAutoFill() {
+    const dateStr = $('#entry-date-hidden').value;
+    const dayIndex = getDayOfWeekIndex(dateStr);
+    const key = DAY_KEYS[dayIndex];
+    const def = config.defaultTimes[key];
+
+    if (def && def.start && def.end) {
+        $('#start-time').value = def.start;
+        $('#end-time').value = def.end;
+        showModal('Remplissage Auto', `Horaires appliqués pour ${DAY_NAMES[dayIndex]} : ${def.start} - ${def.end}`);
+        refreshDayTotal();
+    } else {
+        showModal('Information', `Aucun horaire par défaut configuré pour le ${DAY_NAMES[dayIndex]}. Allez dans Réglages > Pré-remplissage.`);
+    }
+  }
+
+  // --- GRAPHIQUES & LISTES ---
+  function updateMonthlyView(yearMonth) {
+    if(!yearMonth) return;
+    config.selectedMonthYM = yearMonth;
+    lsSaveConfig(config);
+
+    const filtered = workEntries.filter(e => e.date.startsWith(yearMonth));
+    
+    let totalMins = 0;
+    let daysWorked = 0;
+    let remoteDays = 0;
+    let officeDays = 0;
+    let rttUsed = 0;
+    let vacUsed = 0;
+
+    filtered.forEach(e => {
+       const m = calcWorkMinutes(e);
+       if(e.type === 'WORK' || e.type === 'REMOTE') {
+           totalMins += m;
+           daysWorked++;
+       }
+       if(e.type === 'REMOTE') remoteDays++;
+       if(e.type === 'WORK') officeDays++;
+       if(e.type === 'RTT') rttUsed++;
+       if(e.type === 'VACATION') vacUsed++;
+    });
+
+    // Finance
+    const salaryGross = CDI_MONTHLY_HOURS * config.hourlyGrossRate;
+    const salaryNet = salaryGross * (1 - BRUT_TO_NET_DEDUCTION);
+    const mealAllowance = (officeDays + remoteDays) * config.dailyMealAllowance;
+    const kmAllowance = officeDays * config.dailyKmAllowance;
+    const grandTotal = salaryNet + mealAllowance + kmAllowance;
+
+    $('#monthly-base-salary-gross').textContent = salaryGross.toFixed(2) + ' €';
+    $('#monthly-base-salary-net').textContent = salaryNet.toFixed(2) + ' €';
+    $('#monthly-meal-allowance').textContent = mealAllowance.toFixed(2) + ' €';
+    $('#monthly-km-allowance').textContent = kmAllowance.toFixed(2) + ' €';
+    $('#monthly-grand-total').textContent = grandTotal.toFixed(2) + ' €';
+
+    $('#monthly-days-worked').textContent = daysWorked;
+    $('#monthly-total-work-hours').textContent = Math.floor(totalMins/60) + 'h';
+    $('#monthly-remote-days').textContent = remoteDays;
+
+    recalculateBalances();
+    renderMonthlyChart(filtered, yearMonth);
+  }
+
+  function renderMonthlyChart(entries, yearMonth) {
+     const ctx = document.getElementById('monthly-chart').getContext('2d');
+     const targetHours = config.targetWeeklyHours / 60; 
+     // Simplification : objectif journalier moyen = hebdo / 5
+     const dailyTarget = targetHours / 5;
+
+     const [y, m] = yearMonth.split('-').map(Number);
+     const daysInMonth = new Date(y, m, 0).getDate();
+     
+     const labels = [];
+     const dataWorked = [];
+     
+     // Agrégation par semaine pour simplifier l'affichage mobile
+     // Ou jour par jour ? Le code original semblait faire par semaine.
+     // Faisons jour par jour pour la précision, ou semaine si trop dense.
+     // Le code original : "weeklyData[label]" -> semblait grouper par semaine.
+     // Reconstituons une vue simple jour par jour des jours travaillés
+     
+     // Approche simplifiée : Barre par jour travaillé
+     const workedEntries = entries.filter(e => e.type === 'WORK' || e.type === 'REMOTE').sort((a,b)=>a.date.localeCompare(b.date));
+     
+     const chartLabels = workedEntries.map(e => e.date.substring(8)); // Juste le jour
+     const chartData = workedEntries.map(e => (calcWorkMinutes(e)/60).toFixed(1));
+     
+     if (monthlyChartInstance) monthlyChartInstance.destroy();
+
+     monthlyChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: 'Heures',
+                data: chartData,
+                backgroundColor: '#0A84FF',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#333'} },
+                x: { grid: { display: false } }
+            },
+            plugins: { legend: { display: false } }
+        }
+     });
+  }
+
+  function recalculateBalances() {
+      let rttTaken = 0;
+      let vacTaken = 0;
+      workEntries.forEach(e => {
+          if(e.type === 'RTT') rttTaken++;
+          if(e.type === 'VACATION') vacTaken++;
       });
-    }
+      $('#current-rtt-balance').textContent = (config.initialRttDays - rttTaken);
+      $('#current-vacation-balance').textContent = (config.initialVacationDays - vacTaken);
+  }
 
-    function saveSettings(){
-      config.targetWeeklyHours = parseFloat($('#target-hours').value || 0) * 60;
-      config.lunchDurationMinutes = parseInt($('#lunch-minutes').value || 0);
-      config.initialRttDays = parseInt($('#initial-rtt-days').value || 0);
-      config.initialVacationDays = parseInt($('#initial-vacation-days').value || 0);
-      
-      config.hourlyGrossRate = parseFloat($('#hourly-gross-rate').value || 0);
-      config.dailyMealAllowance = parseFloat($('#daily-meal-allowance').value || 0);
-      config.dailyKmAllowance = parseFloat($('#daily-km-allowance').value || 0); 
-
-      lsSaveConfig(config);
-      recalculateBalances(); 
-      updateSettingsUI(); 
-      showModal('Réglages Sauvegardés', 'Vos préférences ont été mises à jour.');
-    }
+  // --- REGLAGES ---
+  function updateSettingsUI() {
+    $('#target-hours').value = (config.targetWeeklyHours / 60).toFixed(1);
+    $('#lunch-minutes').value = config.lunchDurationMinutes;
+    $('#initial-rtt-days').value = config.initialRttDays;
+    $('#initial-vacation-days').value = config.initialVacationDays;
+    $('#hourly-gross-rate').value = config.hourlyGrossRate.toFixed(2);
+    $('#daily-meal-allowance').value = config.dailyMealAllowance.toFixed(2);
+    $('#daily-km-allowance').value = config.dailyKmAllowance.toFixed(2);
     
-// DÉBUT MODIFICATION: Fonctions pour la nouvelle modale d'horaires par défaut
-    let currentDefaultDayKey = null;
-
-    function renderDefaultTimesList() {
-        const container = $('#day-list-container');
-        container.innerHTML = DAY_KEYS.map((key, index) => {
-            const dayName = DAY_NAMES[index];
-            const times = config.defaultTimes[key];
-            const display = times.start && times.end ? `${times.start} - ${times.end}` : 'Non défini';
-            const colorClass = times.start && times.end ? 'text-blue-400 font-bold' : 'text-gray-500';
-            
-            return `<div class="flex justify-between items-center py-3 cursor-pointer active:bg-gray-800" onclick="openTimePicker('${key}', '${dayName}')">
-                        <span class="text-sm font-medium">${dayName}</span>
-                        <span class="text-sm ${colorClass}">${display}</span>
-                    </div>`;
-        }).join('');
+    if(config.userProfilePic) {
+        $('#settings-profile-preview').style.backgroundImage = `url(${config.userProfilePic})`;
+        $('#settings-profile-preview').textContent = '';
+        $('#profile-picture-container').style.backgroundImage = `url(${config.userProfilePic})`;
+        $('#profile-initials').textContent = '';
+        $('#clear-profile-picture-btn').style.display = 'block';
     }
+
+    const isPrivacy = config.privacyMode;
+    $('#toggle-privacy-btn').textContent = isPrivacy ? '🔒' : '🔓';
+    document.querySelectorAll('.privacy-blur').forEach(el => {
+        el.classList.toggle('privacy-visible', !isPrivacy);
+    });
+  }
+
+  function saveSettings() {
+    config.targetWeeklyHours = parseFloat($('#target-hours').value || 0) * 60;
+    config.lunchDurationMinutes = parseInt($('#lunch-minutes').value || 0);
+    config.initialRttDays = parseInt($('#initial-rtt-days').value || 0);
+    config.initialVacationDays = parseInt($('#initial-vacation-days').value || 0);
+    config.hourlyGrossRate = parseFloat($('#hourly-gross-rate').value || 0);
+    config.dailyMealAllowance = parseFloat($('#daily-meal-allowance').value || 0);
+    config.dailyKmAllowance = parseFloat($('#daily-km-allowance').value || 0);
     
-    window.openTimePicker = (key, dayName) => {
-        currentDefaultDayKey = key;
-        const times = config.defaultTimes[key];
-        
-        $('#time-picker-title').textContent = `Horaires pour ${dayName}`;
-        $('#default-start-time').value = times.start || '09:00';
-        $('#default-end-time').value = times.end || '17:30';
-        
-        $('#default-times-modal').style.display = 'none';
-        $('#time-picker-modal').style.display = 'flex';
-    };
+    lsSaveConfig(config);
+    recalculateBalances();
+    updateMonthlyView(config.selectedMonthYM);
+    updateSettingsUI();
+    showModal('Réglages Sauvegardés', 'Vos préférences ont été mises à jour.');
+  }
 
-    function saveDefaultTimes() {
-        if (!currentDefaultDayKey) return;
+  // --- INITIALISATION ---
+  document.addEventListener('DOMContentLoaded', () => {
+     // 1. Charge Config Locale
+     const savedConfig = localStorage.getItem('worker_config');
+     if(savedConfig) config = { ...config, ...JSON.parse(savedConfig) };
+     
+     // 2. Charge Entrées Locales
+     const map = lsLoadEntriesMap(); // Charge dans workEntries
+     
+     // 3. Setup UI
+     setupAuthListeners();
+     updateSettingsUI();
+     updateMonthlyView(config.selectedMonthYM);
+     updateEntryUI(config.lastSelectedDate);
+     
+     // 4. Listeners Inputs
+     $('#entry-type-select').addEventListener('change', refreshDayTotal);
+     $('#start-time').addEventListener('change', refreshDayTotal);
+     $('#end-time').addEventListener('change', refreshDayTotal);
+     $('#lunch-duration-manual').addEventListener('input', refreshDayTotal);
+     
+     // 5. Navigation Tabs
+     const tabs = ['saisie','hebdo','mensuelle','data','reglages'];
+     tabs.forEach(t => {
+         $(`#btn-${t}`).onclick = () => {
+             document.querySelectorAll('.tab-content').forEach(el=>el.style.display='none');
+             document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('is-active'));
+             $(`#tab-${t}`).style.display = 'block';
+             $(`#btn-${t}`).classList.add('is-active');
+             if(t === 'mensuelle') updateMonthlyView(config.selectedMonthYM);
+             if(t === 'reglages') updateSettingsUI();
+         }
+     });
 
-        config.defaultTimes[currentDefaultDayKey] = {
-            start: $('#default-start-time').value,
-            end: $('#default-end-time').value,
-        };
-        lsSaveConfig(config);
-        
-        $('#time-picker-modal').style.display = 'none';
-        renderDefaultTimesList(); // Mise à jour de la liste
-        $('#default-times-modal').style.display = 'flex'; // Retour à la modale de la liste
-        currentDefaultDayKey = null;
-    }
-    
-    function clearDefaultTimes() {
-        if (!currentDefaultDayKey) return;
-        config.defaultTimes[currentDefaultDayKey] = { start: null, end: null };
-        lsSaveConfig(config);
-        
-        $('#time-picker-modal').style.display = 'none';
-        renderDefaultTimesList();
-        $('#default-times-modal').style.display = 'flex';
-        currentDefaultDayKey = null;
-    }
-    
-    function applyAutoFill() {
-        const date = $('#entry-date-hidden').value;
-        const dayIndex = getDayOfWeekIndex(date); // 0=Lun, 6=Dim
-        const dayKey = DAY_KEYS[dayIndex];
-        const defaultTimes = config.defaultTimes[dayKey];
-        
-        if (defaultTimes && defaultTimes.start && defaultTimes.end) {
-            $('#start-time').value = defaultTimes.start;
-            $('#end-time').value = defaultTimes.end;
-            $('#entry-type-select').value = 'WORK'; // Par défaut, on passe en travail
-            refreshDayTotal();
-            showModal('Remplissage automatique', `Horaires appliqués pour ${DAY_NAMES[dayIndex]}.`);
-        } else {
-            showModal('Remplissage automatique', `Aucun horaire par défaut n'est configuré pour ${DAY_NAMES[dayIndex]}.`);
-        }
-    }
-// FIN MODIFICATION
-
-    // --- UI CALENDRIER (omise pour la concision) ---
-    let currentCalDate = new Date(); 
-    function renderCalendar(date) {
-        currentCalDate = date;
-        const year = date.getFullYear();
-        const month = date.getMonth();
-        const firstDayOfMonth = new Date(year, month, 1);
-        const lastDayOfMonth = new Date(year, month + 1, 0);
-        const todayYMD = dateToYMD(new Date());
-
-        $('#calendar-title').textContent = new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(date);
-        
-        const grid = $('#calendar-grid');
-        grid.innerHTML = '';
-
-        // Déterminer le décalage du premier jour (0=dimanche, 1=lundi, ...)
-        let startDay = (firstDayOfMonth.getDay() + 6) % 7; 
-
-        // Remplir les jours vides avant
-        for (let i = 0; i < startDay; i++) {
-            grid.innerHTML += '<div></div>';
-        }
-
-        // Remplir les jours du mois
-        for (let d = 1; d <= lastDayOfMonth.getDate(); d++) {
-            const currentYMD = dateToYMD(new Date(year, month, d));
-            const entry = workEntries.find(e => e.date === currentYMD);
-            let classes = 'cal-btn';
-            let icon = '';
-
-            if (currentYMD === config.lastSelectedDate) classes += ' is-selected';
-            if (currentYMD === todayYMD) classes += ' is-today';
-
-            if (entry) {
-                switch(entry.type) {
-                    case 'WORK': icon = '💼'; break;
-                    case 'REMOTE': icon = '🏠'; break;
-                    case 'RTT': icon = '🏖'; break;
-                    case 'VACATION': icon = '✈️'; break;
-                    case 'HOLIDAY': icon = '🎉'; break;
-                }
-            }
-
-            grid.innerHTML += `<button class="${classes}" data-date="${currentYMD}" onclick="selectDate('${currentYMD}')">
-                                 <div>${d}</div>
-                                 <div class="text-sm">${icon}</div>
-                               </button>`;
-        }
-    }
-
-    window.selectDate = (ymd) => {
-        $('#calendar-modal').style.display = 'none';
-        editDate(ymd); 
-    };
-    
-    // --- INITIALISATION & ÉVÉNEMENTS ---
-    document.addEventListener('DOMContentLoaded', () => {
-      
-      // Essayer de charger la configuration et les données locales
-      const savedConfig = lsLoadConfig();
-      if(savedConfig){ 
-          // Permet d'ajouter 'defaultTimes' si l'ancienne config n'en avait pas
-          config = {...config, ...savedConfig, 
-              defaultTimes: {...config.defaultTimes, ...(savedConfig.defaultTimes || {})} 
-          }; 
-      }
-      workEntries = lsGetAllEntriesArray();
-      recalculateBalances();
-
-      // Gestion de la photo de profil
-      const profilePicInput = $('#profile-picture-file');
-      $('#select-profile-picture-btn').onclick = () => profilePicInput.click();
-      $('#clear-profile-picture-btn').onclick = () => {
-          config.profilePictureBase64 = null;
-          lsSaveConfig(config); 
-          updateProfilePictureDisplay();
-      };
-      
-      profilePicInput.onchange = (e) => {
-          const file = e.target.files[0];
-          if (file) {
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                  config.profilePictureBase64 = e.target.result;
-                  lsSaveConfig(config);
-                  updateProfilePictureDisplay();
-              };
-              reader.readAsDataURL(file);
-          }
-      };
-      
-      // --- ÉVÉNEMENTS TAB BAR ---
-      $('#btn-saisie').onclick = () => setActiveTab('saisie');
-      $('#btn-hebdo').onclick = () => setActiveTab('hebdo');
-      $('#btn-mensuelle').onclick = () => setActiveTab('mensuelle');
-      $('#btn-data').onclick = () => setActiveTab('data');
-      $('#btn-reglages').onclick = () => setActiveTab('reglages');
-      
-      // --- ÉVÉNEMENTS CALENDRIER ---
-      $('#entry-date-button').onclick = () => {
-          renderCalendar(new Date(config.lastSelectedDate + 'T00:00:00'));
-          $('#calendar-modal').style.display = 'flex';
-      };
-      $('#calendar-close-area').onclick = () => $('#calendar-modal').style.display = 'none';
-      $('#calendar-prev').onclick = () => renderCalendar(new Date(addMonths(dateToYMD(currentCalDate), -1) + '-01' + 'T00:00:00'));
-      $('#calendar-next').onclick = () => renderCalendar(new Date(addMonths(dateToYMD(currentCalDate), 1) + '-01' + 'T00:00:00'));
-
-      // --- ÉVÉNEMENTS SAISIE ---
-// DÉBUT MODIFICATION: Ajout de l'événement pour le remplissage automatique
-      $('#auto-fill-btn').onclick = applyAutoFill;
-// FIN MODIFICATION
-
-      $('#save-entry-btn').onclick = () => {
+     // 6. Save Entry
+     $('#save-entry-btn').onclick = () => {
         const date = $('#entry-date-hidden').value;
         const type = $('#entry-type-select').value;
         const start = $('#start-time').value;
         const end = $('#end-time').value;
         const lunch = $('#lunch-duration-manual').value ? parseInt($('#lunch-duration-manual').value) : undefined;
-        const timestamp = Date.now();
         
-        const isWorkType = (type === 'WORK' || type === 'REMOTE');
-        if(isWorkType && (!start || !end)) {
-            showModal('Erreur de Saisie', 'Veuillez remplir les heures de début et de fin pour le travail/télétravail.');
+        if((type === 'WORK' || type === 'REMOTE') && (!start || !end)) {
+            showModal('Erreur', 'Veuillez saisir les horaires.');
             return;
         }
-
-        const newEntry = { date, type, timestamp };
-        if(isWorkType){
-            newEntry.start = start;
-            newEntry.end = end;
-            if(lunch !== undefined && lunch !== 0) newEntry.lunchDurationMinutes = lunch;
-        }
         
-        let entriesMap = lsLoadEntriesMap();
-        entriesMap[date] = newEntry;
-        lsSaveEntriesMap(entriesMap);
+        // Remove existing if any
+        workEntries = workEntries.filter(e => e.date !== date);
         
-        workEntries = lsGetAllEntriesArray();
-        recalculateBalances();
-        renderLatestList();
-        updateEntryUI(date); // Re-affiche l'entrée mise à jour
-        showModal('Enregistré', `L'entrée pour le ${dateToFr(date)} a été sauvegardée.`);
-      };
+        // Add new
+        workEntries.push({ date, type, start, end, lunchDurationMinutes: lunch, timestamp: Date.now() });
+        workEntries.sort((a,b) => a.date.localeCompare(b.date));
+        
+        saveWorkEntriesLocally();
+        updateEntryUI(date);
+        showModal('Enregistré', 'Entrée sauvegardée avec succès.');
+     };
 
-      $('#delete-entry-btn').onclick = () => {
-          const date = $('#entry-date-hidden').value;
-          let entriesMap = lsLoadEntriesMap();
-          delete entriesMap[date];
-          lsSaveEntriesMap(entriesMap);
-          workEntries = lsGetAllEntriesArray();
-          recalculateBalances();
-          renderLatestList();
-          
-          // Réinitialiser la date auj. et l'UI
-          config.lastSelectedDate = dateToYMD(new Date()); 
-          lsSaveConfig(config);
-          updateEntryUI(config.lastSelectedDate);
-          
-          showModal('Supprimé', `L'entrée du ${dateToFr(date)} a été supprimée.`);
-      };
-      
-      // --- ÉVÉNEMENTS MENSUELS ---
-      $('#month-select').onchange = (e) => updateMonthlyView(e.target.value);
-      $('#month-prev').onclick = () => {
-          const newYM = addMonths(config.selectedMonthYM, -1);
-          $('#month-select').value = newYM;
-          updateMonthlyView(newYM);
-      };
-      $('#month-next').onclick = () => {
-          const newYM = addMonths(config.selectedMonthYM, 1);
-          $('#month-select').value = newYM;
-          updateMonthlyView(newYM);
-      };
+     // 7. Delete Entry
+     $('#delete-entry-btn').onclick = () => {
+         const date = $('#entry-date-hidden').value;
+         if(confirm('Supprimer cette entrée ?')) {
+             workEntries = workEntries.filter(e => e.date !== date);
+             saveWorkEntriesLocally();
+             updateEntryUI(date);
+         }
+     };
 
-      // --- ÉVÉNEMENTS RÉGLAGES ---
-      $('#save-settings-btn').onclick = saveSettings;
-// DÉBUT MODIFICATION: Événements pour la modale d'horaires par défaut
-      $('#open-default-times-btn').onclick = () => {
-          renderDefaultTimesList();
-          $('#default-times-modal').style.display = 'flex';
-      };
-      $('#close-default-times-modal-btn').onclick = () => $('#default-times-modal').style.display = 'none';
-      $('#save-default-times-btn').onclick = saveDefaultTimes;
-      $('#cancel-time-picker-btn').onclick = () => {
-          $('#time-picker-modal').style.display = 'none';
-          $('#default-times-modal').style.display = 'flex';
-      };
-      $('#clear-default-times-btn').onclick = clearDefaultTimes;
-// FIN MODIFICATION
-      
-      $('#toggle-privacy-btn').onclick = () => {
-          config.privacyMode = !config.privacyMode;
-          lsSaveConfig(config);
-          updateSettingsUI();
-          // Force la vue mensuelle à se rafraîchir pour appliquer le flou si elle est active
-          if($('#tab-mensuelle').style.display === 'block') {
-             updateMonthlyView(config.selectedMonthYM);
-          }
-      };
+     // 8. Settings & Privacy
+     $('#save-settings-btn').onclick = saveSettings;
+     $('#toggle-privacy-btn').onclick = () => {
+         config.privacyMode = !config.privacyMode;
+         updateSettingsUI();
+         lsSaveConfig(config);
+     };
+     $('#monthly-privacy-toggle').onclick = () => {
+         config.privacyMode = !config.privacyMode;
+         updateSettingsUI();
+         lsSaveConfig(config);
+     };
 
-      // --- ÉVÉNEMENTS IMPORT/EXPORT IMPLÉMENTÉS ---
-      $('#export-data-btn').onclick = exportDataToCsv;
-      $('#import-data-btn').onclick = () => $('#import-file').click();
-      $('#import-file').onchange = (e) => {
-          if (e.target.files.length > 0) {
-              importDataFromCsv(e.target.files[0]);
-              e.target.value = null; 
-          }
-      };
+     // 9. Profile Pic
+     $('#select-profile-picture-btn').onclick = () => $('#profile-picture-file').click();
+     $('#profile-picture-file').onchange = (e) => {
+         const file = e.target.files[0];
+         if(file) {
+             const reader = new FileReader();
+             reader.onload = (evt) => {
+                 config.userProfilePic = evt.target.result;
+                 lsSaveConfig(config);
+                 updateSettingsUI();
+             };
+             reader.readAsDataURL(file);
+         }
+     };
 
-      $('#close-modal-btn').onclick = ()=>$('#custom-modal').style.display='none';
-      $('#clear-entry-btn').onclick = ()=>{ 
-          $('#entry-type-select').value='WORK'; $('#start-time').value=''; $('#end-time').value=''; 
-          refreshDayTotal(); 
-      };
-      $('#entry-type-select').addEventListener('change', refreshDayTotal);
-      $('#start-time').addEventListener('input', refreshDayTotal);
-      $('#end-time').addEventListener('input', refreshDayTotal);
-      $('#lunch-duration-manual').addEventListener('input', refreshDayTotal);
-      
-      // Boot
-      updateEntryUI(config.lastSelectedDate);
-      renderLatestList();
-      updateProfilePictureDisplay();
-      
-      function forceHideSplash(){
-          const splash = $('#splash-screen');
-          if(splash) { 
-              splash.style.opacity = '0'; 
-              setTimeout(() => splash.remove(), 400); 
-          }
+     // 10. Date Navigation
+     $('#entry-date-button').onclick = () => {
+         $('#calendar-modal').style.display = 'flex';
+         renderCalendar(new Date());
+     };
+     $('#calendar-prev').onclick = () => renderCalendar(addMonthToDate(currentCalDate, -1));
+     $('#calendar-next').onclick = () => renderCalendar(addMonthToDate(currentCalDate, 1));
+     $('#close-calendar-btn').onclick = () => $('#calendar-modal').style.display = 'none';
+     $('#close-modal-btn').onclick = () => $('#custom-modal').style.display = 'none';
+
+     // Expose editDate globally
+     window.editDate = (date) => {
+         config.lastSelectedDate = date;
+         lsSaveConfig(config);
+         updateEntryUI(date);
+         $('#calendar-modal').style.display = 'none';
+         // Switch to tab saisie
+         $('#btn-saisie').click();
+     };
+     
+     // Init Splash
+     setTimeout(() => {
+         $('#splash-screen').style.opacity = '0';
+         setTimeout(() => $('#splash-screen').style.display = 'none', 400);
+     }, 1000);
+     
+     // Init Month Select
+     populateMonthSelect();
+     $('#month-select').onchange = (e) => updateMonthlyView(e.target.value);
+     $('#month-prev').onclick = () => {
+         const prev = addMonths(config.selectedMonthYM, -1);
+         $('#month-select').value = prev;
+         updateMonthlyView(prev);
+     };
+     $('#month-next').onclick = () => {
+         const next = addMonths(config.selectedMonthYM, 1);
+         $('#month-select').value = next;
+         updateMonthlyView(next);
+     };
+
+  });
+
+  function populateMonthSelect() {
+      const sel = $('#month-select');
+      sel.innerHTML = '';
+      let cur = new Date().toISOString().substring(0,7);
+      cur = addMonths(cur, 1); // Future month
+      for(let i=0; i<24; i++) { // 2 years back
+          cur = addMonths(cur, -1);
+          const opt = document.createElement('option');
+          opt.value = cur;
+          opt.textContent = monthLabel(cur);
+          if(cur === config.selectedMonthYM) opt.selected = true;
+          sel.appendChild(opt);
       }
+  }
 
-      try {
-          setTimeout(forceHideSplash, 1000);
-      } catch (err) {
-          console.error("Erreur fatale :", err);
-          forceHideSplash();
+  function renderCalendar(dateObj) {
+      currentCalDate = dateObj;
+      const year = dateObj.getFullYear();
+      const month = dateObj.getMonth();
+      $('#calendar-title').textContent = new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(dateObj);
+      
+      const grid = $('#calendar-grid');
+      grid.innerHTML = '';
+      
+      const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+      const daysInMonth = new Date(year, month+1, 0).getDate();
+      
+      // Offset for Monday start (Mon=0... Sun=6)
+      const offset = (firstDay + 6) % 7; 
+      
+      for(let i=0; i<offset; i++) grid.innerHTML += '<div></div>';
+      
+      for(let d=1; d<=daysInMonth; d++) {
+          const ymd = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+          const entry = getEntry(ymd);
+          let cls = 'cal-btn hover:bg-gray-700';
+          let txt = d;
+          
+          if(ymd === config.lastSelectedDate) cls += ' is-selected';
+          if(ymd === dateToYMD(new Date())) cls += ' is-today';
+          
+          let icon = '';
+          if(entry) {
+              if(entry.type === 'WORK') icon = '💼';
+              else if(entry.type === 'REMOTE') icon = '🏠';
+              else if(entry.type === 'RTT') icon = '🏖';
+              else if(entry.type === 'VACATION') icon = '✈️';
+              else if(entry.type === 'HOLIDAY') icon = '🎉';
+          }
+          
+          grid.innerHTML += `<button class="${cls}" onclick="window.editDate('${ymd}')">
+            <div>${d}</div>
+            <div class="text-[10px]">${icon}</div>
+          </button>`;
       }
-    });
-  </script>
+  }
+  
+  function addMonthToDate(d, n) {
+      const newD = new Date(d);
+      newD.setMonth(newD.getMonth() + n);
+      return newD;
+  }
+</script>
 </body>
 </html>
