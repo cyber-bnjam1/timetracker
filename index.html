@@ -21,7 +21,7 @@
     /* RESET BASIQUE */
     body {
       font-family: 'Inter', -apple-system, system-ui, sans-serif;
-      background-color: #000000; /* Fond noir OLED */
+      background-color: #000000;
       color: #ffffff;
       -webkit-tap-highlight-color: transparent;
       overscroll-behavior-y: none;
@@ -30,7 +30,7 @@
     .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
     input, select, textarea, button { font-size: 16px !important; outline: none; }
 
-    /* Style des cartes "Bento" */
+    /* Bento Card */
     .bento-card {
         background-color: #1C1C1E;
         border-radius: 18px;
@@ -39,7 +39,7 @@
         border: 1px solid #2C2C2E;
     }
 
-    /* Style des inputs */
+    /* Inputs */
     .big-input {
         background: #2C2C2E;
         border-radius: 12px;
@@ -69,7 +69,7 @@
     header.nav-blur { padding-top: calc(env(safe-area-inset-top) + 10px); }
     #pane { padding-top: calc(env(safe-area-inset-top) + 80px) !important; }
 
-    /* Boutons Nav */
+    /* Nav Btn */
     .nav-btn {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         width: 100%; height: 100%; background: transparent; border: none;
@@ -91,7 +91,7 @@
     .tab-content { animation: fadeIn 0.2s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Calendrier Modal */
+    /* Modal */
     #calendar-modal {
         position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
         z-index: 2000; display: none; align-items: flex-end; justify-content: center;
@@ -490,7 +490,6 @@
     appId: "1:1063639159692:web:7f8fa02e3c4e112e3a3ca9"
   };
 
-  // Initialisation Firebase
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
@@ -521,7 +520,6 @@
   let monthlyChartInstance = null;
   let currentCalDate = new Date();
 
-  // --- HELPERS DOM ---
   const $ = q => document.querySelector(q);
 
   // --- HELPERS DATE & CALCUL ---
@@ -558,7 +556,6 @@
     const lunch=(e.lunchDurationMinutes ?? config.lunchDurationMinutes) || 0;
     return Math.max(p(e.end)-p(e.start)-lunch,0);
   };
-  const clampMonth = (ym)=>ym.replace(/^(\d{4})-(\d{2}).*$/,(_,y,m)=>`${y}-${m.padStart(2,'0')}`);
   const addMonths = (ym, d)=>{
     let [y,m]=ym.split('-').map(Number);
     m+=d;
@@ -571,7 +568,7 @@
     return new Date(y,m-1,1).toLocaleString('fr-FR', { month:'long', year:'numeric' });
   };
 
-  // --- LOGIQUE CLOUD & SYNC ---
+  // --- SYNC GOOGLE ---
   const googleProvider = new GoogleAuthProvider();
 
   function setupAuthListeners() {
@@ -581,18 +578,8 @@
   }
 
   async function signInWithCloud(provider) {
-      try {
-          await signInWithPopup(auth, provider);
-      } catch (error) {
-          console.error("Auth Error:", error);
-          let msg = error.message;
-          if (error.code === 'auth/operation-not-allowed') {
-             msg = "La connexion Google n'est pas activée dans la console Firebase.";
-          } else if (error.code === 'auth/unauthorized-domain') {
-             msg = "Le domaine actuel n'est pas autorisé dans Firebase Authentication.";
-          }
-          showModal("Erreur connexion", msg);
-      }
+      try { await signInWithPopup(auth, provider); } 
+      catch (error) { showModal("Erreur connexion", error.message); }
   }
 
   onAuthStateChanged(auth, async (user) => {
@@ -605,9 +592,7 @@
           loginView.classList.remove('hidden');
           $('#user-name').textContent = user.displayName || 'Utilisateur';
           $('#user-email').textContent = user.email;
-          $('#user-id-display').textContent = user.uid.substring(0,8)+'...';
           if(user.photoURL) $('#user-avatar').style.backgroundImage = `url(${user.photoURL})`;
-          
           await loadFromCloud();
       } else {
           loginView.classList.add('hidden');
@@ -632,9 +617,12 @@
               localStorage.setItem('worker_entries', JSON.stringify(workEntries));
               localStorage.setItem('worker_config', JSON.stringify(config));
 
+              // UPDATE UI COMPLET
               updateMonthlyView(config.selectedMonthYM);
               updateSettingsUI();
               renderLatestList();
+              renderFullHistory(); // Important
+              renderDefaultTimesList(); // Important
               if(config.lastSelectedDate) updateEntryUI(config.lastSelectedDate);
               
               $('#last-sync-msg').textContent = "Données chargées ✅";
@@ -667,8 +655,7 @@
       }
   }
 
-
-  // --- STORAGE LOCAL ---
+  // --- STORAGE ---
   function lsLoadEntriesMap() {
     const raw = localStorage.getItem('worker_entries');
     if(!raw) return {};
@@ -680,21 +667,21 @@
   }
   function lsSaveConfig(cfg) {
     localStorage.setItem('worker_config', JSON.stringify(cfg));
-    syncData(); // Sync automatique à chaque changement de config
+    syncData();
   }
   function saveWorkEntriesLocally() {
     localStorage.setItem('worker_entries', JSON.stringify(workEntries));
-    syncData(); // Sync automatique à chaque changement de data
+    syncData();
+    renderFullHistory(); // Mettre à jour la liste DATA
   }
 
-  // --- MODAL SYSTEM ---
   function showModal(title, msg) {
     $('#modal-title').textContent = title;
     $('#modal-message').innerHTML = msg;
     $('#custom-modal').style.display = 'flex';
   }
 
-  // --- LOGIQUE METIER ---
+  // --- CORE UI ---
   function getEntry(date) { return workEntries.find(e => e.date === date); }
   
   function updateEntryUI(date) {
@@ -732,9 +719,7 @@
     const start = $('#start-time').value;
     const end = $('#end-time').value;
     const lunch = $('#lunch-duration-manual').value ? parseInt($('#lunch-duration-manual').value) : undefined;
-    
     const entry = { type, start, end, lunchDurationMinutes: lunch };
-    
     const workCard = $('#work-card');
     if(type === 'WORK' || type === 'REMOTE') {
        workCard.style.display = 'block';
@@ -743,16 +728,27 @@
        workCard.style.opacity = '0';
        setTimeout(()=>workCard.style.display = 'none', 300);
     }
-    
-    const mins = calcWorkMinutes(entry);
-    $('#current-day-minutes').textContent = fmtMinutes(mins);
+    $('#current-day-minutes').textContent = fmtMinutes(calcWorkMinutes(entry));
   }
 
   function renderLatestList(){
     const container = $('#latest-list');
     const sorted = [...workEntries].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
-    
-    container.innerHTML = sorted.map(e=>{
+    container.innerHTML = sorted.map(e => createEntryHTML(e)).join('');
+  }
+
+  // --- NOUVELLE FONCTION POUR DATA ---
+  function renderFullHistory() {
+      const container = $('#data-list-container');
+      const sorted = [...workEntries].sort((a,b)=>b.date.localeCompare(a.date));
+      if(sorted.length === 0) {
+          container.innerHTML = '<div class="text-center text-gray-500 py-4">Aucun historique.</div>';
+          return;
+      }
+      container.innerHTML = sorted.map(e => createEntryHTML(e)).join('');
+  }
+
+  function createEntryHTML(e) {
        const isWork = (e.type === 'WORK' || e.type === 'REMOTE');
        let rightText = isWork ? fmtMinutes(calcWorkMinutes(e)) : '';
        let colorClass = 'text-blue-400';
@@ -773,7 +769,6 @@
            <div class="font-bold text-sm ${colorClass}">${rightText}</div>
         </div>
        `;
-    }).join('');
   }
 
   function applyAutoFill() {
@@ -792,31 +787,20 @@
     }
   }
 
-  // --- GRAPHIQUES & LISTES ---
+  // --- STATS ---
   function updateMonthlyView(yearMonth) {
     if(!yearMonth) return;
     config.selectedMonthYM = yearMonth;
     lsSaveConfig(config);
 
     const filtered = workEntries.filter(e => e.date.startsWith(yearMonth));
-    
-    let totalMins = 0;
-    let daysWorked = 0;
-    let remoteDays = 0;
-    let officeDays = 0;
-    let rttUsed = 0;
-    let vacUsed = 0;
+    let totalMins = 0; let daysWorked = 0; let remoteDays = 0; let officeDays = 0;
 
     filtered.forEach(e => {
        const m = calcWorkMinutes(e);
-       if(e.type === 'WORK' || e.type === 'REMOTE') {
-           totalMins += m;
-           daysWorked++;
-       }
+       if(e.type === 'WORK' || e.type === 'REMOTE') { totalMins += m; daysWorked++; }
        if(e.type === 'REMOTE') remoteDays++;
        if(e.type === 'WORK') officeDays++;
-       if(e.type === 'RTT') rttUsed++;
-       if(e.type === 'VACATION') vacUsed++;
     });
 
     const salaryGross = CDI_MONTHLY_HOURS * config.hourlyGrossRate;
@@ -843,40 +827,19 @@
      const ctx = document.getElementById('monthly-chart').getContext('2d');
      const [y, m] = yearMonth.split('-').map(Number);
      const daysInMonth = new Date(y, m, 0).getDate();
-     
      const workedEntries = entries.filter(e => e.type === 'WORK' || e.type === 'REMOTE').sort((a,b)=>a.date.localeCompare(b.date));
-     
      const chartLabels = workedEntries.map(e => e.date.substring(8));
      const chartData = workedEntries.map(e => (calcWorkMinutes(e)/60).toFixed(1));
-     
      if (monthlyChartInstance) monthlyChartInstance.destroy();
-
      monthlyChartInstance = new Chart(ctx, {
         type: 'bar',
-        data: {
-            labels: chartLabels,
-            datasets: [{
-                label: 'Heures',
-                data: chartData,
-                backgroundColor: '#0A84FF',
-                borderRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: { beginAtZero: true, grid: { color: '#333'} },
-                x: { grid: { display: false } }
-            },
-            plugins: { legend: { display: false } }
-        }
+        data: { labels: chartLabels, datasets: [{ label: 'Heures', data: chartData, backgroundColor: '#0A84FF', borderRadius: 4 }] },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#333'} }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
      });
   }
 
   function recalculateBalances() {
-      let rttTaken = 0;
-      let vacTaken = 0;
+      let rttTaken = 0; let vacTaken = 0;
       workEntries.forEach(e => {
           if(e.type === 'RTT') rttTaken++;
           if(e.type === 'VACATION') vacTaken++;
@@ -905,9 +868,7 @@
 
     const isPrivacy = config.privacyMode;
     $('#toggle-privacy-btn').textContent = isPrivacy ? '🔒' : '🔓';
-    document.querySelectorAll('.privacy-blur').forEach(el => {
-        el.classList.toggle('privacy-visible', !isPrivacy);
-    });
+    document.querySelectorAll('.privacy-blur').forEach(el => el.classList.toggle('privacy-visible', !isPrivacy));
   }
 
   function saveSettings() {
@@ -926,28 +887,28 @@
     showModal('Réglages Sauvegardés', 'Vos préférences ont été mises à jour.');
   }
 
-  // --- INITIALISATION ---
+  // --- INIT ---
   document.addEventListener('DOMContentLoaded', () => {
-     // 1. Charge Config
+     // Charge Config
      const savedConfig = localStorage.getItem('worker_config');
      if(savedConfig) config = { ...config, ...JSON.parse(savedConfig) };
      
-     // 2. Charge Entrées
+     // Charge Entries
      const map = lsLoadEntriesMap(); 
      
-     // 3. Setup UI
      setupAuthListeners();
      updateSettingsUI();
      updateMonthlyView(config.selectedMonthYM);
      updateEntryUI(config.lastSelectedDate);
+     renderFullHistory(); // FIXED
+     renderDefaultTimesList(); // FIXED
      
-     // 4. Listeners Inputs
+     // Listeners
      $('#entry-type-select').addEventListener('change', refreshDayTotal);
      $('#start-time').addEventListener('change', refreshDayTotal);
      $('#end-time').addEventListener('change', refreshDayTotal);
      $('#lunch-duration-manual').addEventListener('input', refreshDayTotal);
      
-     // 5. Navigation Tabs
      const tabs = ['saisie','hebdo','mensuelle','data','reglages'];
      tabs.forEach(t => {
          $(`#btn-${t}`).onclick = () => {
@@ -957,10 +918,10 @@
              $(`#btn-${t}`).classList.add('is-active');
              if(t === 'mensuelle') updateMonthlyView(config.selectedMonthYM);
              if(t === 'reglages') updateSettingsUI();
+             if(t === 'data') renderFullHistory(); // Update data tab on click
          }
      });
 
-     // 6. Save Entry
      $('#save-entry-btn').onclick = () => {
         const date = $('#entry-date-hidden').value;
         const type = $('#entry-type-select').value;
@@ -972,7 +933,6 @@
             showModal('Erreur', 'Veuillez saisir les horaires.');
             return;
         }
-        
         workEntries = workEntries.filter(e => e.date !== date);
         workEntries.push({ date, type, start, end, lunchDurationMinutes: lunch, timestamp: Date.now() });
         workEntries.sort((a,b) => a.date.localeCompare(b.date));
@@ -982,7 +942,6 @@
         showModal('Enregistré', 'Entrée sauvegardée avec succès.');
      };
 
-     // 7. Delete Entry
      $('#delete-entry-btn').onclick = () => {
          const date = $('#entry-date-hidden').value;
          if(confirm('Supprimer cette entrée ?')) {
@@ -992,46 +951,25 @@
          }
      };
 
-     // 8. Settings & Privacy
      $('#save-settings-btn').onclick = saveSettings;
-     $('#toggle-privacy-btn').onclick = () => {
-         config.privacyMode = !config.privacyMode;
-         updateSettingsUI();
-         lsSaveConfig(config);
-     };
-     $('#monthly-privacy-toggle').onclick = () => {
-         config.privacyMode = !config.privacyMode;
-         updateSettingsUI();
-         lsSaveConfig(config);
-     };
+     $('#toggle-privacy-btn').onclick = () => { config.privacyMode = !config.privacyMode; updateSettingsUI(); lsSaveConfig(config); };
+     $('#monthly-privacy-toggle').onclick = () => { config.privacyMode = !config.privacyMode; updateSettingsUI(); lsSaveConfig(config); };
 
-     // 9. Profile Pic
      $('#select-profile-picture-btn').onclick = () => $('#profile-picture-file').click();
      $('#profile-picture-file').onchange = (e) => {
          const file = e.target.files[0];
          if(file) {
              const reader = new FileReader();
-             reader.onload = (evt) => {
-                 config.userProfilePic = evt.target.result;
-                 lsSaveConfig(config);
-                 updateSettingsUI();
-             };
+             reader.onload = (evt) => { config.userProfilePic = evt.target.result; lsSaveConfig(config); updateSettingsUI(); };
              reader.readAsDataURL(file);
          }
      };
 
-     // 10. IMPORT / EXPORT (RAJOUTÉ)
+     // CSV EXPORT
      $('#export-data-btn').onclick = () => {
          const header = ["date","type","start","end","lunchDurationMinutes","timestamp"];
          const rows = workEntries.map(e => {
-             return [
-                 `"${e.date}"`,
-                 `"${e.type}"`,
-                 `"${e.start||''}"`,
-                 `"${e.end||''}"`,
-                 `"${e.lunchDurationMinutes||''}"`,
-                 `"${e.timestamp||''}"`
-             ].join(';');
+             return [ `"${e.date}"`, `"${e.type}"`, `"${e.start||''}"`, `"${e.end||''}"`, `"${e.lunchDurationMinutes||''}"`, `"${e.timestamp||''}"` ].join(';');
          });
          const csvContent = "data:text/csv;charset=utf-8," + [header.join(';')].concat(rows).join('\n');
          const encodedUri = encodeURI(csvContent);
@@ -1043,6 +981,7 @@
          document.body.removeChild(link);
      };
 
+     // CSV IMPORT (FIXED)
      $('#import-data-btn').onclick = () => $('#import-file').click();
      $('#import-file').onchange = (e) => {
         const file = e.target.files[0];
@@ -1052,36 +991,26 @@
             const text = evt.target.result;
             const lines = text.split('\n');
             let count = 0;
-            // Skip Header (i=1)
             for(let i=1; i<lines.length; i++){
                 if(!lines[i].trim()) continue;
-                // Retire les guillemets et split par point-virgule
                 const cols = lines[i].split(';').map(c => c.replace(/^"|"$/g, ''));
                 if(cols.length >= 2) {
                     const [date, type, start, end, lunch, ts] = cols;
-                    // Remove existing
                     workEntries = workEntries.filter(we => we.date !== date);
-                    workEntries.push({
-                        date, type, start, end, 
-                        lunchDurationMinutes: lunch ? parseInt(lunch) : undefined,
-                        timestamp: ts ? parseInt(ts) : Date.now()
-                    });
+                    workEntries.push({ date, type, start, end, lunchDurationMinutes: lunch ? parseInt(lunch) : undefined, timestamp: ts ? parseInt(ts) : Date.now() });
                     count++;
                 }
             }
             workEntries.sort((a,b) => a.date.localeCompare(b.date));
-            saveWorkEntriesLocally(); // Sauvegarde + Cloud Sync
+            saveWorkEntriesLocally(); 
             updateMonthlyView(config.selectedMonthYM);
+            renderFullHistory(); // UPDATE DATA TAB
             alert(`${count} entrées importées avec succès !`);
         };
         reader.readAsText(file);
      };
 
-     // 11. Date Navigation
-     $('#entry-date-button').onclick = () => {
-         $('#calendar-modal').style.display = 'flex';
-         renderCalendar(new Date());
-     };
+     $('#entry-date-button').onclick = () => { $('#calendar-modal').style.display = 'flex'; renderCalendar(new Date()); };
      $('#calendar-prev').onclick = () => renderCalendar(addMonthToDate(currentCalDate, -1));
      $('#calendar-next').onclick = () => renderCalendar(addMonthToDate(currentCalDate, 1));
      $('#close-calendar-btn').onclick = () => $('#calendar-modal').style.display = 'none';
@@ -1089,11 +1018,7 @@
      
      $('#auto-fill-btn').onclick = applyAutoFill;
 
-     // Default Times & Time Picker
-     $('#open-default-times-btn').onclick = () => {
-         renderDefaultTimesList();
-         $('#default-times-modal').style.display = 'flex';
-     };
+     $('#open-default-times-btn').onclick = () => { renderDefaultTimesList(); $('#default-times-modal').style.display = 'flex'; };
      $('#close-default-times-btn').onclick = () => $('#default-times-modal').style.display = 'none';
      $('#cancel-time-picker-btn').onclick = () => $('#time-picker-modal').style.display = 'none';
 
@@ -1105,25 +1030,12 @@
          $('#btn-saisie').click();
      };
      
-     // Init Splash
-     setTimeout(() => {
-         $('#splash-screen').style.opacity = '0';
-         setTimeout(() => $('#splash-screen').style.display = 'none', 400);
-     }, 1000);
+     setTimeout(() => { $('#splash-screen').style.opacity = '0'; setTimeout(() => $('#splash-screen').style.display = 'none', 400); }, 1000);
      
      populateMonthSelect();
      $('#month-select').onchange = (e) => updateMonthlyView(e.target.value);
-     $('#month-prev').onclick = () => {
-         const prev = addMonths(config.selectedMonthYM, -1);
-         $('#month-select').value = prev;
-         updateMonthlyView(prev);
-     };
-     $('#month-next').onclick = () => {
-         const next = addMonths(config.selectedMonthYM, 1);
-         $('#month-select').value = next;
-         updateMonthlyView(next);
-     };
-
+     $('#month-prev').onclick = () => { const prev = addMonths(config.selectedMonthYM, -1); $('#month-select').value = prev; updateMonthlyView(prev); };
+     $('#month-next').onclick = () => { const next = addMonths(config.selectedMonthYM, 1); $('#month-select').value = next; updateMonthlyView(next); };
   });
 
   function populateMonthSelect() {
@@ -1146,51 +1058,30 @@
       const year = dateObj.getFullYear();
       const month = dateObj.getMonth();
       $('#calendar-title').textContent = new Intl.DateTimeFormat('fr-FR', {month:'long', year:'numeric'}).format(dateObj);
-      
       const grid = $('#calendar-grid');
       grid.innerHTML = '';
-      
       const firstDay = new Date(year, month, 1).getDay(); 
       const daysInMonth = new Date(year, month+1, 0).getDate();
       const offset = (firstDay + 6) % 7; 
-      
       for(let i=0; i<offset; i++) grid.innerHTML += '<div></div>';
-      
       for(let d=1; d<=daysInMonth; d++) {
           const ymd = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
           const entry = getEntry(ymd);
           let cls = 'cal-btn hover:bg-gray-700';
-          
           if(ymd === config.lastSelectedDate) cls += ' is-selected';
           if(ymd === dateToYMD(new Date())) cls += ' is-today';
-          
           let icon = '';
           if(entry) {
-              if(entry.type === 'WORK') icon = '💼';
-              else if(entry.type === 'REMOTE') icon = '🏠';
-              else if(entry.type === 'RTT') icon = '🏖';
-              else if(entry.type === 'VACATION') icon = '✈️';
-              else if(entry.type === 'HOLIDAY') icon = '🎉';
+              if(entry.type === 'WORK') icon = '💼'; else if(entry.type === 'REMOTE') icon = '🏠'; else if(entry.type === 'RTT') icon = '🏖'; else if(entry.type === 'VACATION') icon = '✈️'; else if(entry.type === 'HOLIDAY') icon = '🎉';
           }
-          
-          grid.innerHTML += `<button class="${cls}" onclick="window.editDate('${ymd}')">
-            <div>${d}</div>
-            <div class="text-[10px]">${icon}</div>
-          </button>`;
+          grid.innerHTML += `<button class="${cls}" onclick="window.editDate('${ymd}')"><div>${d}</div><div class="text-[10px]">${icon}</div></button>`;
       }
   }
   
-  function addMonthToDate(d, n) {
-      const newD = new Date(d);
-      newD.setMonth(newD.getMonth() + n);
-      return newD;
-  }
-  
-  // --- DEFAULT TIMES LOGIC ---
+  // --- DEFAULT TIMES LOGIC (FIXED) ---
   function renderDefaultTimesList() {
       const container = $('#day-list-container');
       container.innerHTML = '';
-      
       DAY_NAMES.forEach((name, index) => {
           const key = DAY_KEYS[index];
           const def = config.defaultTimes[key];
@@ -1199,26 +1090,20 @@
           
           const div = document.createElement('div');
           div.className = "flex justify-between items-center p-3 bg-[#2C2C2E] rounded-xl active:scale-[0.98] transition-transform";
-          div.innerHTML = `
-             <span class="text-white font-medium">${name}</span>
-             <span class="text-sm ${color} font-mono">${timeStr}</span>
-          `;
+          div.innerHTML = `<span class="text-white font-medium">${name}</span><span class="text-sm ${color} font-mono">${timeStr}</span>`;
           div.onclick = () => openTimePicker(index);
           container.appendChild(div);
       });
   }
 
   let currentEditingDayIndex = -1;
-
   function openTimePicker(dayIndex) {
       currentEditingDayIndex = dayIndex;
       const key = DAY_KEYS[dayIndex];
       const def = config.defaultTimes[key];
-      
       $('#time-picker-title').textContent = DAY_NAMES[dayIndex];
       $('#default-start-time').value = (def && def.start) ? def.start : '09:00';
       $('#default-end-time').value = (def && def.end) ? def.end : '17:30';
-      
       $('#time-picker-modal').style.display = 'flex';
   }
 
@@ -1227,13 +1112,11 @@
       const key = DAY_KEYS[currentEditingDayIndex];
       const start = $('#default-start-time').value;
       const end = $('#default-end-time').value;
-      
       config.defaultTimes[key] = { start, end };
       lsSaveConfig(config);
       renderDefaultTimesList();
       $('#time-picker-modal').style.display = 'none';
   };
-
   $('#clear-default-times-btn').onclick = () => {
        if(currentEditingDayIndex === -1) return;
        const key = DAY_KEYS[currentEditingDayIndex];
