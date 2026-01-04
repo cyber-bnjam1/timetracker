@@ -476,7 +476,7 @@
   </div>
 
 <script type="module">
-  // --- IMPORTS FIREBASE & CONFIG (VERSION NETTOYÉE) ---
+  // --- IMPORTS FIREBASE & CONFIG ---
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
   import { getAuth, signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
@@ -571,11 +571,10 @@
     return new Date(y,m-1,1).toLocaleString('fr-FR', { month:'long', year:'numeric' });
   };
 
-  // --- LOGIQUE CLOUD & SYNC (UNIQUEMENT GOOGLE) ---
+  // --- LOGIQUE CLOUD & SYNC ---
   const googleProvider = new GoogleAuthProvider();
 
   function setupAuthListeners() {
-      // Un seul bouton désormais
       $('#btn-login-google').addEventListener('click', () => signInWithCloud(googleProvider));
       $('#btn-logout').addEventListener('click', () => signOut(auth));
       $('#btn-force-sync').addEventListener('click', () => syncData(true));
@@ -630,11 +629,9 @@
               if (data.workEntries) workEntries = JSON.parse(data.workEntries);
               if (data.config) config = { ...config, ...JSON.parse(data.config) };
 
-              // Sauvegarde locale
               localStorage.setItem('worker_entries', JSON.stringify(workEntries));
               localStorage.setItem('worker_config', JSON.stringify(config));
 
-              // Refresh UI
               updateMonthlyView(config.selectedMonthYM);
               updateSettingsUI();
               renderLatestList();
@@ -642,7 +639,6 @@
               
               $('#last-sync-msg').textContent = "Données chargées ✅";
           } else {
-              // Premier login : push data locale
               await syncData(true);
           }
       } catch (e) {
@@ -684,11 +680,11 @@
   }
   function lsSaveConfig(cfg) {
     localStorage.setItem('worker_config', JSON.stringify(cfg));
-    syncData(); // Hook Cloud
+    syncData(); // Sync automatique à chaque changement de config
   }
   function saveWorkEntriesLocally() {
     localStorage.setItem('worker_entries', JSON.stringify(workEntries));
-    syncData(); // Hook Cloud
+    syncData(); // Sync automatique à chaque changement de data
   }
 
   // --- MODAL SYSTEM ---
@@ -823,7 +819,6 @@
        if(e.type === 'VACATION') vacUsed++;
     });
 
-    // Finance
     const salaryGross = CDI_MONTHLY_HOURS * config.hourlyGrossRate;
     const salaryNet = salaryGross * (1 - BRUT_TO_NET_DEDUCTION);
     const mealAllowance = (officeDays + remoteDays) * config.dailyMealAllowance;
@@ -846,15 +841,12 @@
 
   function renderMonthlyChart(entries, yearMonth) {
      const ctx = document.getElementById('monthly-chart').getContext('2d');
-     const targetHours = config.targetWeeklyHours / 60; 
-     const dailyTarget = targetHours / 5;
-
      const [y, m] = yearMonth.split('-').map(Number);
      const daysInMonth = new Date(y, m, 0).getDate();
      
      const workedEntries = entries.filter(e => e.type === 'WORK' || e.type === 'REMOTE').sort((a,b)=>a.date.localeCompare(b.date));
      
-     const chartLabels = workedEntries.map(e => e.date.substring(8)); // Juste le jour
+     const chartLabels = workedEntries.map(e => e.date.substring(8));
      const chartData = workedEntries.map(e => (calcWorkMinutes(e)/60).toFixed(1));
      
      if (monthlyChartInstance) monthlyChartInstance.destroy();
@@ -936,12 +928,12 @@
 
   // --- INITIALISATION ---
   document.addEventListener('DOMContentLoaded', () => {
-     // 1. Charge Config Locale
+     // 1. Charge Config
      const savedConfig = localStorage.getItem('worker_config');
      if(savedConfig) config = { ...config, ...JSON.parse(savedConfig) };
      
-     // 2. Charge Entrées Locales
-     const map = lsLoadEntriesMap(); // Charge dans workEntries
+     // 2. Charge Entrées
+     const map = lsLoadEntriesMap(); 
      
      // 3. Setup UI
      setupAuthListeners();
@@ -981,10 +973,7 @@
             return;
         }
         
-        // Remove existing if any
         workEntries = workEntries.filter(e => e.date !== date);
-        
-        // Add new
         workEntries.push({ date, type, start, end, lunchDurationMinutes: lunch, timestamp: Date.now() });
         workEntries.sort((a,b) => a.date.localeCompare(b.date));
         
@@ -1031,7 +1020,64 @@
          }
      };
 
-     // 10. Date Navigation
+     // 10. IMPORT / EXPORT (RAJOUTÉ)
+     $('#export-data-btn').onclick = () => {
+         const header = ["date","type","start","end","lunchDurationMinutes","timestamp"];
+         const rows = workEntries.map(e => {
+             return [
+                 `"${e.date}"`,
+                 `"${e.type}"`,
+                 `"${e.start||''}"`,
+                 `"${e.end||''}"`,
+                 `"${e.lunchDurationMinutes||''}"`,
+                 `"${e.timestamp||''}"`
+             ].join(';');
+         });
+         const csvContent = "data:text/csv;charset=utf-8," + [header.join(';')].concat(rows).join('\n');
+         const encodedUri = encodeURI(csvContent);
+         const link = document.createElement("a");
+         link.setAttribute("href", encodedUri);
+         link.setAttribute("download", `worker_data_${new Date().toISOString().slice(0,10)}.csv`);
+         document.body.appendChild(link);
+         link.click();
+         document.body.removeChild(link);
+     };
+
+     $('#import-data-btn').onclick = () => $('#import-file').click();
+     $('#import-file').onchange = (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const text = evt.target.result;
+            const lines = text.split('\n');
+            let count = 0;
+            // Skip Header (i=1)
+            for(let i=1; i<lines.length; i++){
+                if(!lines[i].trim()) continue;
+                // Retire les guillemets et split par point-virgule
+                const cols = lines[i].split(';').map(c => c.replace(/^"|"$/g, ''));
+                if(cols.length >= 2) {
+                    const [date, type, start, end, lunch, ts] = cols;
+                    // Remove existing
+                    workEntries = workEntries.filter(we => we.date !== date);
+                    workEntries.push({
+                        date, type, start, end, 
+                        lunchDurationMinutes: lunch ? parseInt(lunch) : undefined,
+                        timestamp: ts ? parseInt(ts) : Date.now()
+                    });
+                    count++;
+                }
+            }
+            workEntries.sort((a,b) => a.date.localeCompare(b.date));
+            saveWorkEntriesLocally(); // Sauvegarde + Cloud Sync
+            updateMonthlyView(config.selectedMonthYM);
+            alert(`${count} entrées importées avec succès !`);
+        };
+        reader.readAsText(file);
+     };
+
+     // 11. Date Navigation
      $('#entry-date-button').onclick = () => {
          $('#calendar-modal').style.display = 'flex';
          renderCalendar(new Date());
@@ -1041,26 +1087,21 @@
      $('#close-calendar-btn').onclick = () => $('#calendar-modal').style.display = 'none';
      $('#close-modal-btn').onclick = () => $('#custom-modal').style.display = 'none';
      
-     // Auto Fill Button
      $('#auto-fill-btn').onclick = applyAutoFill;
 
-     // Setup Default Times Modal
+     // Default Times & Time Picker
      $('#open-default-times-btn').onclick = () => {
          renderDefaultTimesList();
          $('#default-times-modal').style.display = 'flex';
      };
      $('#close-default-times-btn').onclick = () => $('#default-times-modal').style.display = 'none';
-     
-     // Time Picker Modal Logic
      $('#cancel-time-picker-btn').onclick = () => $('#time-picker-modal').style.display = 'none';
 
-     // Expose editDate globally
      window.editDate = (date) => {
          config.lastSelectedDate = date;
          lsSaveConfig(config);
          updateEntryUI(date);
          $('#calendar-modal').style.display = 'none';
-         // Switch to tab saisie
          $('#btn-saisie').click();
      };
      
@@ -1070,7 +1111,6 @@
          setTimeout(() => $('#splash-screen').style.display = 'none', 400);
      }, 1000);
      
-     // Init Month Select
      populateMonthSelect();
      $('#month-select').onchange = (e) => updateMonthlyView(e.target.value);
      $('#month-prev').onclick = () => {
