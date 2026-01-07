@@ -221,7 +221,7 @@
       </div>
 
       <div id="weekly-body" class="bento-card divide-y divide-gray-700/50 p-0 overflow-hidden">
-      </div>
+        </div>
     </section>
 
     <section id="tab-mensuelle" class="tab-content" style="display:none;">
@@ -621,8 +621,8 @@
               updateMonthlyView(config.selectedMonthYM);
               updateSettingsUI();
               renderLatestList();
-              renderFullHistory(); // Important
-              renderDefaultTimesList(); // Important
+              renderFullHistory();
+              renderDefaultTimesList();
               if(config.lastSelectedDate) updateEntryUI(config.lastSelectedDate);
               
               $('#last-sync-msg').textContent = "Données chargées ✅";
@@ -672,7 +672,7 @@
   function saveWorkEntriesLocally() {
     localStorage.setItem('worker_entries', JSON.stringify(workEntries));
     syncData();
-    renderFullHistory(); // Mettre à jour la liste DATA
+    renderFullHistory(); 
   }
 
   function showModal(title, msg) {
@@ -737,7 +737,6 @@
     container.innerHTML = sorted.map(e => createEntryHTML(e)).join('');
   }
 
-  // --- NOUVELLE FONCTION POUR DATA ---
   function renderFullHistory() {
       const container = $('#data-list-container');
       const sorted = [...workEntries].sort((a,b)=>b.date.localeCompare(a.date));
@@ -787,7 +786,66 @@
     }
   }
 
-  // --- STATS ---
+  // --- STATS & HEBDO (CORRIGÉ) ---
+  function updateWeeklyView() {
+       // Trouve le Lundi de la semaine de la date sélectionnée
+       const refDateStr = config.lastSelectedDate || new Date().toISOString().slice(0,10);
+       const refDate = new Date(refDateStr);
+       const day = refDate.getDay(); // 0=Sun, 1=Mon
+       const diff = refDate.getDate() - day + (day === 0 ? -6 : 1); 
+       const monday = new Date(refDate.setDate(diff));
+
+       let totalWeeklyMins = 0;
+       let html = '';
+
+       // Boucle 7 jours
+       for (let i = 0; i < 7; i++) {
+           const d = new Date(monday);
+           d.setDate(monday.getDate() + i);
+           const ymd = dateToYMD(d);
+           const entry = getEntry(ymd);
+           const dayName = DAY_NAMES[i]; 
+
+           let timeStr = '-';
+           let visualClass = 'text-gray-600';
+           let dayMins = 0;
+
+           if (entry) {
+               if(entry.type === 'WORK' || entry.type === 'REMOTE') {
+                   dayMins = calcWorkMinutes(entry);
+                   timeStr = fmtMinutes(dayMins);
+                   visualClass = entry.type === 'WORK' ? 'text-green-400' : 'text-purple-400';
+               } else if (entry.type === 'RTT') {
+                   timeStr = 'RTT'; visualClass = 'text-blue-400';
+               } else if (entry.type === 'VACATION') {
+                   timeStr = 'Congés'; visualClass = 'text-pink-400';
+               } else if (entry.type === 'HOLIDAY') {
+                   timeStr = 'Férié'; visualClass = 'text-yellow-400';
+               }
+               totalWeeklyMins += dayMins;
+           }
+
+           html += `
+           <div onclick="window.editDate('${ymd}')" class="flex justify-between items-center p-4 hover:bg-white/5 active:bg-white/10 transition-colors cursor-pointer">
+               <div class="flex flex-col">
+                   <span class="text-white font-medium">${dayName}</span>
+                   <span class="text-[10px] text-gray-500">${formatFrDate(ymd)}</span>
+               </div>
+               <div class="font-bold font-mono ${visualClass}">${timeStr}</div>
+           </div>`;
+       }
+
+       $('#weekly-body').innerHTML = html;
+       $('#total-weekly-hours').textContent = fmtMinutes(totalWeeklyMins);
+       $('#target-weekly-hours-summary').textContent = fmtMinutes(config.targetWeeklyHours);
+
+       const pct = Math.min(100, (totalWeeklyMins / config.targetWeeklyHours) * 100);
+       const bar = $('#weekly-progress-bar');
+       bar.style.width = `${pct}%`;
+       bar.className = `h-full transition-all duration-500 ${pct >= 100 ? 'bg-green-500' : 'bg-blue-500'}`;
+       $('#progress-bar-label').textContent = `${Math.round(pct)}%`;
+  }
+
   function updateMonthlyView(yearMonth) {
     if(!yearMonth) return;
     config.selectedMonthYM = yearMonth;
@@ -900,8 +958,8 @@
      updateSettingsUI();
      updateMonthlyView(config.selectedMonthYM);
      updateEntryUI(config.lastSelectedDate);
-     renderFullHistory(); // FIXED
-     renderDefaultTimesList(); // FIXED
+     renderFullHistory();
+     renderDefaultTimesList();
      
      // Listeners
      $('#entry-type-select').addEventListener('change', refreshDayTotal);
@@ -916,9 +974,11 @@
              document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('is-active'));
              $(`#tab-${t}`).style.display = 'block';
              $(`#btn-${t}`).classList.add('is-active');
+             
              if(t === 'mensuelle') updateMonthlyView(config.selectedMonthYM);
+             if(t === 'hebdo') updateWeeklyView(); // AJOUT ICI
              if(t === 'reglages') updateSettingsUI();
-             if(t === 'data') renderFullHistory(); // Update data tab on click
+             if(t === 'data') renderFullHistory(); 
          }
      });
 
@@ -981,7 +1041,7 @@
          document.body.removeChild(link);
      };
 
-     // CSV IMPORT (FIXED)
+     // CSV IMPORT
      $('#import-data-btn').onclick = () => $('#import-file').click();
      $('#import-file').onchange = (e) => {
         const file = e.target.files[0];
@@ -1004,7 +1064,7 @@
             workEntries.sort((a,b) => a.date.localeCompare(b.date));
             saveWorkEntriesLocally(); 
             updateMonthlyView(config.selectedMonthYM);
-            renderFullHistory(); // UPDATE DATA TAB
+            renderFullHistory();
             alert(`${count} entrées importées avec succès !`);
         };
         reader.readAsText(file);
@@ -1078,7 +1138,7 @@
       }
   }
   
-  // --- DEFAULT TIMES LOGIC (FIXED) ---
+  // --- DEFAULT TIMES LOGIC ---
   function renderDefaultTimesList() {
       const container = $('#day-list-container');
       container.innerHTML = '';
