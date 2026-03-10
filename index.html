@@ -1,24 +1,25 @@
 <!DOCTYPE html>
+
 <html lang="fr" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
   <title>Worker App</title>
-  
+
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Worker">
 
   <link rel="apple-touch-icon" sizes="180x180" href="apple-icon-180.png"> 
   <link rel="icon" href="favicon.png" type="image/png">
-  
+
   <script src="https://cdn.tailwindcss.com"></script>
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 
   <style>
-    /* RESET BASIQUE */
     body {
       font-family: 'Inter', -apple-system, system-ui, sans-serif;
       background-color: #000000;
@@ -30,7 +31,6 @@
     .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
     input, select, textarea, button { font-size: 16px !important; outline: none; }
 
-    /* Bento Card */
     .bento-card {
         background-color: #1C1C1E;
         border-radius: 18px;
@@ -39,7 +39,6 @@
         border: 1px solid #2C2C2E;
     }
 
-    /* Inputs */
     .big-input {
         background: #2C2C2E;
         border-radius: 12px;
@@ -58,7 +57,6 @@
     
     #month-select { text-align-last: center; }
 
-    /* Nav Blur */
     .nav-blur {
         background: rgba(28, 28, 30, 0.85);
         backdrop-filter: blur(20px);
@@ -69,7 +67,6 @@
     header.nav-blur { padding-top: calc(env(safe-area-inset-top) + 10px); }
     #pane { padding-top: calc(env(safe-area-inset-top) + 80px) !important; }
 
-    /* Nav Btn */
     .nav-btn {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         width: 100%; height: 100%; background: transparent; border: none;
@@ -79,7 +76,6 @@
     .nav-icon { font-size: 22px; margin-bottom: -2px; }
     .nav-label { font-size: 10px; font-weight: 500; }
 
-    /* Hero Button */
     .date-hero-btn {
         background: linear-gradient(135deg, #0A84FF 0%, #007AFF 100%);
         color: white;
@@ -91,7 +87,6 @@
     .tab-content { animation: fadeIn 0.2s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Modal */
     #calendar-modal {
         position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
         z-index: 2000; display: none; align-items: flex-end; justify-content: center;
@@ -111,7 +106,26 @@
     .privacy-blur { filter: blur(6px); user-select: none; transition: filter 0.3s ease; }
     .privacy-visible { filter: blur(0); }
     ::-webkit-scrollbar { display: none; }
+
+    /* Week navigator */
+    .week-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #1C1C1E; border-radius: 14px; padding: 10px 14px;
+      margin-bottom: 12px; border: 1px solid #2C2C2E;
+    }
+    .week-nav-btn {
+      width: 36px; height: 36px; border-radius: 10px; border: none;
+      background: #2C2C2E; color: white; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .week-nav-btn:active { background: #3A3A3C; }
+    .week-nav-label { text-align: center; }
+    .week-nav-label .week-range { font-size: 13px; font-weight: 600; color: white; }
+    .week-nav-label .week-num { font-size: 10px; color: #8E8E93; margin-top: 1px; }
+    .week-nav-btn.week-today { font-size: 11px; width: auto; padding: 0 10px; color: #0A84FF; background: rgba(10,132,255,0.15); border: 1px solid rgba(10,132,255,0.3); }
   </style>
+
 </head>
 
 <body>
@@ -135,267 +149,283 @@
   </header>
 
   <main id="pane" class="w-full min-h-screen pb-28 px-4">
+
+```
+<section id="tab-saisie" class="tab-content">
+  <div class="mb-4">
+    <button id="entry-date-button" class="date-hero-btn active:scale-95 transition-transform duration-100">
+      <div class="text-left">
+        <div class="text-blue-100 text-sm font-medium opacity-80">Date</div>
+        <div id="entry-date-display" class="text-2xl font-bold">Aujourd'hui</div>
+      </div>
+      <div class="bg-white/20 p-2 rounded-lg text-xl">📅</div>
+    </button>
+    <input type="hidden" id="entry-date-hidden" />
+  </div>
+
+  <div class="bento-card">
+    <label class="text-xs text-gray-400 uppercase font-bold mb-2 block">Type</label>
+    <div class="relative">
+      <select id="entry-type-select" class="big-input appearance-none">
+        <option value="WORK">💼 &nbsp; Travail (Bureau)</option>
+        <option value="REMOTE">🏠 &nbsp; Télétravail</option>
+        <option value="RTT">🏖 &nbsp; RTT</option>
+        <option value="VACATION">✈️ &nbsp; Vacances</option>
+        <option value="HOLIDAY">🎉 &nbsp; Férié</option>
+      </select>
+      <div class="absolute right-4 top-4 pointer-events-none text-gray-400">▼</div>
+    </div>
+  </div>
+
+  <div id="work-card" class="bento-card transition-opacity duration-300">
+    <div class="flex justify-between items-center mb-3">
+      <label class="text-xs text-gray-400 uppercase font-bold">Horaires</label>
+      <span id="current-day-minutes" class="text-xs font-bold px-2 py-1 rounded bg-green-500/20 text-green-400">0h 00m</span>
+    </div>
     
-    <section id="tab-saisie" class="tab-content">
-      <div class="mb-4">
-        <button id="entry-date-button" class="date-hero-btn active:scale-95 transition-transform duration-100">
-          <div class="text-left">
-            <div class="text-blue-100 text-sm font-medium opacity-80">Date</div>
-            <div id="entry-date-display" class="text-2xl font-bold">Aujourd'hui</div>
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <div>
+        <span class="text-[10px] text-gray-500 uppercase block mb-1 ml-1">Début</span>
+        <input type="time" id="start-time" class="big-input text-center font-bold text-lg"/>
+      </div>
+      <div>
+        <span class="text-[10px] text-gray-500 uppercase block mb-1 ml-1">Fin</span>
+        <input type="time" id="end-time" class="big-input text-center font-bold text-lg"/>
+      </div>
+    </div>
+
+    <div class="mt-4 pt-3 border-t border-gray-700">
+       <div class="flex justify-between items-center mb-2">
+         <span class="text-sm text-gray-300">Pause midi</span>
+         <span id="lunch-duration-display" class="text-sm font-mono text-blue-400">45min (minimum légal)</span>
+       </div>
+       <input type="number" id="lunch-duration-manual" class="big-input text-right" placeholder="Modifier (min)" inputmode="numeric">
+    </div>
+  </div>
+
+  <div class="grid grid-cols-4 gap-3 mt-2">
+    <button id="auto-fill-btn" class="col-span-1 h-[50px] rounded-xl bg-purple-800/50 text-purple-300 text-xl border border-purple-700 flex items-center justify-center" title="Remplir auto">⚡️</button>
+    <button id="clear-entry-btn" class="col-span-1 h-[50px] rounded-xl bg-gray-800 text-gray-400 text-xl border border-gray-700 flex items-center justify-center">↺</button>
+    <button id="save-entry-btn" class="col-span-2 h-[50px] rounded-xl bg-blue-600 text-white font-bold text-lg shadow-lg shadow-blue-900/50 active:scale-95 transition-transform">Enregistrer</button>
+  </div>
+  <button id="delete-entry-btn" class="w-full mt-3 py-3 text-red-500 text-sm font-medium" style="display:none;">Supprimer</button>
+
+  <div class="mt-8">
+    <h3 class="text-sm font-bold text-gray-500 uppercase mb-3 px-2">Récent</h3>
+    <div id="latest-list" class="space-y-2"></div>
+  </div>
+</section>
+
+<section id="tab-hebdo" class="tab-content" style="display:none;">
+
+  <!-- ✅ NOUVEAU : Navigateur de semaine -->
+  <div class="week-nav">
+    <button class="week-nav-btn" id="week-prev">‹</button>
+    <div class="week-nav-label">
+      <div class="week-range" id="week-range-label">–</div>
+      <div class="week-num" id="week-num-label">Semaine –</div>
+    </div>
+    <button class="week-nav-btn" id="week-next">›</button>
+  </div>
+  <button id="week-today-btn" class="week-nav-btn week-today w-full mb-3" style="width:100%;height:32px;">Semaine actuelle</button>
+
+  <div class="bento-card bg-gradient-to-br from-slate-800 to-slate-900">
+    <div class="flex justify-between items-end mb-4">
+      <div>
+         <div class="text-gray-400 text-xs uppercase">Total Semaine</div>
+         <div id="total-weekly-hours" class="text-3xl font-bold text-white mt-1">0h 00m</div>
+      </div>
+      <div class="text-right">
+         <div class="text-gray-400 text-xs uppercase">Objectif</div>
+         <div id="target-weekly-hours-summary" class="text-blue-400 font-bold">37h 00m</div>
+      </div>
+    </div>
+    
+    <div class="w-full bg-gray-700 h-3 rounded-full overflow-hidden mb-2">
+       <div id="weekly-progress-bar" class="h-full bg-blue-500 transition-all duration-500" style="width: 0%"></div>
+    </div>
+    <div id="progress-bar-label" class="text-center text-xs text-gray-400 font-mono">0%</div>
+  </div>
+
+  <div id="weekly-body" class="bento-card divide-y divide-gray-700/50 p-0 overflow-hidden">
+  </div>
+</section>
+
+<section id="tab-mensuelle" class="tab-content" style="display:none;">
+  <div class="flex items-center gap-2 mb-4 bento-card p-2">
+    <button id="month-prev" class="w-10 h-10 flex items-center justify-center bg-gray-800 rounded-lg text-white">‹</button>
+    <select id="month-select" class="flex-grow bg-transparent text-center text-white font-bold h-10 outline-none"></select>
+    <button id="month-next" class="w-10 h-10 flex items-center justify-center bg-gray-800 rounded-lg text-white">›</button>
+  </div>
+
+  <div class="bento-card bg-gradient-to-br from-purple-800/80 to-pink-800/80 mb-4">
+      <div class="flex justify-between items-center mb-3">
+          <h3 class="text-xs text-white uppercase font-bold">Estimation Salariale</h3>
+          <button id="monthly-privacy-toggle" class="text-xl text-white opacity-70">🔒</button>
+      </div>
+      
+      <div id="finance-details-container">
+          <div class="flex justify-between items-center py-2 border-b border-white/20">
+              <span class="text-sm font-medium">Salaire de base BRUT (151.67h)</span>
+              <span id="monthly-base-salary-gross" class="font-bold text-lg text-white privacy-blur">0.00 €</span>
           </div>
-          <div class="bg-white/20 p-2 rounded-lg text-xl">📅</div>
+          <div class="flex justify-between items-center py-2 border-b border-white/20">
+              <span class="text-sm font-medium">Salaire de base NET (Brut -23%)</span>
+              <span id="monthly-base-salary-net" class="font-bold text-lg text-blue-300 privacy-blur">0.00 €</span>
+          </div>
+          <div class="flex justify-between items-center py-2 border-b border-white/20">
+              <span class="text-sm font-medium">Indemnités Repas NET</span>
+              <span id="monthly-meal-allowance" class="font-bold text-sm text-pink-300 privacy-blur">0.00 €</span>
+          </div>
+          <div class="flex justify-between items-center py-2 border-b border-white/20">
+              <span class="text-sm font-medium">Indemnités KM NET</span>
+              <span id="monthly-km-allowance" class="font-bold text-sm text-green-300 privacy-blur">0.00 €</span>
+          </div>
+          <div class="flex justify-between items-center pt-3">
+              <span class="text-lg font-bold">Total NET</span>
+              <span id="monthly-grand-total" class="font-extrabold text-2xl text-yellow-300 privacy-blur">0.00 €</span>
+          </div>
+      </div>
+  </div>
+
+  <div class="bento-card mb-4">
+    <h3 class="text-xs text-gray-400 uppercase font-bold mb-3">Performance Hebdomadaire</h3>
+    <div style="height: 200px; width: 100%;">
+        <canvas id="monthly-chart"></canvas>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-3 mb-4">
+    <div class="bento-card flex flex-col items-center justify-center py-6">
+       <span id="monthly-days-worked" class="text-3xl font-bold text-green-400">0</span>
+       <span class="text-xs text-gray-500 uppercase mt-1">Jours Travaillés</span>
+    </div>
+    <div class="bento-card flex flex-col items-center justify-center py-6">
+       <span id="monthly-total-work-hours" class="text-2xl font-bold text-white">0h</span>
+       <span class="text-xs text-gray-500 uppercase mt-1">Heures Totales</span>
+    </div>
+  </div>
+
+  <div class="bento-card">
+    <h3 class="text-xs text-gray-400 uppercase font-bold mb-3">Compteurs</h3>
+    <div class="flex justify-between items-center py-2 border-b border-gray-700/50">
+       <span>Jours Télétravail</span>
+       <span id="monthly-remote-days" class="font-bold text-purple-400 text-lg">0</span>
+    </div>
+    <div class="flex justify-between items-center py-2 border-b border-gray-700/50">
+      <span>Solde RTT</span>
+      <span id="current-rtt-balance" class="font-bold text-blue-400 text-lg">0</span>
+    </div>
+    <div class="flex justify-between items-center py-2">
+      <span>Solde CP</span>
+      <span id="current-vacation-balance" class="font-bold text-pink-400 text-lg">0</span>
+    </div>
+  </div>
+</section>
+
+<section id="tab-data" class="tab-content" style="display:none;">
+  <h3 class="text-sm font-bold text-gray-500 uppercase mb-3 px-2">Historique complet</h3>
+  <div id="data-list-container" class="space-y-2"></div>
+</section>
+
+<section id="tab-reglages" class="tab-content" style="display:none;">
+    
+  <div class="bento-card mb-4" id="cloud-section">
+      <h3 class="text-xs text-gray-400 uppercase font-bold mb-3">Sauvegarde Cloud ☁️</h3>
+      
+      <div id="logged-out-view">
+        <p class="text-sm text-gray-400 mb-3">Connectez-vous pour synchroniser vos données et ne jamais les perdre.</p>
+        <button id="btn-login-google" class="w-full h-[44px] rounded-xl bg-[#4285F4] text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
+          <span class="bg-white text-transparent bg-clip-text text-lg" style="-webkit-text-fill-color: white;">G</span> Continuer avec Google
         </button>
-        <input type="hidden" id="entry-date-hidden" />
       </div>
 
-      <div class="bento-card">
-        <label class="text-xs text-gray-400 uppercase font-bold mb-2 block">Type</label>
-        <div class="relative">
-          <select id="entry-type-select" class="big-input appearance-none">
-            <option value="WORK">💼 &nbsp; Travail (Bureau)</option>
-            <option value="REMOTE">🏠 &nbsp; Télétravail</option>
-            <option value="RTT">🏖 &nbsp; RTT</option>
-            <option value="VACATION">✈️ &nbsp; Vacances</option>
-            <option value="HOLIDAY">🎉 &nbsp; Férié</option>
-          </select>
-          <div class="absolute right-4 top-4 pointer-events-none text-gray-400">▼</div>
-        </div>
-      </div>
-
-      <div id="work-card" class="bento-card transition-opacity duration-300">
-        <div class="flex justify-between items-center mb-3">
-          <label class="text-xs text-gray-400 uppercase font-bold">Horaires</label>
-          <span id="current-day-minutes" class="text-xs font-bold px-2 py-1 rounded bg-green-500/20 text-green-400">0h 00m</span>
-        </div>
-        
-        <div class="grid grid-cols-2 gap-3 mb-3">
-          <div>
-            <span class="text-[10px] text-gray-500 uppercase block mb-1 ml-1">Début</span>
-            <input type="time" id="start-time" class="big-input text-center font-bold text-lg"/>
-          </div>
-          <div>
-            <span class="text-[10px] text-gray-500 uppercase block mb-1 ml-1">Fin</span>
-            <input type="time" id="end-time" class="big-input text-center font-bold text-lg"/>
+      <div id="logged-in-view" class="hidden">
+        <div class="flex items-center gap-3 mb-3">
+          <div id="user-avatar" class="w-10 h-10 rounded-full bg-gray-700 bg-cover bg-center"></div>
+          <div class="overflow-hidden">
+            <div id="user-name" class="text-sm font-bold text-white truncate">Utilisateur</div>
+            <div id="user-email" class="text-xs text-gray-500 truncate">email@test.com</div>
           </div>
         </div>
-
-        <div class="mt-4 pt-3 border-t border-gray-700">
-           <div class="flex justify-between items-center mb-2">
-             <span class="text-sm text-gray-300">Pause midi</span>
-             <span id="lunch-duration-display" class="text-sm font-mono text-blue-400">45min (minimum légal)</span>
-           </div>
-           <input type="number" id="lunch-duration-manual" class="big-input text-right" placeholder="Modifier (min)" inputmode="numeric">
+        <div class="flex gap-2">
+            <button id="btn-force-sync" class="flex-1 h-[36px] rounded-lg bg-blue-600/30 text-blue-400 text-xs font-bold border border-blue-600/50">Forcer Sync ↻</button>
+            <button id="btn-logout" class="h-[36px] px-4 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold border border-red-600/30">Déconnexion</button>
         </div>
+        <p id="last-sync-msg" class="text-[10px] text-gray-500 mt-2 text-center">Dernière sync: Jamais</p>
       </div>
+  </div>
 
-      <div class="grid grid-cols-4 gap-3 mt-2">
-        <button id="auto-fill-btn" class="col-span-1 h-[50px] rounded-xl bg-purple-800/50 text-purple-300 text-xl border border-purple-700 flex items-center justify-center" title="Remplir auto">⚡️</button>
-        <button id="clear-entry-btn" class="col-span-1 h-[50px] rounded-xl bg-gray-800 text-gray-400 text-xl border border-gray-700 flex items-center justify-center">↺</button>
-        <button id="save-entry-btn" class="col-span-2 h-[50px] rounded-xl bg-blue-600 text-white font-bold text-lg shadow-lg shadow-blue-900/50 active:scale-95 transition-transform">Enregistrer</button>
+  <div class="bento-card space-y-4">
+    <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Photo de Profil</label>
+    <div class="flex items-center space-x-4">
+      <div id="settings-profile-preview" class="h-12 w-12 rounded-full bg-gray-800 border border-gray-700 bg-cover bg-center flex items-center justify-center text-2xl">👤</div>
+      <div class="flex-grow">
+        <input type="file" id="profile-picture-file" accept="image/*" class="hidden"> 
+        <button id="select-profile-picture-btn" class="w-full h-10 rounded-lg bg-gray-700 text-sm text-white font-medium active:scale-[0.98] transition-transform">Choisir une image</button>
+        <!-- ✅ FIX : bouton suppression photo maintenant fonctionnel -->
+        <button id="clear-profile-picture-btn" class="w-full h-10 rounded-lg bg-red-700/50 text-sm text-red-300 font-medium mt-2 active:scale-[0.98] transition-transform" style="display:none;">Supprimer</button>
       </div>
-      <button id="delete-entry-btn" class="w-full mt-3 py-3 text-red-500 text-sm font-medium" style="display:none;">Supprimer</button>
+    </div>
+  </div>
+  
+  <div class="bento-card space-y-4">
+    <div>
+      <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Taux Horaire Brut (€)</label>
+      <input type="number" step="0.01" id="hourly-gross-rate" class="big-input" value="0.00">
+    </div>
+    <div>
+      <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Indemnité Repas (NET €)</label>
+      <input type="number" step="0.01" id="daily-meal-allowance" class="big-input" value="0.00">
+    </div>
+    <div>
+      <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Indemnité KM (NET €)</label>
+      <input type="number" step="0.01" id="daily-km-allowance" class="big-input" value="0.00">
+    </div>
+    <div class="flex justify-between items-center pt-3 border-t border-gray-700">
+       <label class="text-sm text-gray-300">Activer le flou sur les chiffres</label>
+       <button id="toggle-privacy-btn" class="text-2xl text-blue-400">🔒</button>
+    </div>
+  </div>
+  
+  <div class="bento-card space-y-4">
+     <button id="open-default-times-btn" class="w-full h-10 rounded-lg bg-blue-700 text-sm text-white font-bold active:scale-[0.98] transition-transform">Pré-remplissage des Horaires</button>
+  </div>
 
-      <div class="mt-8">
-        <h3 class="text-sm font-bold text-gray-500 uppercase mb-3 px-2">Récent</h3>
-        <div id="latest-list" class="space-y-2"></div>
-      </div>
-    </section>
-    
-    <section id="tab-hebdo" class="tab-content" style="display:none;">
-      <div class="bento-card bg-gradient-to-br from-slate-800 to-slate-900">
-        <div class="flex justify-between items-end mb-4">
-          <div>
-             <div class="text-gray-400 text-xs uppercase">Total Semaine</div>
-             <div id="total-weekly-hours" class="text-3xl font-bold text-white mt-1">0h 00m</div>
-          </div>
-          <div class="text-right">
-             <div class="text-gray-400 text-xs uppercase">Objectif</div>
-             <div id="target-weekly-hours-summary" class="text-blue-400 font-bold">37h 00m</div>
-          </div>
-        </div>
-        
-        <div class="w-full bg-gray-700 h-3 rounded-full overflow-hidden mb-2">
-           <div id="weekly-progress-bar" class="h-full bg-blue-500 transition-all duration-500" style="width: 0%"></div>
-        </div>
-        <div id="progress-bar-label" class="text-center text-xs text-gray-400 font-mono">0%</div>
-      </div>
+  <div class="bento-card space-y-4">
+    <div>
+      <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Objectif Hebdomadaire (h)</label>
+      <input type="number" id="target-hours" class="big-input" value="37.0">
+    </div>
+    <div>
+      <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Pause Midi Standard (min)</label>
+      <input type="number" id="lunch-minutes" class="big-input" value="45">
+    </div>
+  </div>
 
-      <div id="weekly-body" class="bento-card divide-y divide-gray-700/50 p-0 overflow-hidden">
-        </div>
-    </section>
+  <div class="bento-card space-y-4">
+    <div>
+      <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Stock RTT Initial</label>
+      <input type="number" id="initial-rtt-days" class="big-input" value="10">
+    </div>
+    <div>
+      <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Stock CP Initial</label>
+      <input type="number" id="initial-vacation-days" class="big-input" value="25">
+    </div>
+  </div>
 
-    <section id="tab-mensuelle" class="tab-content" style="display:none;">
-      <div class="flex items-center gap-2 mb-4 bento-card p-2">
-        <button id="month-prev" class="w-10 h-10 flex items-center justify-center bg-gray-800 rounded-lg text-white">‹</button>
-        <select id="month-select" class="flex-grow bg-transparent text-center text-white font-bold h-10 outline-none"></select>
-        <button id="month-next" class="w-10 h-10 flex items-center justify-center bg-gray-800 rounded-lg text-white">›</button>
-      </div>
+  <button id="save-settings-btn" class="w-full h-[50px] rounded-xl bg-blue-600 text-white font-bold text-lg mb-6 active:scale-[0.98] transition-transform">Sauvegarder</button>
 
-      <div class="bento-card bg-gradient-to-br from-purple-800/80 to-pink-800/80 mb-4">
-          <div class="flex justify-between items-center mb-3">
-              <h3 class="text-xs text-white uppercase font-bold">Estimation Salariale</h3>
-              <button id="monthly-privacy-toggle" class="text-xl text-white opacity-70">🔒</button>
-          </div>
-          
-          <div id="finance-details-container">
-              <div class="flex justify-between items-center py-2 border-b border-white/20">
-                  <span class="text-sm font-medium">Salaire de base BRUT (151.67h)</span>
-                  <span id="monthly-base-salary-gross" class="font-bold text-lg text-white privacy-blur">0.00 €</span>
-              </div>
-              <div class="flex justify-between items-center py-2 border-b border-white/20">
-                  <span class="text-sm font-medium">Salaire de base NET (Brut -23%)</span>
-                  <span id="monthly-base-salary-net" class="font-bold text-lg text-blue-300 privacy-blur">0.00 €</span>
-              </div>
-              <div class="flex justify-between items-center py-2 border-b border-white/20">
-                  <span class="text-sm font-medium">Indemnités Repas NET</span>
-                  <span id="monthly-meal-allowance" class="font-bold text-sm text-pink-300 privacy-blur">0.00 €</span>
-              </div>
-              <div class="flex justify-between items-center py-2 border-b border-white/20">
-                  <span class="text-sm font-medium">Indemnités KM NET</span>
-                  <span id="monthly-km-allowance" class="font-bold text-sm text-green-300 privacy-blur">0.00 €</span>
-              </div>
-              <div class="flex justify-between items-center pt-3">
-                  <span class="text-lg font-bold">Total NET</span>
-                  <span id="monthly-grand-total" class="font-extrabold text-2xl text-yellow-300 privacy-blur">0.00 €</span>
-              </div>
-          </div>
-      </div>
+  <div class="grid grid-cols-2 gap-3">
+    <button id="export-data-btn" class="h-10 rounded-lg bg-gray-800 text-sm text-gray-300 active:scale-[0.98] transition-transform">Exporter CSV</button>
+    <button id="import-data-btn" class="h-10 rounded-lg bg-gray-800 text-sm text-gray-300 active:scale-[0.98] transition-transform">Importer CSV</button>
+    <input id="import-file" type="file" accept=".csv" class="hidden">
+  </div>
+  
+  <div class="text-center text-xs text-gray-600 mt-6 pb-4">ID: <span id="user-id-display">Local</span></div>
+</section>
+```
 
-      <div class="bento-card mb-4">
-        <h3 class="text-xs text-gray-400 uppercase font-bold mb-3">Performance Hebdomadaire</h3>
-        <div style="height: 200px; width: 100%;">
-            <canvas id="monthly-chart"></canvas>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3 mb-4">
-        <div class="bento-card flex flex-col items-center justify-center py-6">
-           <span id="monthly-days-worked" class="text-3xl font-bold text-green-400">0</span>
-           <span class="text-xs text-gray-500 uppercase mt-1">Jours Travaillés</span>
-        </div>
-        <div class="bento-card flex flex-col items-center justify-center py-6">
-           <span id="monthly-total-work-hours" class="text-2xl font-bold text-white">0h</span>
-           <span class="text-xs text-gray-500 uppercase mt-1">Heures Totales</span>
-        </div>
-      </div>
-
-      <div class="bento-card">
-        <h3 class="text-xs text-gray-400 uppercase font-bold mb-3">Compteurs</h3>
-        <div class="flex justify-between items-center py-2 border-b border-gray-700/50">
-           <span>Jours Télétravail</span>
-           <span id="monthly-remote-days" class="font-bold text-purple-400 text-lg">0</span>
-        </div>
-        <div class="flex justify-between items-center py-2 border-b border-gray-700/50">
-          <span>Solde RTT</span>
-          <span id="current-rtt-balance" class="font-bold text-blue-400 text-lg">0</span>
-        </div>
-        <div class="flex justify-between items-center py-2">
-          <span>Solde CP</span>
-          <span id="current-vacation-balance" class="font-bold text-pink-400 text-lg">0</span>
-        </div>
-      </div>
-    </section>
-
-    <section id="tab-data" class="tab-content" style="display:none;">
-      <h3 class="text-sm font-bold text-gray-500 uppercase mb-3 px-2">Historique complet</h3>
-      <div id="data-list-container" class="space-y-2"></div>
-    </section>
-
-    <section id="tab-reglages" class="tab-content" style="display:none;">
-        
-      <div class="bento-card mb-4" id="cloud-section">
-          <h3 class="text-xs text-gray-400 uppercase font-bold mb-3">Sauvegarde Cloud ☁️</h3>
-          
-          <div id="logged-out-view">
-            <p class="text-sm text-gray-400 mb-3">Connectez-vous pour synchroniser vos données et ne jamais les perdre.</p>
-            <button id="btn-login-google" class="w-full h-[44px] rounded-xl bg-[#4285F4] text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
-              <span class="bg-white text-transparent bg-clip-text text-lg" style="-webkit-text-fill-color: white;">G</span> Continuer avec Google
-            </button>
-          </div>
-
-          <div id="logged-in-view" class="hidden">
-            <div class="flex items-center gap-3 mb-3">
-              <div id="user-avatar" class="w-10 h-10 rounded-full bg-gray-700 bg-cover bg-center"></div>
-              <div class="overflow-hidden">
-                <div id="user-name" class="text-sm font-bold text-white truncate">Utilisateur</div>
-                <div id="user-email" class="text-xs text-gray-500 truncate">email@test.com</div>
-              </div>
-            </div>
-            <div class="flex gap-2">
-                <button id="btn-force-sync" class="flex-1 h-[36px] rounded-lg bg-blue-600/30 text-blue-400 text-xs font-bold border border-blue-600/50">Forcer Sync ↻</button>
-                <button id="btn-logout" class="h-[36px] px-4 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold border border-red-600/30">Déconnexion</button>
-            </div>
-            <p id="last-sync-msg" class="text-[10px] text-gray-500 mt-2 text-center">Dernière sync: Jamais</p>
-          </div>
-      </div>
-
-      <div class="bento-card space-y-4">
-        <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Photo de Profil</label>
-        <div class="flex items-center space-x-4">
-          <div id="settings-profile-preview" class="h-12 w-12 rounded-full bg-gray-800 border border-gray-700 bg-cover bg-center flex items-center justify-center text-2xl">👤</div>
-          <div class="flex-grow">
-            <input type="file" id="profile-picture-file" accept="image/*" class="hidden"> 
-            <button id="select-profile-picture-btn" class="w-full h-10 rounded-lg bg-gray-700 text-sm text-white font-medium active:scale-[0.98] transition-transform">Choisir une image</button>
-            <button id="clear-profile-picture-btn" class="w-full h-10 rounded-lg bg-red-700/50 text-sm text-red-300 font-medium mt-2 active:scale-[0.98] transition-transform" style="display:none;">Supprimer</button>
-          </div>
-        </div>
-      </div>
-      
-      <div class="bento-card space-y-4">
-        <div>
-          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Taux Horaire Brut (€)</label>
-          <input type="number" step="0.01" id="hourly-gross-rate" class="big-input" value="0.00">
-        </div>
-        <div>
-          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Indemnité Repas (NET €)</label>
-          <input type="number" step="0.01" id="daily-meal-allowance" class="big-input" value="0.00">
-        </div>
-        <div>
-          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Indemnité KM (NET €)</label>
-          <input type="number" step="0.01" id="daily-km-allowance" class="big-input" value="0.00">
-        </div>
-        <div class="flex justify-between items-center pt-3 border-t border-gray-700">
-           <label class="text-sm text-gray-300">Activer le flou sur les chiffres</label>
-           <button id="toggle-privacy-btn" class="text-2xl text-blue-400">🔒</button>
-        </div>
-      </div>
-      
-      <div class="bento-card space-y-4">
-         <button id="open-default-times-btn" class="w-full h-10 rounded-lg bg-blue-700 text-sm text-white font-bold active:scale-[0.98] transition-transform">Pré-remplissage des Horaires</button>
-      </div>
-
-      <div class="bento-card space-y-4">
-        <div>
-          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Objectif Hebdomadaire (h)</label>
-          <input type="number" id="target-hours" class="big-input" value="37.0">
-        </div>
-        <div>
-          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Pause Midi Standard (min)</label>
-          <input type="number" id="lunch-minutes" class="big-input" value="45">
-        </div>
-      </div>
-
-      <div class="bento-card space-y-4">
-        <div>
-          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Stock RTT Initial</label>
-          <input type="number" id="initial-rtt-days" class="big-input" value="10">
-        </div>
-        <div>
-          <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Stock CP Initial</label>
-          <input type="number" id="initial-vacation-days" class="big-input" value="25">
-        </div>
-      </div>
-
-      <button id="save-settings-btn" class="w-full h-[50px] rounded-xl bg-blue-600 text-white font-bold text-lg mb-6 active:scale-[0.98] transition-transform">Sauvegarder</button>
-
-      <div class="grid grid-cols-2 gap-3">
-        <button id="export-data-btn" class="h-10 rounded-lg bg-gray-800 text-sm text-gray-300 active:scale-[0.98] transition-transform">Exporter CSV</button>
-        <button id="import-data-btn" class="h-10 rounded-lg bg-gray-800 text-sm text-gray-300 active:scale-[0.98] transition-transform">Importer CSV</button>
-        <input id="import-file" type="file" accept=".csv" class="hidden">
-      </div>
-      
-      <div class="text-center text-xs text-gray-600 mt-6 pb-4">ID: <span id="user-id-display">Local</span></div>
-    </section>
   </main>
 
   <nav id="tabbar" class="fixed bottom-0 left-0 right-0 z-50 nav-blur safe-bottom">
@@ -476,7 +506,6 @@
   </div>
 
 <script type="module">
-  // --- IMPORTS FIREBASE & CONFIG ---
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
   import { getAuth, signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
@@ -495,13 +524,11 @@
   const db = getFirestore(app);
   let currentUser = null;
 
-  // --- CONSTANTES ---
   const CDI_MONTHLY_HOURS = 151.67;
   const BRUT_TO_NET_DEDUCTION = 0.23;
   const DAY_NAMES = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
   const DAY_KEYS = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
 
-  // --- VARIABLES ---
   let workEntries = [];
   let config = {
       targetWeeklyHours: 37 * 60,
@@ -520,15 +547,29 @@
   let monthlyChartInstance = null;
   let currentCalDate = new Date();
 
+  // ✅ NOUVEAU : date de référence de la semaine affichée dans l'onglet Hebdo
+  // On stocke le lundi de la semaine affichée sous forme YMD
+  let currentWeekMonday = null;
+
   const $ = q => document.querySelector(q);
 
-  // --- HELPERS DATE & CALCUL ---
+  // --- HELPERS ---
   const dateToYMD = d => {
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
+
+  const ymdToDate = ymd => new Date(ymd + 'T00:00:00');
+
+  // ✅ FIX : fonction manquante qui causait le crash du calendrier
+  const addMonthToDate = (dateObj, delta) => {
+    const d = new Date(dateObj);
+    d.setMonth(d.getMonth() + delta);
+    return d;
+  };
+
   const formatFrDate = ymd => {
     if(!ymd) return '';
     const [y,m,d]=ymd.split('-');
@@ -541,7 +582,7 @@
   const getDayOfWeekIndex = (ymd) => {
     const d = new Date(ymd + 'T00:00:00');
     return (d.getDay() + 6) % 7; 
-  }
+  };
   const fmtMinutes = m => {
     const s=m<0?"-":"";
     const a=Math.abs(m);
@@ -549,23 +590,57 @@
     const mn=Math.round(a%60);
     return `${s}${h}h ${mn<10?'0':''}${mn}m`;
   };
-  const calcWorkMinutes = (e)=>{
-    if(e?.type!=='WORK' && e?.type!=='REMOTE') return config.targetWeeklyHours / 5; 
-    if(!e.start||!e.end) return 0;
-    const p=t=>{const [h,m]=t.split(':').map(Number);return h*60+m};
-    const lunch=(e.lunchDurationMinutes ?? config.lunchDurationMinutes) || 0;
-    return Math.max(p(e.end)-p(e.start)-lunch,0);
+
+  // ✅ FIX : RTT, Vacances, Férié = objectif journalier (targetWeeklyHours / 5)
+  const calcWorkMinutes = (e) => {
+    if (!e) return 0;
+    if (e.type === 'RTT' || e.type === 'VACATION' || e.type === 'HOLIDAY') {
+      return Math.round(config.targetWeeklyHours / 5);
+    }
+    if (e.type !== 'WORK' && e.type !== 'REMOTE') return 0;
+    if (!e.start || !e.end) return 0;
+    const p = t => { const [h,m] = t.split(':').map(Number); return h*60+m; };
+    const lunch = (e.lunchDurationMinutes ?? config.lunchDurationMinutes) || 0;
+    return Math.max(p(e.end) - p(e.start) - lunch, 0);
   };
-  const addMonths = (ym, d)=>{
+
+  const addMonths = (ym, d) => {
     let [y,m]=ym.split('-').map(Number);
     m+=d;
     while(m>12){m-=12;y++;}
     while(m<1){m+=12;y--;}
     return `${y}-${String(m).padStart(2,'0')}`;
   };
+
   const monthLabel = (ym) => {
     const [y,m]=ym.split('-').map(Number);
     return new Date(y,m-1,1).toLocaleString('fr-FR', { month:'long', year:'numeric' });
+  };
+
+  // ✅ NOUVEAU : calcule le lundi d'une semaine donnée à partir d'un YMD quelconque
+  const getMondayOfWeek = (ymd) => {
+    const d = ymdToDate(ymd);
+    const day = d.getDay(); // 0=Sun
+    const diff = (day === 0) ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    return dateToYMD(d);
+  };
+
+  // ✅ NOUVEAU : décale le lundi de N semaines
+  const shiftWeek = (mondayYmd, weeks) => {
+    const d = ymdToDate(mondayYmd);
+    d.setDate(d.getDate() + weeks * 7);
+    return dateToYMD(d);
+  };
+
+  // ✅ NOUVEAU : numéro de semaine ISO
+  const getISOWeekNumber = (ymd) => {
+    const d = ymdToDate(ymd);
+    const jan4 = new Date(d.getFullYear(), 0, 4);
+    const startOfWeek1 = new Date(jan4);
+    startOfWeek1.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
+    const weekNum = Math.floor((d - startOfWeek1) / (7 * 24 * 60 * 60 * 1000)) + 1;
+    return weekNum;
   };
 
   // --- SYNC GOOGLE ---
@@ -586,7 +661,6 @@
       currentUser = user;
       const loginView = $('#logged-in-view');
       const logoutView = $('#logged-out-view');
-
       if (user) {
           logoutView.classList.add('hidden');
           loginView.classList.remove('hidden');
@@ -604,27 +678,21 @@
   async function loadFromCloud() {
       if (!currentUser) return;
       $('#last-sync-msg').textContent = "Chargement...";
-      
       try {
           const docRef = doc(db, "users", currentUser.uid);
           const docSnap = await getDoc(docRef);
-
           if (docSnap.exists()) {
               const data = docSnap.data();
               if (data.workEntries) workEntries = JSON.parse(data.workEntries);
               if (data.config) config = { ...config, ...JSON.parse(data.config) };
-
               localStorage.setItem('worker_entries', JSON.stringify(workEntries));
               localStorage.setItem('worker_config', JSON.stringify(config));
-
-              // UPDATE UI COMPLET
               updateMonthlyView(config.selectedMonthYM);
               updateSettingsUI();
               renderLatestList();
               renderFullHistory();
               renderDefaultTimesList();
               if(config.lastSelectedDate) updateEntryUI(config.lastSelectedDate);
-              
               $('#last-sync-msg').textContent = "Données chargées ✅";
           } else {
               await syncData(true);
@@ -638,14 +706,12 @@
   async function syncData(force = false) {
       if (!currentUser) return;
       $('#last-sync-msg').textContent = "Synchronisation...";
-      
       try {
           await setDoc(doc(db, "users", currentUser.uid), {
               workEntries: JSON.stringify(workEntries),
               config: JSON.stringify(config),
               lastUpdated: Timestamp.now()
           }, { merge: true });
-          
           const now = new Date();
           const timeStr = `${now.getHours()}:${now.getMinutes().toString().padStart(2,'0')}`;
           $('#last-sync-msg').textContent = `Sync: ${timeStr} ✅`;
@@ -656,19 +722,18 @@
   }
 
   // --- STORAGE ---
-  function lsLoadEntriesMap() {
+  function lsLoadEntries() {
     const raw = localStorage.getItem('worker_entries');
-    if(!raw) return {};
+    if(!raw) return;
     const arr = JSON.parse(raw);
     workEntries = Array.isArray(arr) ? arr : [];
-    const map = {};
-    workEntries.forEach(e => map[e.date] = e);
-    return map;
   }
+
   function lsSaveConfig(cfg) {
     localStorage.setItem('worker_config', JSON.stringify(cfg));
     syncData();
   }
+
   function saveWorkEntriesLocally() {
     localStorage.setItem('worker_entries', JSON.stringify(workEntries));
     syncData();
@@ -709,7 +774,6 @@
       $('#save-entry-btn').classList.add('bg-blue-600');
       $('#save-entry-btn').classList.remove('bg-green-600');
     }
-    
     refreshDayTotal();
     renderLatestList();
   }
@@ -752,13 +816,11 @@
        let rightText = isWork ? fmtMinutes(calcWorkMinutes(e)) : '';
        let colorClass = 'text-blue-400';
        let labelType = e.type;
-
        if(e.type === 'WORK') { labelType = 'Travail'; colorClass = 'text-green-400'; }
        else if(e.type === 'REMOTE') { labelType = 'Télétravail'; colorClass = 'text-purple-400'; }
        else if(e.type === 'RTT') { labelType = 'RTT'; colorClass = 'text-blue-300'; rightText = '1j'; }
        else if(e.type === 'VACATION') { labelType = 'Congé'; colorClass = 'text-pink-400'; rightText = '1j'; }
        else if(e.type === 'HOLIDAY') { labelType = 'Férié'; colorClass = 'text-yellow-400'; rightText = '1j'; }
-
        return `
         <div onclick="window.editDate('${e.date}')" class="flex justify-between items-center p-3 bg-[#2C2C2E] rounded-xl active:scale-[0.98] transition-transform">
            <div>
@@ -775,7 +837,6 @@
     const dayIndex = getDayOfWeekIndex(dateStr);
     const key = DAY_KEYS[dayIndex];
     const def = config.defaultTimes[key];
-
     if (def && def.start && def.end) {
         $('#start-time').value = def.start;
         $('#end-time').value = def.end;
@@ -786,64 +847,86 @@
     }
   }
 
-  // --- STATS & HEBDO (CORRIGÉ) ---
+  // ✅ REFONTE COMPLÈTE : Vue hebdo avec navigation
   function updateWeeklyView() {
-       // Trouve le Lundi de la semaine de la date sélectionnée
-       const refDateStr = config.lastSelectedDate || new Date().toISOString().slice(0,10);
-       const refDate = new Date(refDateStr);
-       const day = refDate.getDay(); // 0=Sun, 1=Mon
-       const diff = refDate.getDate() - day + (day === 0 ? -6 : 1); 
-       const monday = new Date(refDate.setDate(diff));
+    // Initialise au lundi de la semaine courante si pas encore défini
+    if (!currentWeekMonday) {
+      currentWeekMonday = getMondayOfWeek(new Date().toISOString().slice(0, 10));
+    }
 
-       let totalWeeklyMins = 0;
-       let html = '';
+    const monday = ymdToDate(currentWeekMonday);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
 
-       // Boucle 7 jours
-       for (let i = 0; i < 7; i++) {
-           const d = new Date(monday);
-           d.setDate(monday.getDate() + i);
-           const ymd = dateToYMD(d);
-           const entry = getEntry(ymd);
-           const dayName = DAY_NAMES[i]; 
+    // Label de la plage
+    const fmtShort = d => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    $('#week-range-label').textContent = `${fmtShort(monday)} – ${fmtShort(sunday)}`;
+    $('#week-num-label').textContent = `Semaine ${getISOWeekNumber(currentWeekMonday)} · ${monday.getFullYear()}`;
 
-           let timeStr = '-';
-           let visualClass = 'text-gray-600';
-           let dayMins = 0;
+    let totalWeeklyMins = 0;
+    let html = '';
 
-           if (entry) {
-               if(entry.type === 'WORK' || entry.type === 'REMOTE') {
-                   dayMins = calcWorkMinutes(entry);
-                   timeStr = fmtMinutes(dayMins);
-                   visualClass = entry.type === 'WORK' ? 'text-green-400' : 'text-purple-400';
-               } else if (entry.type === 'RTT') {
-                   timeStr = 'RTT'; visualClass = 'text-blue-400';
-               } else if (entry.type === 'VACATION') {
-                   timeStr = 'Congés'; visualClass = 'text-pink-400';
-               } else if (entry.type === 'HOLIDAY') {
-                   timeStr = 'Férié'; visualClass = 'text-yellow-400';
-               }
-               totalWeeklyMins += dayMins;
-           }
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const ymd = dateToYMD(d);
+      const entry = getEntry(ymd);
+      const dayName = DAY_NAMES[i];
 
-           html += `
-           <div onclick="window.editDate('${ymd}')" class="flex justify-between items-center p-4 hover:bg-white/5 active:bg-white/10 transition-colors cursor-pointer">
-               <div class="flex flex-col">
-                   <span class="text-white font-medium">${dayName}</span>
-                   <span class="text-[10px] text-gray-500">${formatFrDate(ymd)}</span>
-               </div>
-               <div class="font-bold font-mono ${visualClass}">${timeStr}</div>
-           </div>`;
-       }
+      let timeStr = '–';
+      let visualClass = 'text-gray-600';
+      let subStr = '';
+      let dayMins = 0;
 
-       $('#weekly-body').innerHTML = html;
-       $('#total-weekly-hours').textContent = fmtMinutes(totalWeeklyMins);
-       $('#target-weekly-hours-summary').textContent = fmtMinutes(config.targetWeeklyHours);
+      if (entry) {
+        if (entry.type === 'WORK' || entry.type === 'REMOTE') {
+          dayMins = calcWorkMinutes(entry);
+          timeStr = fmtMinutes(dayMins);
+          visualClass = entry.type === 'WORK' ? 'text-green-400' : 'text-purple-400';
+          subStr = entry.type === 'WORK' ? '💼' : '🏠';
+        } else if (entry.type === 'RTT') {
+          // ✅ FIX : RTT compte comme objectif/5 dans le total
+          dayMins = Math.round(config.targetWeeklyHours / 5);
+          timeStr = fmtMinutes(dayMins);
+          visualClass = 'text-blue-400';
+          subStr = '🏖 RTT';
+        } else if (entry.type === 'VACATION') {
+          // ✅ FIX : Congé compte comme objectif/5 dans le total
+          dayMins = Math.round(config.targetWeeklyHours / 5);
+          timeStr = fmtMinutes(dayMins);
+          visualClass = 'text-pink-400';
+          subStr = '✈️ Congé';
+        } else if (entry.type === 'HOLIDAY') {
+          // ✅ FIX : Férié compte comme objectif/5 dans le total
+          dayMins = Math.round(config.targetWeeklyHours / 5);
+          timeStr = fmtMinutes(dayMins);
+          visualClass = 'text-yellow-400';
+          subStr = '🎉 Férié';
+        }
+        totalWeeklyMins += dayMins;
+      }
 
-       const pct = Math.min(100, (totalWeeklyMins / config.targetWeeklyHours) * 100);
-       const bar = $('#weekly-progress-bar');
-       bar.style.width = `${pct}%`;
-       bar.className = `h-full transition-all duration-500 ${pct >= 100 ? 'bg-green-500' : 'bg-blue-500'}`;
-       $('#progress-bar-label').textContent = `${Math.round(pct)}%`;
+      const isWeekend = i >= 5;
+      const rowBg = isWeekend ? 'opacity-50' : '';
+      html += `
+        <div onclick="window.editDate('${ymd}')" class="flex justify-between items-center p-4 hover:bg-white/5 active:bg-white/10 transition-colors cursor-pointer ${rowBg}">
+          <div class="flex flex-col">
+            <span class="text-white font-medium">${dayName} <span class="text-gray-500 text-xs font-normal">${subStr}</span></span>
+            <span class="text-[10px] text-gray-500">${formatFrDate(ymd)}</span>
+          </div>
+          <div class="font-bold font-mono ${visualClass}">${timeStr}</div>
+        </div>`;
+    }
+
+    $('#weekly-body').innerHTML = html;
+    $('#total-weekly-hours').textContent = fmtMinutes(totalWeeklyMins);
+    $('#target-weekly-hours-summary').textContent = fmtMinutes(config.targetWeeklyHours);
+
+    const pct = Math.min(100, (totalWeeklyMins / config.targetWeeklyHours) * 100);
+    const bar = $('#weekly-progress-bar');
+    bar.style.width = `${pct}%`;
+    bar.className = `h-full transition-all duration-500 ${pct >= 100 ? 'bg-green-500' : 'bg-blue-500'}`;
+    $('#progress-bar-label').textContent = `${Math.round(pct)}%`;
   }
 
   function updateMonthlyView(yearMonth) {
@@ -883,8 +966,6 @@
 
   function renderMonthlyChart(entries, yearMonth) {
      const ctx = document.getElementById('monthly-chart').getContext('2d');
-     const [y, m] = yearMonth.split('-').map(Number);
-     const daysInMonth = new Date(y, m, 0).getDate();
      const workedEntries = entries.filter(e => e.type === 'WORK' || e.type === 'REMOTE').sort((a,b)=>a.date.localeCompare(b.date));
      const chartLabels = workedEntries.map(e => e.date.substring(8));
      const chartData = workedEntries.map(e => (calcWorkMinutes(e)/60).toFixed(1));
@@ -922,6 +1003,12 @@
         $('#profile-picture-container').style.backgroundImage = `url(${config.userProfilePic})`;
         $('#profile-initials').textContent = '';
         $('#clear-profile-picture-btn').style.display = 'block';
+    } else {
+        $('#settings-profile-preview').style.backgroundImage = '';
+        $('#settings-profile-preview').textContent = '👤';
+        $('#profile-picture-container').style.backgroundImage = '';
+        $('#profile-initials').textContent = '👤';
+        $('#clear-profile-picture-btn').style.display = 'none';
     }
 
     const isPrivacy = config.privacyMode;
@@ -937,7 +1024,6 @@
     config.hourlyGrossRate = parseFloat($('#hourly-gross-rate').value || 0);
     config.dailyMealAllowance = parseFloat($('#daily-meal-allowance').value || 0);
     config.dailyKmAllowance = parseFloat($('#daily-km-allowance').value || 0);
-    
     lsSaveConfig(config);
     recalculateBalances();
     updateMonthlyView(config.selectedMonthYM);
@@ -947,13 +1033,14 @@
 
   // --- INIT ---
   document.addEventListener('DOMContentLoaded', () => {
-     // Charge Config
      const savedConfig = localStorage.getItem('worker_config');
      if(savedConfig) config = { ...config, ...JSON.parse(savedConfig) };
      
-     // Charge Entries
-     const map = lsLoadEntriesMap(); 
+     lsLoadEntries();
      
+     // Initialise currentWeekMonday à la semaine de lastSelectedDate
+     currentWeekMonday = getMondayOfWeek(config.lastSelectedDate || new Date().toISOString().slice(0, 10));
+
      setupAuthListeners();
      updateSettingsUI();
      updateMonthlyView(config.selectedMonthYM);
@@ -961,12 +1048,18 @@
      renderFullHistory();
      renderDefaultTimesList();
      
-     // Listeners
+     // Listeners saisie
      $('#entry-type-select').addEventListener('change', refreshDayTotal);
      $('#start-time').addEventListener('change', refreshDayTotal);
      $('#end-time').addEventListener('change', refreshDayTotal);
      $('#lunch-duration-manual').addEventListener('input', refreshDayTotal);
-     
+
+     // ✅ NOUVEAU : navigation semaine
+     $('#week-prev').onclick = () => { currentWeekMonday = shiftWeek(currentWeekMonday, -1); updateWeeklyView(); };
+     $('#week-next').onclick = () => { currentWeekMonday = shiftWeek(currentWeekMonday, 1); updateWeeklyView(); };
+     $('#week-today-btn').onclick = () => { currentWeekMonday = getMondayOfWeek(new Date().toISOString().slice(0, 10)); updateWeeklyView(); };
+
+     // Tabs
      const tabs = ['saisie','hebdo','mensuelle','data','reglages'];
      tabs.forEach(t => {
          $(`#btn-${t}`).onclick = () => {
@@ -974,12 +1067,11 @@
              document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('is-active'));
              $(`#tab-${t}`).style.display = 'block';
              $(`#btn-${t}`).classList.add('is-active');
-             
              if(t === 'mensuelle') updateMonthlyView(config.selectedMonthYM);
-             if(t === 'hebdo') updateWeeklyView(); // AJOUT ICI
+             if(t === 'hebdo') updateWeeklyView();
              if(t === 'reglages') updateSettingsUI();
              if(t === 'data') renderFullHistory(); 
-         }
+         };
      });
 
      $('#save-entry-btn').onclick = () => {
@@ -988,7 +1080,6 @@
         const start = $('#start-time').value;
         const end = $('#end-time').value;
         const lunch = $('#lunch-duration-manual').value ? parseInt($('#lunch-duration-manual').value) : undefined;
-        
         if((type === 'WORK' || type === 'REMOTE') && (!start || !end)) {
             showModal('Erreur', 'Veuillez saisir les horaires.');
             return;
@@ -996,7 +1087,6 @@
         workEntries = workEntries.filter(e => e.date !== date);
         workEntries.push({ date, type, start, end, lunchDurationMinutes: lunch, timestamp: Date.now() });
         workEntries.sort((a,b) => a.date.localeCompare(b.date));
-        
         saveWorkEntriesLocally();
         updateEntryUI(date);
         showModal('Enregistré', 'Entrée sauvegardée avec succès.');
@@ -1011,6 +1101,13 @@
          }
      };
 
+     $('#clear-entry-btn').onclick = () => {
+         $('#start-time').value = '';
+         $('#end-time').value = '';
+         $('#lunch-duration-manual').value = '';
+         refreshDayTotal();
+     };
+
      $('#save-settings-btn').onclick = saveSettings;
      $('#toggle-privacy-btn').onclick = () => { config.privacyMode = !config.privacyMode; updateSettingsUI(); lsSaveConfig(config); };
      $('#monthly-privacy-toggle').onclick = () => { config.privacyMode = !config.privacyMode; updateSettingsUI(); lsSaveConfig(config); };
@@ -1023,6 +1120,12 @@
              reader.onload = (evt) => { config.userProfilePic = evt.target.result; lsSaveConfig(config); updateSettingsUI(); };
              reader.readAsDataURL(file);
          }
+     };
+     // ✅ FIX : listener manquant pour la suppression de photo de profil
+     $('#clear-profile-picture-btn').onclick = () => {
+         config.userProfilePic = null;
+         lsSaveConfig(config);
+         updateSettingsUI();
      };
 
      // CSV EXPORT
@@ -1070,7 +1173,9 @@
         reader.readAsText(file);
      };
 
+     // Calendrier
      $('#entry-date-button').onclick = () => { $('#calendar-modal').style.display = 'flex'; renderCalendar(new Date()); };
+     // ✅ FIX : utilise addMonthToDate (maintenant défini)
      $('#calendar-prev').onclick = () => renderCalendar(addMonthToDate(currentCalDate, -1));
      $('#calendar-next').onclick = () => renderCalendar(addMonthToDate(currentCalDate, 1));
      $('#close-calendar-btn').onclick = () => $('#calendar-modal').style.display = 'none';
@@ -1084,13 +1189,18 @@
 
      window.editDate = (date) => {
          config.lastSelectedDate = date;
+         // ✅ Met à jour aussi la semaine affichée dans Hebdo
+         currentWeekMonday = getMondayOfWeek(date);
          lsSaveConfig(config);
          updateEntryUI(date);
          $('#calendar-modal').style.display = 'none';
          $('#btn-saisie').click();
      };
      
-     setTimeout(() => { $('#splash-screen').style.opacity = '0'; setTimeout(() => $('#splash-screen').style.display = 'none', 400); }, 1000);
+     setTimeout(() => {
+       $('#splash-screen').style.opacity = '0';
+       setTimeout(() => $('#splash-screen').style.display = 'none', 400);
+     }, 1000);
      
      populateMonthSelect();
      $('#month-select').onchange = (e) => updateMonthlyView(e.target.value);
@@ -1132,24 +1242,27 @@
           if(ymd === dateToYMD(new Date())) cls += ' is-today';
           let icon = '';
           if(entry) {
-              if(entry.type === 'WORK') icon = '💼'; else if(entry.type === 'REMOTE') icon = '🏠'; else if(entry.type === 'RTT') icon = '🏖'; else if(entry.type === 'VACATION') icon = '✈️'; else if(entry.type === 'HOLIDAY') icon = '🎉';
+              if(entry.type === 'WORK') icon = '💼';
+              else if(entry.type === 'REMOTE') icon = '🏠';
+              else if(entry.type === 'RTT') icon = '🏖';
+              else if(entry.type === 'VACATION') icon = '✈️';
+              else if(entry.type === 'HOLIDAY') icon = '🎉';
           }
           grid.innerHTML += `<button class="${cls}" onclick="window.editDate('${ymd}')"><div>${d}</div><div class="text-[10px]">${icon}</div></button>`;
       }
   }
   
-  // --- DEFAULT TIMES LOGIC ---
+  // --- DEFAULT TIMES ---
   function renderDefaultTimesList() {
       const container = $('#day-list-container');
       container.innerHTML = '';
       DAY_NAMES.forEach((name, index) => {
           const key = DAY_KEYS[index];
           const def = config.defaultTimes[key];
-          const timeStr = (def && def.start) ? `${def.start} - ${def.end}` : 'Non défini';
+          const timeStr = (def && def.start) ? `${def.start} – ${def.end}` : 'Non défini';
           const color = (def && def.start) ? 'text-blue-400' : 'text-gray-500';
-          
           const div = document.createElement('div');
-          div.className = "flex justify-between items-center p-3 bg-[#2C2C2E] rounded-xl active:scale-[0.98] transition-transform";
+          div.className = "flex justify-between items-center p-3 bg-[#2C2C2E] rounded-xl active:scale-[0.98] transition-transform cursor-pointer";
           div.innerHTML = `<span class="text-white font-medium">${name}</span><span class="text-sm ${color} font-mono">${timeStr}</span>`;
           div.onclick = () => openTimePicker(index);
           container.appendChild(div);
@@ -1170,9 +1283,7 @@
   $('#save-default-times-btn').onclick = () => {
       if(currentEditingDayIndex === -1) return;
       const key = DAY_KEYS[currentEditingDayIndex];
-      const start = $('#default-start-time').value;
-      const end = $('#default-end-time').value;
-      config.defaultTimes[key] = { start, end };
+      config.defaultTimes[key] = { start: $('#default-start-time').value, end: $('#default-end-time').value };
       lsSaveConfig(config);
       renderDefaultTimesList();
       $('#time-picker-modal').style.display = 'none';
@@ -1186,5 +1297,6 @@
        $('#time-picker-modal').style.display = 'none';
   };
 </script>
+
 </body>
 </html>
