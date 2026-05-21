@@ -17,133 +17,323 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 
   <style>
+    :root {
+      --accent: #00E5A0;
+      --accent-dim: rgba(0, 229, 160, 0.12);
+      --accent-glow: rgba(0, 229, 160, 0.25);
+      --bg: #080808;
+      --surface: #111111;
+      --surface2: #1A1A1A;
+      --border: rgba(255,255,255,0.07);
+      --border-accent: rgba(0, 229, 160, 0.3);
+      --text: #F0F0F0;
+      --text-muted: #555;
+      --text-dim: #888;
+      --danger: #FF4B4B;
+      --radius: 20px;
+      --radius-sm: 12px;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
-      font-family: 'Inter', -apple-system, system-ui, sans-serif;
-      background-color: #000000;
-      color: #ffffff;
+      font-family: 'DM Sans', -apple-system, system-ui, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
       -webkit-tap-highlight-color: transparent;
       overscroll-behavior-y: none;
+      letter-spacing: -0.01em;
     }
+
+    .mono { font-family: 'Space Mono', monospace; }
 
     .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-    input, select, textarea, button { font-size: 16px !important; outline: none; }
+    input, select, textarea, button { font-size: 16px !important; outline: none; font-family: 'DM Sans', sans-serif; }
 
+    /* CARDS */
     .bento-card {
-        background-color: #1C1C1E;
-        border-radius: 18px;
-        padding: 16px;
-        margin-bottom: 12px;
-        border: 1px solid #2C2C2E;
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 10px;
+      border: 1px solid var(--border);
+      transition: border-color 0.2s;
     }
 
+    /* INPUTS */
     .big-input {
-        background: #2C2C2E;
-        border-radius: 12px;
-        height: 50px;
-        width: 100%;
-        padding: 0 16px;
-        color: white;
-        border: 1px solid transparent;
-        transition: all 0.2s;
-        appearance: none; -webkit-appearance: none;
+      background: var(--surface2);
+      border-radius: var(--radius-sm);
+      height: 52px;
+      width: 100%;
+      padding: 0 16px;
+      color: var(--text);
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+      appearance: none; -webkit-appearance: none;
     }
     .big-input:focus {
-        background: #3A3A3C;
-        border-color: #0A84FF;
+      background: #222;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
     }
-    
-    #month-select { text-align-last: center; }
 
-    .nav-blur {
-        background: rgba(28, 28, 30, 0.85);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-top: 1px solid rgba(255,255,255,0.1);
+    /* HEADER */
+    header.app-header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+      background: rgba(8, 8, 8, 0.90);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border);
+      padding: calc(env(safe-area-inset-top) + 12px) 20px 14px;
     }
-    
-    header.nav-blur { padding-top: calc(env(safe-area-inset-top) + 10px); }
-    #pane { padding-top: calc(env(safe-area-inset-top) + 80px) !important; }
 
+    .app-logo {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--text);
+    }
+    .app-logo span { color: var(--accent); }
+    .app-subtitle {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    #pane { padding-top: calc(env(safe-area-inset-top) + 82px) !important; }
+
+    /* NAV BAR */
+    .nav-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+      background: rgba(8, 8, 8, 0.92);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-top: 1px solid var(--border);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .nav-inner {
+      display: flex; justify-content: space-around; align-items: center;
+      height: 64px; max-width: 480px; margin: 0 auto;
+    }
     .nav-btn {
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        width: 100%; height: 100%; background: transparent; border: none;
-        color: #8E8E93; gap: 4px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      width: 100%; height: 100%; background: transparent; border: none;
+      color: var(--text-muted); gap: 4px; transition: color 0.15s;
+      position: relative;
     }
-    .nav-btn.is-active { color: #0A84FF; }
-    .nav-icon { font-size: 22px; margin-bottom: -2px; }
-    .nav-label { font-size: 10px; font-weight: 500; }
+    .nav-btn.is-active { color: var(--accent); }
+    .nav-btn.is-active::before {
+      content: '';
+      position: absolute;
+      top: 8px;
+      width: 24px; height: 3px;
+      background: var(--accent);
+      border-radius: 2px;
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
+    .nav-icon { font-size: 20px; }
+    .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 0.03em; }
 
+    /* DATE HERO BUTTON */
     .date-hero-btn {
-        background: linear-gradient(135deg, #0A84FF 0%, #007AFF 100%);
-        color: white;
-        width: 100%; padding: 20px; border-radius: 20px;
-        display: flex; justify-content: space-between; align-items: center;
-        border: none; box-shadow: 0 4px 15px rgba(10, 132, 255, 0.3);
+      background: var(--surface);
+      color: var(--text);
+      width: 100%; padding: 18px 20px; border-radius: var(--radius);
+      display: flex; justify-content: space-between; align-items: center;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 0 20px var(--accent-dim);
+      transition: all 0.15s;
+    }
+    .date-hero-btn:active { transform: scale(0.98); opacity: 0.9; }
+    .date-hero-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+    .date-hero-value { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+    .date-hero-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: var(--accent-dim);
+      border: 1px solid var(--border-accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
     }
 
-    .tab-content { animation: fadeIn 0.2s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    /* SECTION LABELS */
+    .section-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--text-muted);
+      margin-bottom: 8px; display: block;
+    }
 
+    /* BADGE */
+    .badge-hours {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px; font-weight: 700;
+      padding: 4px 10px; border-radius: 8px;
+      background: var(--accent-dim); color: var(--accent);
+      border: 1px solid var(--border-accent);
+    }
+
+    /* PROGRESS BAR */
+    .progress-track {
+      width: 100%; height: 6px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 99px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 99px;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent-glow);
+      transition: width 0.5s ease;
+    }
+    .progress-fill.complete { background: var(--accent); }
+
+    /* BUTTONS */
+    .btn-primary {
+      width: 100%; height: 52px; border-radius: var(--radius-sm);
+      background: var(--accent); color: #000;
+      font-weight: 700; font-size: 15px; letter-spacing: -0.01em;
+      border: none; transition: all 0.15s;
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+    .btn-primary:active { transform: scale(0.97); opacity: 0.9; }
+    .btn-primary.is-edit { background: #1A1A1A; color: var(--accent); border: 1px solid var(--border-accent); box-shadow: none; }
+
+    .btn-icon {
+      height: 52px; border-radius: var(--radius-sm);
+      background: var(--surface2); color: var(--text-dim);
+      border: 1px solid var(--border); font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .btn-icon:active { background: #222; }
+    .btn-icon.accent { background: var(--accent-dim); color: var(--accent); border-color: var(--border-accent); }
+
+    /* WEEK NAV */
+    .week-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface); border-radius: var(--radius-sm);
+      padding: 10px 14px; margin-bottom: 10px; border: 1px solid var(--border);
+    }
+    .week-nav-btn {
+      width: 36px; height: 36px; border-radius: 10px; border: none;
+      background: var(--surface2); color: var(--text); font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .week-nav-btn:active { background: #2a2a2a; }
+    .week-range { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+    .week-num { font-size: 10px; color: var(--text-muted); margin-top: 2px; font-family: 'Space Mono', monospace; }
+    .week-nav-btn.week-today {
+      font-size: 11px; width: auto; padding: 0 14px; height: 32px;
+      color: var(--accent); background: var(--accent-dim);
+      border: 1px solid var(--border-accent); border-radius: 8px; font-weight: 700;
+    }
+
+    /* WEEKLY SUMMARY CARD (in Saisie) */
+    .weekly-summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+    }
+    .weekly-summary-card .big-total {
+      font-family: 'Space Mono', monospace;
+      font-size: 28px; font-weight: 700;
+      color: var(--text); letter-spacing: -0.03em;
+    }
+    .day-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .day-row:last-child { border-bottom: none; }
+    .day-row .day-name { font-size: 13px; font-weight: 500; color: var(--text-dim); }
+    .day-row .day-val { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; }
+
+    /* HEBDO CARD */
+    .hebdo-summary {
+      background: var(--surface);
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius);
+      padding: 20px; margin-bottom: 10px;
+      box-shadow: 0 0 30px var(--accent-dim);
+    }
+
+    /* MODALS */
     #calendar-modal {
-        position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
-        z-index: 2000; display: none; align-items: flex-end; justify-content: center;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+      z-index: 2000; display: none; align-items: flex-end; justify-content: center;
     }
     #calendar-container {
-        background: #1C1C1E; width: 100%; border-radius: 24px 24px 0 0;
-        padding: 24px; padding-bottom: calc(20px + env(safe-area-inset-bottom));
-        box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+      background: var(--surface); width: 100%;
+      border-radius: 28px 28px 0 0;
+      padding: 28px; padding-bottom: calc(24px + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--border);
     }
     .cal-btn {
-        width: 100%; aspect-ratio: 1; border-radius: 12px; border: none;
-        background: transparent; color: white; font-weight: 500;
+      width: 100%; aspect-ratio: 1; border-radius: 10px; border: none;
+      background: transparent; color: var(--text); font-weight: 500; font-size: 14px;
+      transition: background 0.1s;
     }
-    .cal-btn.is-selected { background: #0A84FF; font-weight: 700; }
-    .cal-btn.is-today { border: 2px solid #0A84FF; }
-    
+    .cal-btn:active { background: var(--surface2); }
+    .cal-btn.is-selected { background: var(--accent); color: #000; font-weight: 800; }
+    .cal-btn.is-today { border: 1.5px solid var(--accent); color: var(--accent); }
+
+    /* ENTRY CARDS (history) */
+    .entry-card {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 16px; background: var(--surface);
+      border-radius: var(--radius-sm); border: 1px solid var(--border);
+      margin-bottom: 8px; transition: border-color 0.15s;
+      cursor: pointer;
+    }
+    .entry-card:active { background: var(--surface2); }
+    .entry-date { font-size: 11px; color: var(--text-muted); font-family: 'Space Mono', monospace; }
+    .entry-type { font-size: 14px; font-weight: 600; color: var(--text); margin-top: 2px; }
+    .entry-hours { font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; }
+
+    /* ANIMATIONS */
+    .tab-content { animation: fadeUp 0.2s ease-out; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
     .privacy-blur { filter: blur(6px); user-select: none; transition: filter 0.3s ease; }
     .privacy-visible { filter: blur(0); }
     ::-webkit-scrollbar { display: none; }
 
-    /* Week navigator */
-    .week-nav {
-      display: flex; align-items: center; justify-content: space-between;
-      background: #1C1C1E; border-radius: 14px; padding: 10px 14px;
-      margin-bottom: 12px; border: 1px solid #2C2C2E;
-    }
-    .week-nav-btn {
-      width: 36px; height: 36px; border-radius: 10px; border: none;
-      background: #2C2C2E; color: white; font-size: 18px;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: background 0.15s;
-    }
-    .week-nav-btn:active { background: #3A3A3C; }
-    .week-nav-label { text-align: center; }
-    .week-nav-label .week-range { font-size: 13px; font-weight: 600; color: white; }
-    .week-nav-label .week-num { font-size: 10px; color: #8E8E93; margin-top: 1px; }
-    .week-nav-btn.week-today { font-size: 11px; width: auto; padding: 0 10px; color: #0A84FF; background: rgba(10,132,255,0.15); border: 1px solid rgba(10,132,255,0.3); }
+    /* SPLASH */
+    #splash-screen { position:fixed; inset:0; background:#080808; z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; gap: 8px; transition:opacity 0.4s; }
+    .splash-logo { font-size:36px; font-weight:800; letter-spacing: -0.05em; color: var(--text); }
+    .splash-logo span { color: var(--accent); }
+    .splash-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity:0.3; transform: scale(0.8); } 50% { opacity:1; transform: scale(1.2); } }
+
+    /* SETTINGS DIVIDER */
+    .settings-divider { height: 1px; background: var(--border); margin: 12px 0; }
   </style>
 
 </head>
 
 <body>
 
-  <div id="splash-screen" style="position:fixed; inset:0; background:#000; z-index:9999; display:flex; justify-content:center; align-items:center; transition:opacity 0.4s;">
-    <div style="font-size:32px; font-weight:800; background: -webkit-linear-gradient(#0A84FF, #5AC8FA); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-      Worker.
-    </div>
+  <div id="splash-screen">
+    <div class="splash-logo">Work<span>.</span></div>
+    <div class="splash-dot"></div>
   </div>
 
-  <header class="fixed top-0 left-0 right-0 z-40 nav-blur px-4 pb-3">
-    <div class="flex justify-between items-end">
+  <header class="app-header">
+    <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight text-white">Worker</h1>
-        <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Suivi d'heures</p>
+        <div class="app-logo">Work<span>.</span></div>
+        <div class="app-subtitle">Suivi d'heures</div>
       </div>
-      <div id="profile-picture-container" class="h-8 w-8 rounded-full bg-gray-800 flex items-center justify-center border border-gray-700 bg-cover bg-center">
-        <span id="profile-initials" class="text-lg">👤</span>
+      <div id="profile-picture-container" class="h-9 w-9 rounded-full bg-[#1A1A1A] flex items-center justify-center border border-[rgba(255,255,255,0.08)] bg-cover bg-center">
+        <span id="profile-initials" class="text-base">👤</span>
       </div>
     </div>
   </header>
@@ -151,291 +341,234 @@
   <main id="pane" class="w-full min-h-screen pb-28 px-4">
 
 <section id="tab-saisie" class="tab-content">
-  <div class="mb-4">
-    <button id="entry-date-button" class="date-hero-btn active:scale-95 transition-transform duration-100">
+  <!-- Date button -->
+  <div class="mb-3">
+    <button id="entry-date-button" class="date-hero-btn">
       <div class="text-left">
-        <div class="text-blue-100 text-sm font-medium opacity-80">Date</div>
-        <div id="entry-date-display" class="text-2xl font-bold">Aujourd'hui</div>
+        <div class="date-hero-label">Date sélectionnée</div>
+        <div id="entry-date-display" class="date-hero-value">Aujourd'hui</div>
       </div>
-      <div class="bg-white/20 p-2 rounded-lg text-xl">📅</div>
+      <div class="date-hero-icon">📅</div>
     </button>
     <input type="hidden" id="entry-date-hidden" />
   </div>
 
+  <!-- Type -->
   <div class="bento-card">
-    <label class="text-xs text-gray-400 uppercase font-bold mb-2 block">Type</label>
+    <span class="section-label">Type de journée</span>
     <div class="relative">
-      <select id="entry-type-select" class="big-input appearance-none">
+      <select id="entry-type-select" class="big-input">
         <option value="WORK">💼 &nbsp; Travail (Bureau)</option>
         <option value="REMOTE">🏠 &nbsp; Télétravail</option>
         <option value="RTT">🏖 &nbsp; RTT</option>
         <option value="VACATION">✈️ &nbsp; Vacances</option>
         <option value="HOLIDAY">🎉 &nbsp; Férié</option>
       </select>
-      <div class="absolute right-4 top-4 pointer-events-none text-gray-400">▼</div>
+      <div class="absolute right-4 top-4 pointer-events-none" style="color:var(--text-muted)">▼</div>
     </div>
   </div>
 
+  <!-- Horaires -->
   <div id="work-card" class="bento-card transition-opacity duration-300">
     <div class="flex justify-between items-center mb-3">
-      <label class="text-xs text-gray-400 uppercase font-bold">Horaires</label>
-      <span id="current-day-minutes" class="text-xs font-bold px-2 py-1 rounded bg-green-500/20 text-green-400">0h 00m</span>
+      <span class="section-label" style="margin-bottom:0">Horaires</span>
+      <span id="current-day-minutes" class="badge-hours">0h 00m</span>
     </div>
-    
     <div class="grid grid-cols-2 gap-3 mb-3">
       <div>
-        <span class="text-[10px] text-gray-500 uppercase block mb-1 ml-1">Début</span>
-        <input type="time" id="start-time" class="big-input text-center font-bold text-lg"/>
+        <span class="section-label">Début</span>
+        <input type="time" id="start-time" class="big-input text-center mono" style="font-weight:700; font-size:18px!important;"/>
       </div>
       <div>
-        <span class="text-[10px] text-gray-500 uppercase block mb-1 ml-1">Fin</span>
-        <input type="time" id="end-time" class="big-input text-center font-bold text-lg"/>
+        <span class="section-label">Fin</span>
+        <input type="time" id="end-time" class="big-input text-center mono" style="font-weight:700; font-size:18px!important;"/>
       </div>
     </div>
-
-    <div class="mt-4 pt-3 border-t border-gray-700">
-       <div class="flex justify-between items-center mb-2">
-         <span class="text-sm text-gray-300">Pause midi</span>
-         <span id="lunch-duration-display" class="text-sm font-mono text-blue-400">45min (minimum légal)</span>
-       </div>
-       <input type="number" id="lunch-duration-manual" class="big-input text-right" placeholder="Modifier (min)" inputmode="numeric">
+    <div class="pt-3" style="border-top: 1px solid var(--border)">
+      <div class="flex justify-between items-center mb-2">
+        <span style="font-size:13px; color:var(--text-dim)">Pause midi</span>
+        <span id="lunch-duration-display" class="mono" style="font-size:11px; color:var(--accent)">45min (minimum légal)</span>
+      </div>
+      <input type="number" id="lunch-duration-manual" class="big-input" style="text-align:right" placeholder="Modifier (min)" inputmode="numeric">
     </div>
   </div>
 
-  <div class="grid grid-cols-4 gap-3 mt-2">
-    <button id="auto-fill-btn" class="col-span-1 h-[50px] rounded-xl bg-purple-800/50 text-purple-300 text-xl border border-purple-700 flex items-center justify-center" title="Remplir auto">⚡️</button>
-    <button id="clear-entry-btn" class="col-span-1 h-[50px] rounded-xl bg-gray-800 text-gray-400 text-xl border border-gray-700 flex items-center justify-center">↺</button>
-    <button id="save-entry-btn" class="col-span-2 h-[50px] rounded-xl bg-blue-600 text-white font-bold text-lg shadow-lg shadow-blue-900/50 active:scale-95 transition-transform">Enregistrer</button>
+  <!-- Actions -->
+  <div class="grid grid-cols-4 gap-2 mt-1">
+    <button id="auto-fill-btn" class="btn-icon accent col-span-1" title="Remplir auto">⚡️</button>
+    <button id="clear-entry-btn" class="btn-icon col-span-1">↺</button>
+    <button id="save-entry-btn" class="btn-primary col-span-2">Enregistrer</button>
   </div>
-  <button id="delete-entry-btn" class="w-full mt-3 py-3 text-red-500 text-sm font-medium" style="display:none;">Supprimer</button>
+  <button id="delete-entry-btn" class="w-full mt-3 py-3 text-sm font-semibold" style="display:none; color:var(--danger); background:none; border:none;">Supprimer cette entrée</button>
 
-  <div class="mt-8">
-    <h3 class="text-sm font-bold text-gray-500 uppercase mb-3 px-2">Récent</h3>
-    <div id="latest-list" class="space-y-2"></div>
+  <!-- Mini résumé hebdo -->
+  <div class="mt-5" id="saisie-weekly-summary">
+    <div class="week-nav mb-2" style="justify-content:center;">
+      <div style="text-align:center;">
+        <div class="week-range" id="saisie-week-range-label">–</div>
+        <div class="week-num" id="saisie-week-num-label">Semaine –</div>
+      </div>
+    </div>
+    <div class="weekly-summary-card">
+      <div class="flex justify-between items-center mb-1">
+        <span class="section-label" style="margin-bottom:0">Progression</span>
+        <span id="saisie-weekly-pct" class="mono" style="font-size:11px; font-weight:700; color:var(--accent)">0%</span>
+      </div>
+      <div class="progress-track mb-3">
+        <div id="saisie-weekly-bar" class="progress-fill" style="width:0%"></div>
+      </div>
+      <div class="flex justify-between items-baseline mb-3">
+        <span id="saisie-weekly-total" class="big-total">0h 00m</span>
+        <span id="saisie-weekly-target" style="font-size:12px; color:var(--text-muted); font-family:'Space Mono',monospace">/ 37h 00m</span>
+      </div>
+      <div id="saisie-weekly-days"></div>
+    </div>
   </div>
 </section>
 
 <section id="tab-hebdo" class="tab-content" style="display:none;">
-
-  <!-- ✅ NOUVEAU : Navigateur de semaine -->
   <div class="week-nav">
     <button class="week-nav-btn" id="week-prev">‹</button>
-    <div class="week-nav-label">
+    <div style="text-align:center;">
       <div class="week-range" id="week-range-label">–</div>
       <div class="week-num" id="week-num-label">Semaine –</div>
     </div>
     <button class="week-nav-btn" id="week-next">›</button>
   </div>
-  <button id="week-today-btn" class="week-nav-btn week-today w-full mb-3" style="width:100%;height:32px;">Semaine actuelle</button>
+  <button id="week-today-btn" class="week-nav-btn week-today w-full mb-3" style="width:100%;height:36px;">Semaine actuelle</button>
 
-  <div class="bento-card bg-gradient-to-br from-slate-800 to-slate-900">
+  <div class="hebdo-summary">
     <div class="flex justify-between items-end mb-4">
       <div>
-         <div class="text-gray-400 text-xs uppercase">Total Semaine</div>
-         <div id="total-weekly-hours" class="text-3xl font-bold text-white mt-1">0h 00m</div>
+        <div class="section-label">Total semaine</div>
+        <div id="total-weekly-hours" class="mono" style="font-size:34px; font-weight:700; letter-spacing:-0.03em; color:var(--text)">0h 00m</div>
       </div>
-      <div class="text-right">
-         <div class="text-gray-400 text-xs uppercase">Objectif</div>
-         <div id="target-weekly-hours-summary" class="text-blue-400 font-bold">37h 00m</div>
+      <div style="text-align:right;">
+        <div class="section-label">Objectif</div>
+        <div id="target-weekly-hours-summary" class="mono" style="font-size:16px; font-weight:700; color:var(--accent)">37h 00m</div>
       </div>
     </div>
-    
-    <div class="w-full bg-gray-700 h-3 rounded-full overflow-hidden mb-2">
-       <div id="weekly-progress-bar" class="h-full bg-blue-500 transition-all duration-500" style="width: 0%"></div>
+    <div class="progress-track mb-2">
+      <div id="weekly-progress-bar" class="progress-fill" style="width:0%"></div>
     </div>
-    <div id="progress-bar-label" class="text-center text-xs text-gray-400 font-mono">0%</div>
+    <div id="progress-bar-label" class="mono" style="text-align:center; font-size:11px; color:var(--text-muted); margin-top:6px;">0%</div>
   </div>
 
-  <div id="weekly-body" class="bento-card divide-y divide-gray-700/50 p-0 overflow-hidden">
-  </div>
-</section>
-
-<section id="tab-mensuelle" class="tab-content" style="display:none;">
-  <div class="flex items-center gap-2 mb-4 bento-card p-2">
-    <button id="month-prev" class="w-10 h-10 flex items-center justify-center bg-gray-800 rounded-lg text-white">‹</button>
-    <select id="month-select" class="flex-grow bg-transparent text-center text-white font-bold h-10 outline-none"></select>
-    <button id="month-next" class="w-10 h-10 flex items-center justify-center bg-gray-800 rounded-lg text-white">›</button>
-  </div>
-
-  <div class="bento-card bg-gradient-to-br from-purple-800/80 to-pink-800/80 mb-4">
-      <div class="flex justify-between items-center mb-3">
-          <h3 class="text-xs text-white uppercase font-bold">Estimation Salariale</h3>
-          <button id="monthly-privacy-toggle" class="text-xl text-white opacity-70">🔒</button>
-      </div>
-      
-      <div id="finance-details-container">
-          <div class="flex justify-between items-center py-2 border-b border-white/20">
-              <span class="text-sm font-medium">Salaire de base BRUT (151.67h)</span>
-              <span id="monthly-base-salary-gross" class="font-bold text-lg text-white privacy-blur">0.00 €</span>
-          </div>
-          <div class="flex justify-between items-center py-2 border-b border-white/20">
-              <span class="text-sm font-medium">Salaire de base NET (Brut -23%)</span>
-              <span id="monthly-base-salary-net" class="font-bold text-lg text-blue-300 privacy-blur">0.00 €</span>
-          </div>
-          <div class="flex justify-between items-center py-2 border-b border-white/20">
-              <span class="text-sm font-medium">Indemnités Repas NET</span>
-              <span id="monthly-meal-allowance" class="font-bold text-sm text-pink-300 privacy-blur">0.00 €</span>
-          </div>
-          <div class="flex justify-between items-center py-2 border-b border-white/20">
-              <span class="text-sm font-medium">Indemnités KM NET</span>
-              <span id="monthly-km-allowance" class="font-bold text-sm text-green-300 privacy-blur">0.00 €</span>
-          </div>
-          <div class="flex justify-between items-center pt-3">
-              <span class="text-lg font-bold">Total NET</span>
-              <span id="monthly-grand-total" class="font-extrabold text-2xl text-yellow-300 privacy-blur">0.00 €</span>
-          </div>
-      </div>
-  </div>
-
-  <div class="bento-card mb-4">
-    <h3 class="text-xs text-gray-400 uppercase font-bold mb-3">Performance Hebdomadaire</h3>
-    <div style="height: 200px; width: 100%;">
-        <canvas id="monthly-chart"></canvas>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-2 gap-3 mb-4">
-    <div class="bento-card flex flex-col items-center justify-center py-6">
-       <span id="monthly-days-worked" class="text-3xl font-bold text-green-400">0</span>
-       <span class="text-xs text-gray-500 uppercase mt-1">Jours Travaillés</span>
-    </div>
-    <div class="bento-card flex flex-col items-center justify-center py-6">
-       <span id="monthly-total-work-hours" class="text-2xl font-bold text-white">0h</span>
-       <span class="text-xs text-gray-500 uppercase mt-1">Heures Totales</span>
-    </div>
-  </div>
-
-  <div class="bento-card">
-    <h3 class="text-xs text-gray-400 uppercase font-bold mb-3">Compteurs</h3>
-    <div class="flex justify-between items-center py-2 border-b border-gray-700/50">
-       <span>Jours Télétravail</span>
-       <span id="monthly-remote-days" class="font-bold text-purple-400 text-lg">0</span>
-    </div>
-    <div class="flex justify-between items-center py-2 border-b border-gray-700/50">
-      <span>Solde RTT</span>
-      <span id="current-rtt-balance" class="font-bold text-blue-400 text-lg">0</span>
-    </div>
-    <div class="flex justify-between items-center py-2">
-      <span>Solde CP</span>
-      <span id="current-vacation-balance" class="font-bold text-pink-400 text-lg">0</span>
-    </div>
-  </div>
+  <div id="weekly-body" class="bento-card" style="padding:0; overflow:hidden;"></div>
 </section>
 
 <section id="tab-data" class="tab-content" style="display:none;">
-  <h3 class="text-sm font-bold text-gray-500 uppercase mb-3 px-2">Historique complet</h3>
-  <div id="data-list-container" class="space-y-2"></div>
+  <div class="section-label px-1 mb-3">Historique complet</div>
+  <div id="data-list-container"></div>
 </section>
 
 <section id="tab-reglages" class="tab-content" style="display:none;">
-    
-  <div class="bento-card mb-4" id="cloud-section">
-      <h3 class="text-xs text-gray-400 uppercase font-bold mb-3">Sauvegarde Cloud ☁️</h3>
-      
-      <div id="logged-out-view">
-        <p class="text-sm text-gray-400 mb-3">Connectez-vous pour synchroniser vos données et ne jamais les perdre.</p>
-        <button id="btn-login-google" class="w-full h-[44px] rounded-xl bg-[#4285F4] text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
-          <span class="bg-white text-transparent bg-clip-text text-lg" style="-webkit-text-fill-color: white;">G</span> Continuer avec Google
-        </button>
-      </div>
 
-      <div id="logged-in-view" class="hidden">
-        <div class="flex items-center gap-3 mb-3">
-          <div id="user-avatar" class="w-10 h-10 rounded-full bg-gray-700 bg-cover bg-center"></div>
-          <div class="overflow-hidden">
-            <div id="user-name" class="text-sm font-bold text-white truncate">Utilisateur</div>
-            <div id="user-email" class="text-xs text-gray-500 truncate">email@test.com</div>
-          </div>
+  <!-- Cloud -->
+  <div class="bento-card mb-2" id="cloud-section">
+    <span class="section-label">Sauvegarde Cloud ☁️</span>
+    <div id="logged-out-view">
+      <p style="font-size:13px; color:var(--text-dim); margin-bottom:12px;">Connectez-vous pour synchroniser vos données.</p>
+      <button id="btn-login-google" class="w-full h-[44px] rounded-xl font-bold text-white flex items-center justify-center gap-2" style="background:#4285F4; border:none;">
+        <span style="font-weight:800;">G</span> Continuer avec Google
+      </button>
+    </div>
+    <div id="logged-in-view" class="hidden">
+      <div class="flex items-center gap-3 mb-3">
+        <div id="user-avatar" class="w-10 h-10 rounded-full bg-[#1A1A1A] bg-cover bg-center"></div>
+        <div class="overflow-hidden">
+          <div id="user-name" style="font-size:14px; font-weight:700;">Utilisateur</div>
+          <div id="user-email" style="font-size:11px; color:var(--text-muted);">email@test.com</div>
         </div>
-        <div class="flex gap-2">
-            <button id="btn-force-sync" class="flex-1 h-[36px] rounded-lg bg-blue-600/30 text-blue-400 text-xs font-bold border border-blue-600/50">Forcer Sync ↻</button>
-            <button id="btn-logout" class="h-[36px] px-4 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold border border-red-600/30">Déconnexion</button>
-        </div>
-        <p id="last-sync-msg" class="text-[10px] text-gray-500 mt-2 text-center">Dernière sync: Jamais</p>
       </div>
+      <div class="flex gap-2">
+        <button id="btn-force-sync" class="flex-1 h-9 rounded-lg text-xs font-bold" style="background:var(--accent-dim); color:var(--accent); border:1px solid var(--border-accent);">Forcer Sync ↻</button>
+        <button id="btn-logout" class="h-9 px-4 rounded-lg text-xs font-bold" style="background:rgba(255,75,75,0.1); color:var(--danger); border:1px solid rgba(255,75,75,0.2);">Déconnexion</button>
+      </div>
+      <p id="last-sync-msg" style="font-size:10px; color:var(--text-muted); margin-top:8px; text-align:center; font-family:'Space Mono',monospace;">Dernière sync: Jamais</p>
+    </div>
   </div>
 
-  <div class="bento-card space-y-4">
-    <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Photo de Profil</label>
-    <div class="flex items-center space-x-4">
-      <div id="settings-profile-preview" class="h-12 w-12 rounded-full bg-gray-800 border border-gray-700 bg-cover bg-center flex items-center justify-center text-2xl">👤</div>
+  <!-- Profil -->
+  <div class="bento-card">
+    <span class="section-label">Photo de profil</span>
+    <div class="flex items-center gap-4">
+      <div id="settings-profile-preview" class="h-12 w-12 rounded-full bg-[#1A1A1A] border bg-cover bg-center flex items-center justify-center text-2xl" style="border-color:var(--border);">👤</div>
       <div class="flex-grow">
-        <input type="file" id="profile-picture-file" accept="image/*" class="hidden"> 
-        <button id="select-profile-picture-btn" class="w-full h-10 rounded-lg bg-gray-700 text-sm text-white font-medium active:scale-[0.98] transition-transform">Choisir une image</button>
-        <!-- ✅ FIX : bouton suppression photo maintenant fonctionnel -->
-        <button id="clear-profile-picture-btn" class="w-full h-10 rounded-lg bg-red-700/50 text-sm text-red-300 font-medium mt-2 active:scale-[0.98] transition-transform" style="display:none;">Supprimer</button>
+        <input type="file" id="profile-picture-file" accept="image/*" class="hidden">
+        <button id="select-profile-picture-btn" class="w-full h-10 rounded-lg text-sm font-semibold" style="background:var(--surface2); color:var(--text); border:1px solid var(--border);">Choisir une image</button>
+        <button id="clear-profile-picture-btn" class="w-full h-10 rounded-lg text-sm font-semibold mt-2" style="display:none; background:rgba(255,75,75,0.1); color:var(--danger); border:1px solid rgba(255,75,75,0.2);">Supprimer</button>
       </div>
     </div>
   </div>
-  
-  <div class="bento-card space-y-4">
-    <div>
-      <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Taux Horaire Brut (€)</label>
+
+  <!-- Finance -->
+  <div class="bento-card">
+    <span class="section-label">Rémunération</span>
+    <div style="margin-bottom:12px;">
+      <label class="section-label">Taux Horaire Brut (€)</label>
       <input type="number" step="0.01" id="hourly-gross-rate" class="big-input" value="0.00">
     </div>
-    <div>
-      <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Indemnité Repas (NET €)</label>
+    <div style="margin-bottom:12px;">
+      <label class="section-label">Indemnité Repas (NET €)</label>
       <input type="number" step="0.01" id="daily-meal-allowance" class="big-input" value="0.00">
     </div>
-    <div>
-      <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Indemnité KM (NET €)</label>
+    <div style="margin-bottom:12px;">
+      <label class="section-label">Indemnité KM (NET €)</label>
       <input type="number" step="0.01" id="daily-km-allowance" class="big-input" value="0.00">
     </div>
-    <div class="flex justify-between items-center pt-3 border-t border-gray-700">
-       <label class="text-sm text-gray-300">Activer le flou sur les chiffres</label>
-       <button id="toggle-privacy-btn" class="text-2xl text-blue-400">🔒</button>
+    <div class="flex justify-between items-center pt-3" style="border-top:1px solid var(--border);">
+      <span style="font-size:13px; color:var(--text-dim);">Flou sur les chiffres</span>
+      <button id="toggle-privacy-btn" style="font-size:22px; background:none; border:none; color:var(--accent);">🔒</button>
     </div>
   </div>
-  
-  <div class="bento-card space-y-4">
-     <button id="open-default-times-btn" class="w-full h-10 rounded-lg bg-blue-700 text-sm text-white font-bold active:scale-[0.98] transition-transform">Pré-remplissage des Horaires</button>
+
+  <!-- Horaires -->
+  <div class="bento-card">
+    <button id="open-default-times-btn" class="w-full h-11 rounded-xl text-sm font-bold" style="background:var(--accent-dim); color:var(--accent); border:1px solid var(--border-accent);">⏱ Pré-remplissage des Horaires</button>
   </div>
 
-  <div class="bento-card space-y-4">
-    <div>
-      <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Objectif Hebdomadaire (h)</label>
+  <!-- Objectifs -->
+  <div class="bento-card">
+    <span class="section-label">Paramètres</span>
+    <div style="margin-bottom:12px;">
+      <label class="section-label">Objectif Hebdomadaire (h)</label>
       <input type="number" id="target-hours" class="big-input" value="37.0">
     </div>
-    <div>
-      <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Pause Midi Standard (min)</label>
+    <div style="margin-bottom:12px;">
+      <label class="section-label">Pause Midi Standard (min)</label>
       <input type="number" id="lunch-minutes" class="big-input" value="45">
     </div>
-  </div>
-
-  <div class="bento-card space-y-4">
-    <div>
-      <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Stock RTT Initial</label>
+    <div style="margin-bottom:12px;">
+      <label class="section-label">Stock RTT Initial</label>
       <input type="number" id="initial-rtt-days" class="big-input" value="10">
     </div>
     <div>
-      <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Stock CP Initial</label>
+      <label class="section-label">Stock CP Initial</label>
       <input type="number" id="initial-vacation-days" class="big-input" value="25">
     </div>
   </div>
 
-  <button id="save-settings-btn" class="w-full h-[50px] rounded-xl bg-blue-600 text-white font-bold text-lg mb-6 active:scale-[0.98] transition-transform">Sauvegarder</button>
+  <button id="save-settings-btn" class="btn-primary mb-4">Sauvegarder</button>
 
   <div class="grid grid-cols-2 gap-3">
-    <button id="export-data-btn" class="h-10 rounded-lg bg-gray-800 text-sm text-gray-300 active:scale-[0.98] transition-transform">Exporter CSV</button>
-    <button id="import-data-btn" class="h-10 rounded-lg bg-gray-800 text-sm text-gray-300 active:scale-[0.98] transition-transform">Importer CSV</button>
+    <button id="export-data-btn" class="h-10 rounded-xl text-sm font-semibold" style="background:var(--surface); color:var(--text-dim); border:1px solid var(--border);">Exporter CSV</button>
+    <button id="import-data-btn" class="h-10 rounded-xl text-sm font-semibold" style="background:var(--surface); color:var(--text-dim); border:1px solid var(--border);">Importer CSV</button>
     <input id="import-file" type="file" accept=".csv" class="hidden">
   </div>
-  
-  <div class="text-center text-xs text-gray-600 mt-6 pb-4">ID: <span id="user-id-display">Local</span></div>
+
+  <div style="text-align:center; font-size:10px; color:var(--text-muted); margin-top:24px; padding-bottom:8px; font-family:'Space Mono',monospace;">ID: <span id="user-id-display">Local</span></div>
 </section>
 
   </main>
 
-  <nav id="tabbar" class="fixed bottom-0 left-0 right-0 z-50 nav-blur safe-bottom">
-    <div class="flex justify-around items-center h-[60px] max-w-md mx-auto">
+  <nav id="tabbar" class="nav-bar">
+    <div class="nav-inner">
       <button id="btn-saisie" class="nav-btn is-active">
         <span class="nav-icon">✏️</span> <span class="nav-label">Saisie</span>
       </button>
       <button id="btn-hebdo" class="nav-btn">
         <span class="nav-icon">📊</span> <span class="nav-label">Hebdo</span>
-      </button>
-      <button id="btn-mensuelle" class="nav-btn">
-        <span class="nav-icon">🗓</span> <span class="nav-label">Mois</span>
       </button>
       <button id="btn-data" class="nav-btn">
         <span class="nav-icon">📂</span> <span class="nav-label">Data</span>
@@ -446,61 +579,61 @@
     </div>
   </nav>
 
-  <div id="custom-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(5px); z-index:3000; display:none; align-items:center; justify-content:center; padding:20px;">
-    <div class="bg-[#1C1C1E] border border-gray-700 rounded-2xl p-6 w-full max-w-xs shadow-2xl transform scale-100">
-      <h3 id="modal-title" class="text-white text-lg font-bold mb-2">Titre</h3>
-      <p id="modal-message" class="text-gray-400 text-sm mb-6 leading-relaxed">Message</p>
-      <button id="close-modal-btn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl">OK</button>
+  <div id="custom-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); z-index:3000; display:none; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:24px; padding:24px; width:100%; max-width:320px; box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+      <h3 id="modal-title" style="color:var(--text); font-size:17px; font-weight:700; margin-bottom:8px; letter-spacing:-0.02em;">Titre</h3>
+      <p id="modal-message" style="color:var(--text-dim); font-size:13px; margin-bottom:24px; line-height:1.6;">Message</p>
+      <button id="close-modal-btn" class="btn-primary">OK</button>
     </div>
   </div>
 
   <div id="calendar-modal">
     <div id="calendar-container">
-       <div class="flex justify-between items-center mb-6 px-2">
-         <button id="calendar-prev" class="text-blue-500 text-lg p-2 font-bold">Préc.</button>
-         <span id="calendar-title" class="text-white font-bold text-lg capitalize">Mois</span>
-         <button id="calendar-next" class="text-blue-500 text-lg p-2 font-bold">Suiv.</button>
-       </div>
-       <div class="grid grid-cols-7 gap-1 text-center mb-2">
-         <div class="text-xs text-gray-500 font-bold">L</div>
-         <div class="text-xs text-gray-500 font-bold">M</div>
-         <div class="text-xs text-gray-500 font-bold">M</div>
-         <div class="text-xs text-gray-500 font-bold">J</div>
-         <div class="text-xs text-gray-500 font-bold">V</div>
-         <div class="text-xs text-gray-500 font-bold">S</div>
-         <div class="text-xs text-gray-500 font-bold">D</div>
-       </div>
-       <div id="calendar-grid" class="grid grid-cols-7 gap-2"></div>
-       <button id="close-calendar-btn" class="w-full bg-gray-800 text-white font-bold py-4 rounded-xl mt-6">Fermer</button>
-    </div>
-  </div>
-
-  <div id="default-times-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(5px); z-index:2500; display:none; align-items:center; justify-content:center; padding:20px;">
-    <div class="bg-[#1C1C1E] border border-gray-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl h-[80vh] overflow-y-auto">
-        <h3 class="text-white text-xl font-bold mb-4">Horaires par défaut</h3>
-        <p class="text-gray-400 text-xs mb-4">Définissez vos horaires types pour le remplissage automatique.</p>
-        <div id="day-list-container" class="space-y-3 mb-4"></div>
-        <button id="close-default-times-btn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl">Fermer</button>
-    </div>
-  </div>
-
-  <div id="time-picker-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:2600; display:none; align-items:center; justify-content:center; padding:20px;">
-      <div class="bg-[#2C2C2E] border border-gray-600 rounded-2xl p-6 w-full max-w-xs shadow-2xl">
-        <h3 id="time-picker-title" class="text-white text-lg font-bold mb-4 text-center">Lundi</h3>
-        <div class="grid grid-cols-2 gap-4 mb-4">
-            <div>
-                <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Début</label>
-                <input type="time" id="default-start-time" class="big-input text-center font-bold text-lg" value="09:00"/>
-            </div>
-            <div>
-                <label class="text-xs text-gray-400 uppercase font-bold mb-1 block">Fin</label>
-                <input type="time" id="default-end-time" class="big-input text-center font-bold text-lg" value="17:30"/>
-            </div>
-        </div>
-        <button id="save-default-times-btn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-6">Sauvegarder</button>
-        <button id="clear-default-times-btn" class="w-full bg-red-600/50 text-red-300 font-bold py-3 rounded-xl mt-2">Effacer les horaires</button>
-        <button id="cancel-time-picker-btn" class="w-full bg-transparent text-gray-400 font-bold py-3 rounded-xl mt-2">Annuler</button>
+      <div class="flex justify-between items-center mb-6 px-2">
+        <button id="calendar-prev" style="color:var(--accent); font-size:15px; padding:8px; font-weight:700; background:none; border:none;">Préc.</button>
+        <span id="calendar-title" style="color:var(--text); font-weight:700; font-size:17px; text-transform:capitalize;">Mois</span>
+        <button id="calendar-next" style="color:var(--accent); font-size:15px; padding:8px; font-weight:700; background:none; border:none;">Suiv.</button>
       </div>
+      <div class="grid grid-cols-7 gap-1 text-center mb-2">
+        <div class="section-label" style="margin-bottom:0;">L</div>
+        <div class="section-label" style="margin-bottom:0;">M</div>
+        <div class="section-label" style="margin-bottom:0;">M</div>
+        <div class="section-label" style="margin-bottom:0;">J</div>
+        <div class="section-label" style="margin-bottom:0;">V</div>
+        <div class="section-label" style="margin-bottom:0;">S</div>
+        <div class="section-label" style="margin-bottom:0;">D</div>
+      </div>
+      <div id="calendar-grid" class="grid grid-cols-7 gap-2"></div>
+      <button id="close-calendar-btn" class="w-full font-bold py-4 rounded-2xl mt-6" style="background:var(--surface2); color:var(--text); border:1px solid var(--border);">Fermer</button>
+    </div>
+  </div>
+
+  <div id="default-times-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); z-index:2500; display:none; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:24px; padding:24px; width:100%; max-width:380px; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+      <h3 style="color:var(--text); font-size:20px; font-weight:700; margin-bottom:6px; letter-spacing:-0.02em;">Horaires par défaut</h3>
+      <p style="color:var(--text-muted); font-size:12px; margin-bottom:16px;">Définissez vos horaires types pour le remplissage automatique.</p>
+      <div id="day-list-container" style="margin-bottom:16px; display:flex; flex-direction:column; gap:8px;"></div>
+      <button id="close-default-times-btn" class="btn-primary">Fermer</button>
+    </div>
+  </div>
+
+  <div id="time-picker-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:2600; display:none; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:24px; padding:24px; width:100%; max-width:320px; box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+      <h3 id="time-picker-title" style="color:var(--text); font-size:18px; font-weight:700; text-align:center; margin-bottom:20px;">Lundi</h3>
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="section-label">Début</label>
+          <input type="time" id="default-start-time" class="big-input text-center mono" style="font-weight:700;" value="09:00"/>
+        </div>
+        <div>
+          <label class="section-label">Fin</label>
+          <input type="time" id="default-end-time" class="big-input text-center mono" style="font-weight:700;" value="17:30"/>
+        </div>
+      </div>
+      <button id="save-default-times-btn" class="btn-primary" style="margin-bottom:8px;">Sauvegarder</button>
+      <button id="clear-default-times-btn" class="w-full font-bold py-3 rounded-xl" style="background:rgba(255,75,75,0.1); color:var(--danger); border:1px solid rgba(255,75,75,0.2); margin-bottom:8px;">Effacer les horaires</button>
+      <button id="cancel-time-picker-btn" class="w-full font-bold py-3 rounded-xl" style="background:none; color:var(--text-muted); border:none;">Annuler</button>
+    </div>
   </div>
 
 <script type="module">
@@ -685,11 +818,10 @@
               if (data.config) config = { ...config, ...JSON.parse(data.config) };
               localStorage.setItem('worker_entries', JSON.stringify(workEntries));
               localStorage.setItem('worker_config', JSON.stringify(config));
-              updateMonthlyView(config.selectedMonthYM);
               updateSettingsUI();
-              renderLatestList();
               renderFullHistory();
               renderDefaultTimesList();
+              renderSaisieWeeklySummary();
               if(config.lastSelectedDate) updateEntryUI(config.lastSelectedDate);
               $('#last-sync-msg').textContent = "Données chargées ✅";
           } else {
@@ -760,8 +892,7 @@
       $('#lunch-duration-manual').value = entry.lunchDurationMinutes ?? '';
       $('#delete-entry-btn').style.display = 'block';
       $('#save-entry-btn').textContent = 'Modifier';
-      $('#save-entry-btn').classList.remove('bg-blue-600');
-      $('#save-entry-btn').classList.add('bg-green-600');
+      $('#save-entry-btn').classList.add('is-edit');
     } else {
       $('#entry-type-select').value = 'WORK';
       $('#start-time').value = '';
@@ -769,11 +900,9 @@
       $('#lunch-duration-manual').value = '';
       $('#delete-entry-btn').style.display = 'none';
       $('#save-entry-btn').textContent = 'Enregistrer';
-      $('#save-entry-btn').classList.add('bg-blue-600');
-      $('#save-entry-btn').classList.remove('bg-green-600');
+      $('#save-entry-btn').classList.remove('is-edit');
     }
     refreshDayTotal();
-    renderLatestList();
   }
 
   function refreshDayTotal(){
@@ -793,12 +922,6 @@
     $('#current-day-minutes').textContent = fmtMinutes(calcWorkMinutes(entry));
   }
 
-  function renderLatestList(){
-    const container = $('#latest-list');
-    const sorted = [...workEntries].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
-    container.innerHTML = sorted.map(e => createEntryHTML(e)).join('');
-  }
-
   function renderFullHistory() {
       const container = $('#data-list-container');
       const sorted = [...workEntries].sort((a,b)=>b.date.localeCompare(a.date));
@@ -812,20 +935,20 @@
   function createEntryHTML(e) {
        const isWork = (e.type === 'WORK' || e.type === 'REMOTE');
        let rightText = isWork ? fmtMinutes(calcWorkMinutes(e)) : '';
-       let colorClass = 'text-blue-400';
+       let colorStyle = 'color:#00E5A0';
        let labelType = e.type;
-       if(e.type === 'WORK') { labelType = 'Travail'; colorClass = 'text-green-400'; }
-       else if(e.type === 'REMOTE') { labelType = 'Télétravail'; colorClass = 'text-purple-400'; }
-       else if(e.type === 'RTT') { labelType = 'RTT'; colorClass = 'text-blue-300'; rightText = '1j'; }
-       else if(e.type === 'VACATION') { labelType = 'Congé'; colorClass = 'text-pink-400'; rightText = '1j'; }
-       else if(e.type === 'HOLIDAY') { labelType = 'Férié'; colorClass = 'text-yellow-400'; rightText = '1j'; }
+       if(e.type === 'WORK') { labelType = '💼 Travail'; colorStyle = 'color:#4ADE80'; }
+       else if(e.type === 'REMOTE') { labelType = '🏠 Télétravail'; colorStyle = 'color:#A78BFA'; }
+       else if(e.type === 'RTT') { labelType = '🏖 RTT'; colorStyle = 'color:#60A5FA'; rightText = '1j'; }
+       else if(e.type === 'VACATION') { labelType = '✈️ Congé'; colorStyle = 'color:#F472B6'; rightText = '1j'; }
+       else if(e.type === 'HOLIDAY') { labelType = '🎉 Férié'; colorStyle = 'color:#FBBF24'; rightText = '1j'; }
        return `
-        <div onclick="window.editDate('${e.date}')" class="flex justify-between items-center p-3 bg-[#2C2C2E] rounded-xl active:scale-[0.98] transition-transform">
+        <div onclick="window.editDate('${e.date}')" class="entry-card">
            <div>
-              <div class="text-xs text-gray-400">${formatFrDate(e.date)}</div>
-              <div class="font-bold text-sm text-white">${labelType}</div>
+              <div class="entry-date">${formatFrDate(e.date)}</div>
+              <div class="entry-type">${labelType}</div>
            </div>
-           <div class="font-bold text-sm ${colorClass}">${rightText}</div>
+           <div class="entry-hours" style="${colorStyle}">${rightText}</div>
         </div>
        `;
   }
@@ -905,14 +1028,14 @@
       }
 
       const isWeekend = i >= 5;
-      const rowBg = isWeekend ? 'opacity-50' : '';
+      const rowOpacity = isWeekend ? 'opacity:0.4;' : '';
       html += `
-        <div onclick="window.editDate('${ymd}')" class="flex justify-between items-center p-4 hover:bg-white/5 active:bg-white/10 transition-colors cursor-pointer ${rowBg}">
-          <div class="flex flex-col">
-            <span class="text-white font-medium">${dayName} <span class="text-gray-500 text-xs font-normal">${subStr}</span></span>
-            <span class="text-[10px] text-gray-500">${formatFrDate(ymd)}</span>
+        <div onclick="window.editDate('${ymd}')" style="display:flex; justify-content:space-between; align-items:center; padding:14px 18px; ${rowOpacity} border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.1s;" onmousedown="this.style.background='var(--surface2)'" onmouseup="this.style.background=''" ontouchstart="this.style.background='var(--surface2)'" ontouchend="this.style.background=''">
+          <div>
+            <div style="font-size:14px; font-weight:600; color:var(--text);">${dayName} <span style="font-size:11px; color:var(--text-muted); font-weight:400;">${subStr}</span></div>
+            <div style="font-size:10px; color:var(--text-muted); font-family:'Space Mono',monospace; margin-top:2px;">${formatFrDate(ymd)}</div>
           </div>
-          <div class="font-bold font-mono ${visualClass}">${timeStr}</div>
+          <div style="font-family:'Space Mono',monospace; font-size:13px; font-weight:700; ${visualClass.includes('green') ? 'color:#4ADE80' : visualClass.includes('purple') ? 'color:#A78BFA' : visualClass.includes('blue') ? 'color:#60A5FA' : visualClass.includes('pink') ? 'color:#F472B6' : visualClass.includes('yellow') ? 'color:#FBBF24' : 'color:var(--text-muted)'}">${timeStr}</div>
         </div>`;
     }
 
@@ -927,62 +1050,12 @@
     $('#progress-bar-label').textContent = `${Math.round(pct)}%`;
   }
 
-  function updateMonthlyView(yearMonth) {
-    if(!yearMonth) return;
-    config.selectedMonthYM = yearMonth;
-    lsSaveConfig(config);
-
-    const filtered = workEntries.filter(e => e.date.startsWith(yearMonth));
-    let totalMins = 0; let daysWorked = 0; let remoteDays = 0; let officeDays = 0;
-
-    filtered.forEach(e => {
-       const m = calcWorkMinutes(e);
-       if(e.type === 'WORK' || e.type === 'REMOTE') { totalMins += m; daysWorked++; }
-       if(e.type === 'REMOTE') remoteDays++;
-       if(e.type === 'WORK') officeDays++;
-    });
-
-    const salaryGross = CDI_MONTHLY_HOURS * config.hourlyGrossRate;
-    const salaryNet = salaryGross * (1 - BRUT_TO_NET_DEDUCTION);
-    const mealAllowance = (officeDays + remoteDays) * config.dailyMealAllowance;
-    const kmAllowance = officeDays * config.dailyKmAllowance;
-    const grandTotal = salaryNet + mealAllowance + kmAllowance;
-
-    $('#monthly-base-salary-gross').textContent = salaryGross.toFixed(2) + ' €';
-    $('#monthly-base-salary-net').textContent = salaryNet.toFixed(2) + ' €';
-    $('#monthly-meal-allowance').textContent = mealAllowance.toFixed(2) + ' €';
-    $('#monthly-km-allowance').textContent = kmAllowance.toFixed(2) + ' €';
-    $('#monthly-grand-total').textContent = grandTotal.toFixed(2) + ' €';
-
-    $('#monthly-days-worked').textContent = daysWorked;
-    $('#monthly-total-work-hours').textContent = Math.floor(totalMins/60) + 'h';
-    $('#monthly-remote-days').textContent = remoteDays;
-
-    recalculateBalances();
-    renderMonthlyChart(filtered, yearMonth);
-  }
-
-  function renderMonthlyChart(entries, yearMonth) {
-     const ctx = document.getElementById('monthly-chart').getContext('2d');
-     const workedEntries = entries.filter(e => e.type === 'WORK' || e.type === 'REMOTE').sort((a,b)=>a.date.localeCompare(b.date));
-     const chartLabels = workedEntries.map(e => e.date.substring(8));
-     const chartData = workedEntries.map(e => (calcWorkMinutes(e)/60).toFixed(1));
-     if (monthlyChartInstance) monthlyChartInstance.destroy();
-     monthlyChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: { labels: chartLabels, datasets: [{ label: 'Heures', data: chartData, backgroundColor: '#0A84FF', borderRadius: 4 }] },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#333'} }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
-     });
-  }
-
   function recalculateBalances() {
       let rttTaken = 0; let vacTaken = 0;
       workEntries.forEach(e => {
           if(e.type === 'RTT') rttTaken++;
           if(e.type === 'VACATION') vacTaken++;
       });
-      $('#current-rtt-balance').textContent = (config.initialRttDays - rttTaken);
-      $('#current-vacation-balance').textContent = (config.initialVacationDays - vacTaken);
   }
 
   // --- REGLAGES ---
@@ -1024,7 +1097,7 @@
     config.dailyKmAllowance = parseFloat($('#daily-km-allowance').value || 0);
     lsSaveConfig(config);
     recalculateBalances();
-    updateMonthlyView(config.selectedMonthYM);
+    renderSaisieWeeklySummary();
     updateSettingsUI();
     showModal('Réglages Sauvegardés', 'Vos préférences ont été mises à jour.');
   }
@@ -1041,10 +1114,10 @@
 
      setupAuthListeners();
      updateSettingsUI();
-     updateMonthlyView(config.selectedMonthYM);
      updateEntryUI(config.lastSelectedDate);
      renderFullHistory();
      renderDefaultTimesList();
+     renderSaisieWeeklySummary();
      
      // Listeners saisie
      $('#entry-type-select').addEventListener('change', refreshDayTotal);
@@ -1058,14 +1131,13 @@
      $('#week-today-btn').onclick = () => { currentWeekMonday = getMondayOfWeek(new Date().toISOString().slice(0, 10)); updateWeeklyView(); };
 
      // Tabs
-     const tabs = ['saisie','hebdo','mensuelle','data','reglages'];
+     const tabs = ['saisie','hebdo','data','reglages'];
      tabs.forEach(t => {
          $(`#btn-${t}`).onclick = () => {
              document.querySelectorAll('.tab-content').forEach(el=>el.style.display='none');
              document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('is-active'));
              $(`#tab-${t}`).style.display = 'block';
              $(`#btn-${t}`).classList.add('is-active');
-             if(t === 'mensuelle') updateMonthlyView(config.selectedMonthYM);
              if(t === 'hebdo') updateWeeklyView();
              if(t === 'reglages') updateSettingsUI();
              if(t === 'data') renderFullHistory(); 
@@ -1087,6 +1159,7 @@
         workEntries.sort((a,b) => a.date.localeCompare(b.date));
         saveWorkEntriesLocally();
         updateEntryUI(date);
+        renderSaisieWeeklySummary();
         showModal('Enregistré', 'Entrée sauvegardée avec succès.');
      };
 
@@ -1096,6 +1169,7 @@
              workEntries = workEntries.filter(e => e.date !== date);
              saveWorkEntriesLocally();
              updateEntryUI(date);
+             renderSaisieWeeklySummary();
          }
      };
 
@@ -1108,7 +1182,6 @@
 
      $('#save-settings-btn').onclick = saveSettings;
      $('#toggle-privacy-btn').onclick = () => { config.privacyMode = !config.privacyMode; updateSettingsUI(); lsSaveConfig(config); };
-     $('#monthly-privacy-toggle').onclick = () => { config.privacyMode = !config.privacyMode; updateSettingsUI(); lsSaveConfig(config); };
 
      $('#select-profile-picture-btn').onclick = () => $('#profile-picture-file').click();
      $('#profile-picture-file').onchange = (e) => {
@@ -1164,8 +1237,8 @@
             }
             workEntries.sort((a,b) => a.date.localeCompare(b.date));
             saveWorkEntriesLocally(); 
-            updateMonthlyView(config.selectedMonthYM);
             renderFullHistory();
+            renderSaisieWeeklySummary();
             alert(`${count} entrées importées avec succès !`);
         };
         reader.readAsText(file);
@@ -1191,6 +1264,7 @@
          currentWeekMonday = getMondayOfWeek(date);
          lsSaveConfig(config);
          updateEntryUI(date);
+         renderSaisieWeeklySummary();
          $('#calendar-modal').style.display = 'none';
          $('#btn-saisie').click();
      };
@@ -1200,26 +1274,7 @@
        setTimeout(() => $('#splash-screen').style.display = 'none', 400);
      }, 1000);
      
-     populateMonthSelect();
-     $('#month-select').onchange = (e) => updateMonthlyView(e.target.value);
-     $('#month-prev').onclick = () => { const prev = addMonths(config.selectedMonthYM, -1); $('#month-select').value = prev; updateMonthlyView(prev); };
-     $('#month-next').onclick = () => { const next = addMonths(config.selectedMonthYM, 1); $('#month-select').value = next; updateMonthlyView(next); };
   });
-
-  function populateMonthSelect() {
-      const sel = $('#month-select');
-      sel.innerHTML = '';
-      let cur = new Date().toISOString().substring(0,7);
-      cur = addMonths(cur, 1); 
-      for(let i=0; i<24; i++) { 
-          cur = addMonths(cur, -1);
-          const opt = document.createElement('option');
-          opt.value = cur;
-          opt.textContent = monthLabel(cur);
-          if(cur === config.selectedMonthYM) opt.selected = true;
-          sel.appendChild(opt);
-      }
-  }
 
   function renderCalendar(dateObj) {
       currentCalDate = dateObj;
@@ -1258,10 +1313,10 @@
           const key = DAY_KEYS[index];
           const def = config.defaultTimes[key];
           const timeStr = (def && def.start) ? `${def.start} – ${def.end}` : 'Non défini';
-          const color = (def && def.start) ? 'text-blue-400' : 'text-gray-500';
+          const color = (def && def.start) ? 'var(--accent)' : 'var(--text-muted)';
           const div = document.createElement('div');
-          div.className = "flex justify-between items-center p-3 bg-[#2C2C2E] rounded-xl active:scale-[0.98] transition-transform cursor-pointer";
-          div.innerHTML = `<span class="text-white font-medium">${name}</span><span class="text-sm ${color} font-mono">${timeStr}</span>`;
+          div.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:var(--surface2); border-radius:12px; border:1px solid var(--border); cursor:pointer;";
+          div.innerHTML = `<span style="font-weight:600; font-size:14px;">${name}</span><span style="font-size:11px; color:${color}; font-family:'Space Mono',monospace; font-weight:700;">${timeStr}</span>`;
           div.onclick = () => openTimePicker(index);
           container.appendChild(div);
       });
@@ -1276,6 +1331,64 @@
       $('#default-start-time').value = (def && def.start) ? def.start : '09:00';
       $('#default-end-time').value = (def && def.end) ? def.end : '17:30';
       $('#time-picker-modal').style.display = 'flex';
+  }
+
+  function renderSaisieWeeklySummary() {
+    if (!currentWeekMonday) {
+      currentWeekMonday = getMondayOfWeek(new Date().toISOString().slice(0, 10));
+    }
+    const monday = ymdToDate(currentWeekMonday);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    const fmtShort = d => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    $('#saisie-week-range-label').textContent = `${fmtShort(monday)} – ${fmtShort(sunday)}`;
+    $('#saisie-week-num-label').textContent = `Semaine ${getISOWeekNumber(currentWeekMonday)} · ${monday.getFullYear()}`;
+
+    let totalMins = 0;
+    let daysHtml = '';
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const ymd = dateToYMD(d);
+      const entry = getEntry(ymd);
+      const dayName = DAY_NAMES[i];
+      let timeStr = '–';
+      let colorCls = 'text-gray-600';
+      let icon = '';
+      let dayMins = 0;
+      if (entry) {
+        if (entry.type === 'WORK' || entry.type === 'REMOTE') {
+          dayMins = calcWorkMinutes(entry);
+          timeStr = fmtMinutes(dayMins);
+          colorCls = entry.type === 'WORK' ? 'text-green-400' : 'text-purple-400';
+          icon = entry.type === 'WORK' ? '💼' : '🏠';
+        } else if (entry.type === 'RTT') {
+          dayMins = Math.round(config.targetWeeklyHours / 5);
+          timeStr = fmtMinutes(dayMins); colorCls = 'text-blue-400'; icon = '🏖';
+        } else if (entry.type === 'VACATION') {
+          dayMins = Math.round(config.targetWeeklyHours / 5);
+          timeStr = fmtMinutes(dayMins); colorCls = 'text-pink-400'; icon = '✈️';
+        } else if (entry.type === 'HOLIDAY') {
+          dayMins = Math.round(config.targetWeeklyHours / 5);
+          timeStr = fmtMinutes(dayMins); colorCls = 'text-yellow-400'; icon = '🎉';
+        }
+        totalMins += dayMins;
+      }
+      const isWeekend = i >= 5;
+      const opacity = isWeekend ? 'opacity:0.4;' : '';
+      daysHtml += `<div class="day-row" style="${opacity}">
+        <span class="day-name">${icon} ${dayName}</span>
+        <span class="day-val" style="${colorCls.includes('green') ? 'color:#4ADE80' : colorCls.includes('purple') ? 'color:#A78BFA' : colorCls.includes('blue') ? 'color:#60A5FA' : colorCls.includes('pink') ? 'color:#F472B6' : colorCls.includes('yellow') ? 'color:#FBBF24' : colorCls.includes('gray') ? 'color:var(--text-muted)' : 'color:var(--accent)'}">${timeStr}</span>
+      </div>`;
+    }
+    $('#saisie-weekly-days').innerHTML = daysHtml;
+    $('#saisie-weekly-total').textContent = fmtMinutes(totalMins);
+    $('#saisie-weekly-target').textContent = `/ ${fmtMinutes(config.targetWeeklyHours)}`;
+    const pct = Math.min(100, (totalMins / config.targetWeeklyHours) * 100);
+    $('#saisie-weekly-bar').style.width = `${pct}%`;
+    $('#saisie-weekly-bar').className = `h-full transition-all duration-500 ${pct >= 100 ? 'bg-green-500' : 'bg-blue-500'}`;
+    $('#saisie-weekly-pct').textContent = `${Math.round(pct)}%`;
   }
 
   $('#save-default-times-btn').onclick = () => {
