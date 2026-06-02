@@ -313,6 +313,21 @@
     .splash-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
     @keyframes pulse { 0%,100% { opacity:0.3; transform: scale(0.8); } 50% { opacity:1; transform: scale(1.2); } }
 
+    /* TRANSPORT BUTTONS */
+    .transport-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 6px; padding: 14px 10px; border-radius: var(--radius-sm);
+      background: var(--surface2); border: 1.5px solid var(--border);
+      cursor: pointer; transition: all 0.15s; user-select: none;
+    }
+    .transport-btn.selected {
+      background: var(--accent-dim); border-color: var(--accent);
+      box-shadow: 0 0 12px var(--accent-dim);
+    }
+    .transport-icon { font-size: 24px; }
+    .transport-label { font-size: 12px; font-weight: 600; color: var(--text-dim); }
+    .transport-btn.selected .transport-label { color: var(--accent); }
+
     /* SETTINGS DIVIDER */
     .settings-divider { height: 1px; background: var(--border); margin: 12px 0; }
   </style>
@@ -322,14 +337,14 @@
 <body>
 
   <div id="splash-screen">
-    <div class="splash-logo">Work<span>.</span></div>
+    <div class="splash-logo">Worker<span>.</span></div>
     <div class="splash-dot"></div>
   </div>
 
   <header class="app-header">
     <div class="flex justify-between items-center">
       <div>
-        <div class="app-logo">Work<span>.</span></div>
+        <div class="app-logo">Worker<span>.</span></div>
         <div class="app-subtitle">Suivi d'heures</div>
       </div>
       <div id="profile-picture-container" class="h-9 w-9 rounded-full bg-[#1A1A1A] flex items-center justify-center border border-[rgba(255,255,255,0.08)] bg-cover bg-center">
@@ -368,7 +383,24 @@
     </div>
   </div>
 
-  <!-- Horaires -->
+  <!-- Transport -->
+  <div class="bento-card" id="transport-card">
+    <span class="section-label">Transport aller-retour</span>
+    <div style="display:flex; gap:10px;">
+      <label class="transport-btn" id="transport-car-label">
+        <input type="radio" name="transport" id="transport-car" value="car" style="display:none;">
+        <span class="transport-icon">🚗</span>
+        <span class="transport-label">Voiture</span>
+      </label>
+      <label class="transport-btn" id="transport-bike-label">
+        <input type="radio" name="transport" id="transport-bike" value="bike" style="display:none;">
+        <span class="transport-icon">🚲</span>
+        <span class="transport-label">Vélo / Autres</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Horaires (WORK/REMOTE) -->
   <div id="work-card" class="bento-card transition-opacity duration-300">
     <div class="flex justify-between items-center mb-3">
       <span class="section-label" style="margin-bottom:0">Horaires</span>
@@ -452,6 +484,10 @@
       <div id="weekly-progress-bar" class="progress-fill" style="width:0%"></div>
     </div>
     <div id="progress-bar-label" class="mono" style="text-align:center; font-size:11px; color:var(--text-muted); margin-top:6px;">0%</div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+      <div style="font-size:12px; color:var(--text-dim);">🚗 Transport semaine</div>
+      <div id="weekly-transport-cost" class="mono" style="font-size:14px; font-weight:700; color:#FB923C;">0.00 €</div>
+    </div>
   </div>
 
   <div id="weekly-body" class="bento-card" style="padding:0; overflow:hidden;"></div>
@@ -520,6 +556,29 @@
     <div class="flex justify-between items-center pt-3" style="border-top:1px solid var(--border);">
       <span style="font-size:13px; color:var(--text-dim);">Flou sur les chiffres</span>
       <button id="toggle-privacy-btn" style="font-size:22px; background:none; border:none; color:var(--accent);">🔒</button>
+    </div>
+  </div>
+
+  <!-- Transport -->
+  <div class="bento-card">
+    <span class="section-label">🚗 Transport — Voiture</span>
+    <div style="margin-bottom:12px;">
+      <label class="section-label">Coût estimé aller-retour (€)</label>
+      <input type="number" step="0.01" id="car-daily-cost" class="big-input" placeholder="ex: 8.50" value="0.00">
+    </div>
+    <div>
+      <label class="section-label">Distance aller-retour (km)</label>
+      <input type="number" step="0.1" id="car-daily-km" class="big-input" placeholder="ex: 42" value="0">
+    </div>
+    <div style="height:1px; background:var(--border); margin:14px 0;"></div>
+    <span class="section-label">🚲 Transport — Vélo électrique</span>
+    <div style="margin-bottom:12px;">
+      <label class="section-label">Coût recharge estimée aller-retour (€)</label>
+      <input type="number" step="0.01" id="bike-daily-cost" class="big-input" placeholder="ex: 0.20" value="0.00">
+    </div>
+    <div>
+      <label class="section-label">Distance aller-retour (km)</label>
+      <input type="number" step="0.1" id="bike-daily-km" class="big-input" placeholder="ex: 28" value="0">
     </div>
   </div>
 
@@ -673,7 +732,11 @@
       selectedMonthYM: new Date().toISOString().substring(0, 7),
       userProfilePic: null,
       privacyMode: false,
-      defaultTimes: {}
+      defaultTimes: {},
+      carDailyCost: 0,
+      carDailyKm: 0,
+      bikeDailyCost: 0,
+      bikeDailyKm: 0
   };
   let monthlyChartInstance = null;
   let currentCalDate = new Date();
@@ -893,6 +956,7 @@
       $('#delete-entry-btn').style.display = 'block';
       $('#save-entry-btn').textContent = 'Modifier';
       $('#save-entry-btn').classList.add('is-edit');
+      setTransportUI(entry.transport || null);
     } else {
       $('#entry-type-select').value = 'WORK';
       $('#start-time').value = '';
@@ -901,8 +965,27 @@
       $('#delete-entry-btn').style.display = 'none';
       $('#save-entry-btn').textContent = 'Enregistrer';
       $('#save-entry-btn').classList.remove('is-edit');
+      setTransportUI(null);
     }
     refreshDayTotal();
+  }
+
+  function setTransportUI(value) {
+    document.querySelectorAll('.transport-btn').forEach(el => el.classList.remove('selected'));
+    if (value === 'car') {
+      $('#transport-car').checked = true;
+      $('#transport-car-label').classList.add('selected');
+    } else if (value === 'bike') {
+      $('#transport-bike').checked = true;
+      $('#transport-bike-label').classList.add('selected');
+    } else {
+      document.querySelectorAll('input[name="transport"]').forEach(el => el.checked = false);
+    }
+  }
+
+  function getSelectedTransport() {
+    const checked = document.querySelector('input[name="transport"]:checked');
+    return checked ? checked.value : null;
   }
 
   function refreshDayTotal(){
@@ -912,12 +995,22 @@
     const lunch = $('#lunch-duration-manual').value ? parseInt($('#lunch-duration-manual').value) : undefined;
     const entry = { type, start, end, lunchDurationMinutes: lunch };
     const workCard = $('#work-card');
-    if(type === 'WORK' || type === 'REMOTE') {
+    const transportCard = $('#transport-card');
+    const showWork = (type === 'WORK' || type === 'REMOTE');
+    const showTransport = (type === 'WORK'); // Seulement bureau
+    if(showWork) {
        workCard.style.display = 'block';
        setTimeout(()=>workCard.style.opacity = '1', 10);
     } else {
        workCard.style.opacity = '0';
        setTimeout(()=>workCard.style.display = 'none', 300);
+    }
+    if(showTransport) {
+       transportCard.style.display = 'block';
+       setTimeout(()=>transportCard.style.opacity = '1', 10);
+    } else {
+       transportCard.style.opacity = '0';
+       setTimeout(()=>transportCard.style.display = 'none', 300);
     }
     $('#current-day-minutes').textContent = fmtMinutes(calcWorkMinutes(entry));
   }
@@ -968,9 +1061,19 @@
     }
   }
 
+  function getTransportCost(entry) {
+    // Seulement pour les jours de bureau (WORK) avec transport sélectionné
+    if (!entry || entry.type !== 'WORK') return { cost: 0, icon: '', label: '' };
+    if (entry.transport === 'car') {
+      return { cost: config.carDailyCost || 0, icon: '🚗', label: 'voiture' };
+    } else if (entry.transport === 'bike') {
+      return { cost: config.bikeDailyCost || 0, icon: '🚲', label: 'vélo' };
+    }
+    return { cost: 0, icon: '', label: '' };
+  }
+
   // ✅ REFONTE COMPLÈTE : Vue hebdo avec navigation
   function updateWeeklyView() {
-    // Initialise au lundi de la semaine courante si pas encore défini
     if (!currentWeekMonday) {
       currentWeekMonday = getMondayOfWeek(new Date().toISOString().slice(0, 10));
     }
@@ -979,12 +1082,12 @@
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
 
-    // Label de la plage
     const fmtShort = d => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
     $('#week-range-label').textContent = `${fmtShort(monday)} – ${fmtShort(sunday)}`;
     $('#week-num-label').textContent = `Semaine ${getISOWeekNumber(currentWeekMonday)} · ${monday.getFullYear()}`;
 
     let totalWeeklyMins = 0;
+    let totalTransportCost = 0;
     let html = '';
 
     for (let i = 0; i < 7; i++) {
@@ -998,6 +1101,7 @@
       let visualClass = 'text-gray-600';
       let subStr = '';
       let dayMins = 0;
+      let transportInfo = { cost: 0, icon: '', label: '' };
 
       if (entry) {
         if (entry.type === 'WORK' || entry.type === 'REMOTE') {
@@ -1005,37 +1109,51 @@
           timeStr = fmtMinutes(dayMins);
           visualClass = entry.type === 'WORK' ? 'text-green-400' : 'text-purple-400';
           subStr = entry.type === 'WORK' ? '💼' : '🏠';
+          if (entry.type === 'WORK') transportInfo = getTransportCost(entry);
         } else if (entry.type === 'RTT') {
-          // ✅ FIX : RTT compte comme objectif/5 dans le total
           dayMins = Math.round(config.targetWeeklyHours / 5);
           timeStr = fmtMinutes(dayMins);
           visualClass = 'text-blue-400';
           subStr = '🏖 RTT';
         } else if (entry.type === 'VACATION') {
-          // ✅ FIX : Congé compte comme objectif/5 dans le total
           dayMins = Math.round(config.targetWeeklyHours / 5);
           timeStr = fmtMinutes(dayMins);
           visualClass = 'text-pink-400';
           subStr = '✈️ Congé';
         } else if (entry.type === 'HOLIDAY') {
-          // ✅ FIX : Férié compte comme objectif/5 dans le total
           dayMins = Math.round(config.targetWeeklyHours / 5);
           timeStr = fmtMinutes(dayMins);
           visualClass = 'text-yellow-400';
           subStr = '🎉 Férié';
         }
         totalWeeklyMins += dayMins;
+        totalTransportCost += transportInfo.cost;
       }
 
       const isWeekend = i >= 5;
       const rowOpacity = isWeekend ? 'opacity:0.4;' : '';
+      const timeColor = visualClass.includes('green') ? '#4ADE80' : visualClass.includes('purple') ? '#A78BFA' : visualClass.includes('blue') ? '#60A5FA' : visualClass.includes('pink') ? '#F472B6' : visualClass.includes('yellow') ? '#FBBF24' : 'var(--text-muted)';
+
+      // Transport display pour ce jour
+      let transportHtml = '';
+      if (entry && entry.type === 'WORK') {
+        if (transportInfo.cost > 0) {
+          transportHtml = `<span style="font-size:10px; color:#FB923C; font-family:'Space Mono',monospace; margin-top:3px; display:block;">${transportInfo.icon} ${transportInfo.cost.toFixed(2)} €</span>`;
+        } else if (transportInfo.icon) {
+          transportHtml = `<span style="font-size:10px; color:var(--text-muted); font-family:'Space Mono',monospace; margin-top:3px; display:block;">${transportInfo.icon} 0.00 €</span>`;
+        }
+      }
+
       html += `
         <div onclick="window.editDate('${ymd}')" style="display:flex; justify-content:space-between; align-items:center; padding:14px 18px; ${rowOpacity} border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.1s;" onmousedown="this.style.background='var(--surface2)'" onmouseup="this.style.background=''" ontouchstart="this.style.background='var(--surface2)'" ontouchend="this.style.background=''">
           <div>
             <div style="font-size:14px; font-weight:600; color:var(--text);">${dayName} <span style="font-size:11px; color:var(--text-muted); font-weight:400;">${subStr}</span></div>
             <div style="font-size:10px; color:var(--text-muted); font-family:'Space Mono',monospace; margin-top:2px;">${formatFrDate(ymd)}</div>
           </div>
-          <div style="font-family:'Space Mono',monospace; font-size:13px; font-weight:700; ${visualClass.includes('green') ? 'color:#4ADE80' : visualClass.includes('purple') ? 'color:#A78BFA' : visualClass.includes('blue') ? 'color:#60A5FA' : visualClass.includes('pink') ? 'color:#F472B6' : visualClass.includes('yellow') ? 'color:#FBBF24' : 'color:var(--text-muted)'}">${timeStr}</div>
+          <div style="text-align:right;">
+            <div style="font-family:'Space Mono',monospace; font-size:13px; font-weight:700; color:${timeColor};">${timeStr}</div>
+            ${transportHtml}
+          </div>
         </div>`;
     }
 
@@ -1043,10 +1161,15 @@
     $('#total-weekly-hours').textContent = fmtMinutes(totalWeeklyMins);
     $('#target-weekly-hours-summary').textContent = fmtMinutes(config.targetWeeklyHours);
 
+    // Icône dynamique selon transport dominant
+    const transportEl = $('#weekly-transport-cost');
+    transportEl.textContent = `${totalTransportCost.toFixed(2)} €`;
+    transportEl.style.color = totalTransportCost > 0 ? '#FB923C' : 'var(--text-muted)';
+
     const pct = Math.min(100, (totalWeeklyMins / config.targetWeeklyHours) * 100);
     const bar = $('#weekly-progress-bar');
     bar.style.width = `${pct}%`;
-    bar.className = `h-full transition-all duration-500 ${pct >= 100 ? 'bg-green-500' : 'bg-blue-500'}`;
+    bar.className = `progress-fill${pct >= 100 ? ' complete' : ''}`;
     $('#progress-bar-label').textContent = `${Math.round(pct)}%`;
   }
 
@@ -1067,6 +1190,10 @@
     $('#hourly-gross-rate').value = config.hourlyGrossRate.toFixed(2);
     $('#daily-meal-allowance').value = config.dailyMealAllowance.toFixed(2);
     $('#daily-km-allowance').value = config.dailyKmAllowance.toFixed(2);
+    $('#car-daily-cost').value = (config.carDailyCost || 0).toFixed(2);
+    $('#car-daily-km').value = (config.carDailyKm || 0);
+    $('#bike-daily-cost').value = (config.bikeDailyCost || 0).toFixed(2);
+    $('#bike-daily-km').value = (config.bikeDailyKm || 0);
     
     if(config.userProfilePic) {
         $('#settings-profile-preview').style.backgroundImage = `url(${config.userProfilePic})`;
@@ -1095,6 +1222,10 @@
     config.hourlyGrossRate = parseFloat($('#hourly-gross-rate').value || 0);
     config.dailyMealAllowance = parseFloat($('#daily-meal-allowance').value || 0);
     config.dailyKmAllowance = parseFloat($('#daily-km-allowance').value || 0);
+    config.carDailyCost = parseFloat($('#car-daily-cost').value || 0);
+    config.carDailyKm = parseFloat($('#car-daily-km').value || 0);
+    config.bikeDailyCost = parseFloat($('#bike-daily-cost').value || 0);
+    config.bikeDailyKm = parseFloat($('#bike-daily-km').value || 0);
     lsSaveConfig(config);
     recalculateBalances();
     renderSaisieWeeklySummary();
@@ -1125,6 +1256,17 @@
      $('#end-time').addEventListener('change', refreshDayTotal);
      $('#lunch-duration-manual').addEventListener('input', refreshDayTotal);
 
+     // Transport radio buttons
+     document.querySelectorAll('input[name="transport"]').forEach(radio => {
+       radio.addEventListener('change', () => {
+         document.querySelectorAll('.transport-btn').forEach(el => el.classList.remove('selected'));
+         const label = document.querySelector(`label[for="${radio.id}"]`) || radio.closest('label');
+         if(label) label.classList.add('selected');
+       });
+     });
+     $('#transport-car-label').addEventListener('click', () => setTransportUI('car'));
+     $('#transport-bike-label').addEventListener('click', () => setTransportUI('bike'));
+
      // ✅ NOUVEAU : navigation semaine
      $('#week-prev').onclick = () => { currentWeekMonday = shiftWeek(currentWeekMonday, -1); updateWeeklyView(); };
      $('#week-next').onclick = () => { currentWeekMonday = shiftWeek(currentWeekMonday, 1); updateWeeklyView(); };
@@ -1150,12 +1292,13 @@
         const start = $('#start-time').value;
         const end = $('#end-time').value;
         const lunch = $('#lunch-duration-manual').value ? parseInt($('#lunch-duration-manual').value) : undefined;
+        const transport = (type === 'WORK') ? getSelectedTransport() : null;
         if((type === 'WORK' || type === 'REMOTE') && (!start || !end)) {
             showModal('Erreur', 'Veuillez saisir les horaires.');
             return;
         }
         workEntries = workEntries.filter(e => e.date !== date);
-        workEntries.push({ date, type, start, end, lunchDurationMinutes: lunch, timestamp: Date.now() });
+        workEntries.push({ date, type, start, end, lunchDurationMinutes: lunch, transport, timestamp: Date.now() });
         workEntries.sort((a,b) => a.date.localeCompare(b.date));
         saveWorkEntriesLocally();
         updateEntryUI(date);
