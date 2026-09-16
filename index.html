@@ -1362,6 +1362,16 @@
        showModal('Enregistré ✅', `${count} jour${count > 1 ? 's' : ''} de ${type === 'RTT' ? 'RTT' : 'congés'} sauvegardé${count > 1 ? 's' : ''}.`);
      };
 
+     // Navigation compteur mensuel
+     $('#month-counter-prev').onclick = () => {
+       currentCounterMonth = addMonths(currentCounterMonth, -1);
+       renderMonthlyCounter();
+     };
+     $('#month-counter-next').onclick = () => {
+       currentCounterMonth = addMonths(currentCounterMonth, 1);
+       renderMonthlyCounter();
+     };
+
      // ✅ NOUVEAU : navigation semaine
      $('#week-prev').onclick = () => { currentWeekMonday = shiftWeek(currentWeekMonday, -1); updateWeeklyView(); };
      $('#week-next').onclick = () => { currentWeekMonday = shiftWeek(currentWeekMonday, 1); updateWeeklyView(); };
@@ -1571,33 +1581,26 @@
       $('#time-picker-modal').style.display = 'flex';
   }
 
+  let currentCounterMonth = new Date().toISOString().substring(0, 7); // 'YYYY-MM'
+
   function renderMonthlyCounter() {
-    const today = new Date();
-    const ym = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
-    const monthName = today.toLocaleDateString('fr-FR', { month:'long', year:'numeric' });
-    const days = workEntries.filter(e => e.date.startsWith(ym) && (e.type === 'WORK' || e.type === 'REMOTE'));
-    $('#monthly-days-worked-count').textContent = days.length;
-    $('#monthly-counter-label').textContent = `Jours travaillés`;
+    const [y, m] = currentCounterMonth.split('-').map(Number);
+    const monthName = new Date(y, m - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
     $('#monthly-counter-sub').textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+    const officeDays = workEntries.filter(e => e.date.startsWith(currentCounterMonth) && e.type === 'WORK').length;
+    const remoteDays = workEntries.filter(e => e.date.startsWith(currentCounterMonth) && e.type === 'REMOTE').length;
+    $('#monthly-office-count').textContent = officeDays;
+    $('#monthly-remote-count').textContent = remoteDays;
+    $('#monthly-total-count').textContent = officeDays + remoteDays;
+
+    // Griser le bouton suivant si on est sur le mois courant
+    const nowYM = new Date().toISOString().substring(0, 7);
+    $('#month-counter-next').style.opacity = currentCounterMonth >= nowYM ? '0.3' : '1';
+    $('#month-counter-next').disabled = currentCounterMonth >= nowYM;
   }
 
   $('#save-default-times-btn').onclick = () => {
-      if(currentEditingDayIndex === -1) return;
-      const key = DAY_KEYS[currentEditingDayIndex];
-      config.defaultTimes[key] = { start: $('#default-start-time').value, end: $('#default-end-time').value };
-      lsSaveConfig(config);
-      renderDefaultTimesList();
-      $('#time-picker-modal').style.display = 'none';
-  };
-  $('#clear-default-times-btn').onclick = () => {
-       if(currentEditingDayIndex === -1) return;
-       const key = DAY_KEYS[currentEditingDayIndex];
-       delete config.defaultTimes[key];
-       lsSaveConfig(config);
-       renderDefaultTimesList();
-       $('#time-picker-modal').style.display = 'none';
-  };
-</script>
 
 </body>
 </html>
