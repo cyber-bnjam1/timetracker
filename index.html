@@ -372,30 +372,30 @@
 <section id="tab-saisie" class="tab-content">
 
   <!-- DATE ROW : bouton date + today -->
-  <div style="display:flex; gap:8px; margin-bottom:8px; align-items:stretch;">
-    <button id="entry-date-button" class="date-hero-btn" style="flex:1; padding:14px 16px;">
+  <div style="display:flex; gap:10px; margin-bottom:12px; align-items:stretch;">
+    <button id="entry-date-button" class="date-hero-btn" style="flex:1; padding:16px 18px;">
       <div class="text-left">
         <div class="date-hero-label">Date</div>
-        <div id="entry-date-display" class="date-hero-value" style="font-size:15px;">Aujourd'hui</div>
+        <div id="entry-date-display" class="date-hero-value" style="font-size:16px;">Aujourd'hui</div>
       </div>
-      <div class="date-hero-icon" style="width:36px;height:36px;font-size:17px;">📅</div>
+      <div class="date-hero-icon" style="width:40px;height:40px;font-size:18px;">📅</div>
     </button>
     <button id="today-btn" style="
       background:var(--surface); border:1px solid var(--border-accent);
       border-radius:var(--radius); color:var(--accent);
-      font-size:11px; font-weight:700; letter-spacing:0.04em;
-      padding:0 14px; white-space:nowrap; cursor:pointer;
+      font-size:12px; font-weight:700; letter-spacing:0.04em;
+      padding:0 16px; white-space:nowrap; cursor:pointer;
       box-shadow:0 0 14px var(--accent-dim);">
       Auj.
     </button>
     <input type="hidden" id="entry-date-hidden" />
   </div>
 
-  <!-- TYPE + TRANSPORT sur même ligne compacte -->
-  <div class="bento-card" style="padding:12px 14px; margin-bottom:8px;">
+  <!-- TYPE + TRANSPORT sur même ligne -->
+  <div class="bento-card" style="padding:14px 16px; margin-bottom:12px;">
     <div style="display:flex; gap:10px; align-items:center;">
       <div style="flex:1; position:relative;">
-        <select id="entry-type-select" class="big-input" style="height:44px; font-size:14px!important; padding-right:28px;">
+        <select id="entry-type-select" class="big-input" style="height:48px; font-size:15px!important; padding-right:28px;">
           <option value="WORK">💼 Bureau</option>
           <option value="REMOTE">🏠 Télétravail</option>
           <option value="RTT">🏖 RTT</option>
@@ -405,23 +405,23 @@
         <div style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;font-size:11px;">▼</div>
       </div>
       <!-- Transport inline (visible seulement WORK) -->
-      <div id="transport-card" style="display:flex; gap:6px;">
-        <label class="transport-btn" id="transport-car-label" style="padding:8px 10px; gap:3px;">
+      <div id="transport-card" style="display:flex; gap:8px;">
+        <label class="transport-btn" id="transport-car-label" style="padding:10px 12px; gap:3px;">
           <input type="radio" name="transport" id="transport-car" value="car" style="display:none;">
-          <span class="transport-icon" style="font-size:18px;">🚗</span>
+          <span class="transport-icon" style="font-size:20px;">🚗</span>
         </label>
-        <label class="transport-btn" id="transport-bike-label" style="padding:8px 10px; gap:3px;">
+        <label class="transport-btn" id="transport-bike-label" style="padding:10px 12px; gap:3px;">
           <input type="radio" name="transport" id="transport-bike" value="bike" style="display:none;">
-          <span class="transport-icon" style="font-size:18px;">🚲</span>
+          <span class="transport-icon" style="font-size:20px;">🚲</span>
         </label>
       </div>
     </div>
     <!-- Bouton plage congés/RTT (visible si RTT ou VACATION) -->
-    <div id="range-btn-wrap" style="display:none; margin-top:8px;">
+    <div id="range-btn-wrap" style="display:none; margin-top:10px;">
       <button id="open-range-modal-btn" style="
-        width:100%; height:38px; border-radius:10px;
+        width:100%; height:40px; border-radius:10px;
         background:var(--accent-dim); color:var(--accent);
-        border:1px solid var(--border-accent); font-size:12px; font-weight:700;
+        border:1px solid var(--border-accent); font-size:13px; font-weight:700;
         cursor:pointer;">
         📅 Saisir une plage de dates
       </button>
@@ -429,38 +429,38 @@
   </div>
 
   <!-- HORAIRES (WORK/REMOTE) -->
-  <div id="work-card" class="bento-card" style="padding:12px 14px; margin-bottom:8px; transition:opacity 0.2s;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+  <div id="work-card" class="bento-card" style="padding:16px; margin-bottom:12px; transition:opacity 0.2s;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
       <span class="section-label" style="margin-bottom:0;">Horaires</span>
       <span id="current-day-minutes" class="badge-hours">0h 00m</span>
     </div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
       <div>
-        <span class="section-label" style="margin-bottom:4px;">Début</span>
-        <input type="time" id="start-time" class="big-input mono" style="height:44px; text-align:center; font-weight:700; font-size:17px!important;"/>
+        <span class="section-label" style="margin-bottom:5px;">Début</span>
+        <input type="time" id="start-time" class="big-input mono" style="height:52px; text-align:center; font-weight:700; font-size:20px!important;"/>
       </div>
       <div>
-        <span class="section-label" style="margin-bottom:4px;">Fin</span>
-        <input type="time" id="end-time" class="big-input mono" style="height:44px; text-align:center; font-weight:700; font-size:17px!important;"/>
+        <span class="section-label" style="margin-bottom:5px;">Fin</span>
+        <input type="time" id="end-time" class="big-input mono" style="height:52px; text-align:center; font-weight:700; font-size:20px!important;"/>
       </div>
     </div>
-    <div style="display:flex; align-items:center; gap:8px; padding-top:8px; border-top:1px solid var(--border);">
-      <span style="font-size:12px; color:var(--text-dim); flex:1;">⏸ Pause midi</span>
-      <span id="lunch-duration-display" class="mono" style="font-size:11px; color:var(--accent);">45min</span>
+    <div style="display:flex; align-items:center; gap:10px; padding-top:10px; border-top:1px solid var(--border);">
+      <span style="font-size:13px; color:var(--text-dim); flex:1;">⏸ Pause midi</span>
+      <span id="lunch-duration-display" class="mono" style="font-size:12px; color:var(--accent);">45min</span>
       <input type="number" id="lunch-duration-manual" style="
-        width:70px; height:34px; border-radius:8px; text-align:center;
+        width:72px; height:38px; border-radius:8px; text-align:center;
         background:var(--input-bg); color:var(--text); border:1px solid var(--border);
-        font-size:13px!important; font-family:'Space Mono',monospace;" placeholder="min" inputmode="numeric">
+        font-size:14px!important; font-family:'Space Mono',monospace;" placeholder="min" inputmode="numeric">
     </div>
   </div>
 
   <!-- ACTIONS -->
-  <div style="display:grid; grid-template-columns:44px 44px 1fr; gap:8px;">
-    <button id="auto-fill-btn" class="btn-icon accent" style="height:48px;">⚡️</button>
-    <button id="clear-entry-btn" class="btn-icon" style="height:48px;">↺</button>
-    <button id="save-entry-btn" class="btn-primary" style="height:48px;">Enregistrer</button>
+  <div style="display:grid; grid-template-columns:52px 52px 1fr; gap:10px;">
+    <button id="auto-fill-btn" class="btn-icon accent" style="height:52px;">⚡️</button>
+    <button id="clear-entry-btn" class="btn-icon" style="height:52px;">↺</button>
+    <button id="save-entry-btn" class="btn-primary" style="height:52px;">Enregistrer</button>
   </div>
-  <button id="delete-entry-btn" style="display:none; width:100%; margin-top:8px; padding:10px; color:var(--danger); background:none; border:none; font-size:13px; font-weight:600; cursor:pointer;">Supprimer cette entrée</button>
+  <button id="delete-entry-btn" style="display:none; width:100%; margin-top:10px; padding:12px; color:var(--danger); background:none; border:none; font-size:13px; font-weight:600; cursor:pointer;">Supprimer cette entrée</button>
 
 </section>
 
@@ -498,16 +498,28 @@
 
   <div id="weekly-body" class="bento-card" style="padding:0; overflow:hidden; margin-bottom:10px;"></div>
 
-  <!-- Compteur mensuel -->
+  <!-- Compteur mensuel avec navigation -->
   <div class="bento-card" style="padding:14px 18px;">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <div>
-        <div class="section-label" id="monthly-counter-label">Jours travaillés — mois</div>
-        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;" id="monthly-counter-sub"></div>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+      <button id="month-counter-prev" style="width:34px;height:34px;border-radius:10px;border:none;background:var(--surface2);color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">‹</button>
+      <div style="text-align:center;">
+        <div class="section-label" style="margin-bottom:1px;">Jours travaillés</div>
+        <div id="monthly-counter-sub" style="font-size:13px;font-weight:600;color:var(--text);"></div>
       </div>
-      <div style="display:flex; align-items:baseline; gap:4px;">
-        <span id="monthly-days-worked-count" class="mono" style="font-size:28px; font-weight:700; color:var(--accent);">0</span>
-        <span style="font-size:12px; color:var(--text-muted);">j</span>
+      <button id="month-counter-next" style="width:34px;height:34px;border-radius:10px;border:none;background:var(--surface2);color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">›</button>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; text-align:center;">
+      <div style="background:var(--surface2);border-radius:12px;padding:10px 6px;border:1px solid var(--border);">
+        <div id="monthly-office-count" class="mono" style="font-size:22px;font-weight:700;color:#4ADE80;">0</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">💼 Bureau</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:12px;padding:10px 6px;border:1px solid var(--border);">
+        <div id="monthly-remote-count" class="mono" style="font-size:22px;font-weight:700;color:#A78BFA;">0</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">🏠 Télétravail</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:12px;padding:10px 6px;border:1px solid var(--border);">
+        <div id="monthly-total-count" class="mono" style="font-size:22px;font-weight:700;color:var(--accent);">0</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Total</div>
       </div>
     </div>
   </div>
