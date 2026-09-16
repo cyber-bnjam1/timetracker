@@ -1521,6 +1521,23 @@
        $('#splash-screen').style.opacity = '0';
        setTimeout(() => $('#splash-screen').style.display = 'none', 400);
      }, 1000);
+
+     $('#save-default-times-btn').onclick = () => {
+         if(currentEditingDayIndex === -1) return;
+         const key = DAY_KEYS[currentEditingDayIndex];
+         config.defaultTimes[key] = { start: $('#default-start-time').value, end: $('#default-end-time').value };
+         lsSaveConfig(config);
+         renderDefaultTimesList();
+         $('#time-picker-modal').style.display = 'none';
+     };
+     $('#clear-default-times-btn').onclick = () => {
+          if(currentEditingDayIndex === -1) return;
+          const key = DAY_KEYS[currentEditingDayIndex];
+          delete config.defaultTimes[key];
+          lsSaveConfig(config);
+          renderDefaultTimesList();
+          $('#time-picker-modal').style.display = 'none';
+     };
      
   });
 
@@ -1600,7 +1617,7 @@
     $('#month-counter-next').disabled = currentCounterMonth >= nowYM;
   }
 
-  $('#save-default-times-btn').onclick = () => {
+</script>
 
 </body>
 </html>
