@@ -21,20 +21,46 @@
 
   <style>
     :root {
-      --accent: #00E5A0;
-      --accent-dim: rgba(0, 229, 160, 0.12);
-      --accent-glow: rgba(0, 229, 160, 0.25);
-      --bg: #080808;
-      --surface: #111111;
-      --surface2: #1A1A1A;
+      --accent: #00C98A;
+      --accent-dim: rgba(0, 201, 138, 0.12);
+      --accent-glow: rgba(0, 201, 138, 0.22);
+      --border-accent: rgba(0, 201, 138, 0.3);
+      --danger: #E53E3E;
+      --radius: 18px;
+      --radius-sm: 12px;
+      /* Dark (default) */
+      --bg: #0A0A0A;
+      --surface: #141414;
+      --surface2: #1E1E1E;
       --border: rgba(255,255,255,0.07);
-      --border-accent: rgba(0, 229, 160, 0.3);
       --text: #F0F0F0;
       --text-muted: #555;
       --text-dim: #888;
-      --danger: #FF4B4B;
-      --radius: 20px;
-      --radius-sm: 12px;
+      --shadow: rgba(0,0,0,0.4);
+      --header-bg: rgba(10,10,10,0.92);
+      --nav-bg: rgba(10,10,10,0.94);
+      --modal-bg: rgba(0,0,0,0.72);
+      --splash-bg: #0A0A0A;
+      --input-bg: #1E1E1E;
+      --progress-track: rgba(255,255,255,0.07);
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #F2F2F7;
+        --surface: #FFFFFF;
+        --surface2: #F2F2F7;
+        --border: rgba(0,0,0,0.08);
+        --text: #1A1A1A;
+        --text-muted: #AEAEB2;
+        --text-dim: #636366;
+        --shadow: rgba(0,0,0,0.12);
+        --header-bg: rgba(242,242,247,0.92);
+        --nav-bg: rgba(255,255,255,0.94);
+        --modal-bg: rgba(0,0,0,0.45);
+        --splash-bg: #F2F2F7;
+        --input-bg: #F2F2F7;
+        --progress-track: rgba(0,0,0,0.07);
+      }
     }
 
     * { box-sizing: border-box; }
@@ -65,18 +91,18 @@
 
     /* INPUTS */
     .big-input {
-      background: var(--surface2);
+      background: var(--input-bg);
       border-radius: var(--radius-sm);
-      height: 52px;
+      height: 48px;
       width: 100%;
-      padding: 0 16px;
+      padding: 0 14px;
       color: var(--text);
       border: 1px solid var(--border);
       transition: all 0.2s;
       appearance: none; -webkit-appearance: none;
     }
     .big-input:focus {
-      background: #222;
+      background: var(--surface2);
       border-color: var(--accent);
       box-shadow: 0 0 0 3px var(--accent-dim);
     }
@@ -84,11 +110,11 @@
     /* HEADER */
     header.app-header {
       position: fixed; top: 0; left: 0; right: 0; z-index: 40;
-      background: rgba(8, 8, 8, 0.90);
+      background: var(--header-bg);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       border-bottom: 1px solid var(--border);
-      padding: calc(env(safe-area-inset-top) + 12px) 20px 14px;
+      padding: calc(env(safe-area-inset-top) + 10px) 18px 12px;
     }
 
     .app-logo {
@@ -112,7 +138,7 @@
     /* NAV BAR */
     .nav-bar {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
-      background: rgba(8, 8, 8, 0.92);
+      background: var(--nav-bg);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       border-top: 1px solid var(--border);
@@ -181,7 +207,7 @@
     /* PROGRESS BAR */
     .progress-track {
       width: 100%; height: 6px;
-      background: rgba(255,255,255,0.06);
+      background: var(--progress-track);
       border-radius: 99px; overflow: hidden;
     }
     .progress-fill {
@@ -201,7 +227,7 @@
       box-shadow: 0 4px 20px var(--accent-glow);
     }
     .btn-primary:active { transform: scale(0.97); opacity: 0.9; }
-    .btn-primary.is-edit { background: #1A1A1A; color: var(--accent); border: 1px solid var(--border-accent); box-shadow: none; }
+    .btn-primary.is-edit { background: var(--surface2); color: var(--accent); border: 1px solid var(--border-accent); box-shadow: none; }
 
     .btn-icon {
       height: 52px; border-radius: var(--radius-sm);
@@ -210,7 +236,7 @@
       display: flex; align-items: center; justify-content: center;
       transition: all 0.15s;
     }
-    .btn-icon:active { background: #222; }
+    .btn-icon:active { background: var(--surface2); }
     .btn-icon.accent { background: var(--accent-dim); color: var(--accent); border-color: var(--border-accent); }
 
     /* WEEK NAV */
@@ -225,7 +251,7 @@
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; transition: background 0.15s;
     }
-    .week-nav-btn:active { background: #2a2a2a; }
+    .week-nav-btn:active { background: var(--surface2); }
     .week-range { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
     .week-num { font-size: 10px; color: var(--text-muted); margin-top: 2px; font-family: 'Space Mono', monospace; }
     .week-nav-btn.week-today {
@@ -234,22 +260,10 @@
       border: 1px solid var(--border-accent); border-radius: 8px; font-weight: 700;
     }
 
-    /* WEEKLY SUMMARY CARD (in Saisie) */
-    .weekly-summary-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px 18px;
-    }
-    .weekly-summary-card .big-total {
-      font-family: 'Space Mono', monospace;
-      font-size: 28px; font-weight: 700;
-      color: var(--text); letter-spacing: -0.03em;
-    }
     .day-row {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
     }
     .day-row:last-child { border-bottom: none; }
     .day-row .day-name { font-size: 13px; font-weight: 500; color: var(--text-dim); }
@@ -267,7 +281,7 @@
     /* MODALS */
     #calendar-modal {
       position: fixed; inset: 0;
-      background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+      background: var(--modal-bg); backdrop-filter: blur(8px);
       z-index: 2000; display: none; align-items: flex-end; justify-content: center;
     }
     #calendar-container {
@@ -307,7 +321,7 @@
     ::-webkit-scrollbar { display: none; }
 
     /* SPLASH */
-    #splash-screen { position:fixed; inset:0; background:#080808; z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; gap: 8px; transition:opacity 0.4s; }
+    #splash-screen { position:fixed; inset:0; background:var(--splash-bg); z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; gap: 8px; transition:opacity 0.4s; }
     .splash-logo { font-size:36px; font-weight:800; letter-spacing: -0.05em; color: var(--text); }
     .splash-logo span { color: var(--accent); }
     .splash-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
@@ -316,8 +330,8 @@
     /* TRANSPORT BUTTONS */
     .transport-btn {
       flex: 1; display: flex; flex-direction: column; align-items: center;
-      gap: 6px; padding: 14px 10px; border-radius: var(--radius-sm);
-      background: var(--surface2); border: 1.5px solid var(--border);
+      gap: 6px; padding: 10px 8px; border-radius: var(--radius-sm);
+      background: var(--input-bg); border: 1.5px solid var(--border);
       cursor: pointer; transition: all 0.15s; user-select: none;
     }
     .transport-btn.selected {
@@ -356,106 +370,98 @@
   <main id="pane" class="w-full min-h-screen pb-28 px-4">
 
 <section id="tab-saisie" class="tab-content">
-  <!-- Date button -->
-  <div class="mb-3">
-    <button id="entry-date-button" class="date-hero-btn">
+
+  <!-- DATE ROW : bouton date + today -->
+  <div style="display:flex; gap:8px; margin-bottom:8px; align-items:stretch;">
+    <button id="entry-date-button" class="date-hero-btn" style="flex:1; padding:14px 16px;">
       <div class="text-left">
-        <div class="date-hero-label">Date sélectionnée</div>
-        <div id="entry-date-display" class="date-hero-value">Aujourd'hui</div>
+        <div class="date-hero-label">Date</div>
+        <div id="entry-date-display" class="date-hero-value" style="font-size:15px;">Aujourd'hui</div>
       </div>
-      <div class="date-hero-icon">📅</div>
+      <div class="date-hero-icon" style="width:36px;height:36px;font-size:17px;">📅</div>
+    </button>
+    <button id="today-btn" style="
+      background:var(--surface); border:1px solid var(--border-accent);
+      border-radius:var(--radius); color:var(--accent);
+      font-size:11px; font-weight:700; letter-spacing:0.04em;
+      padding:0 14px; white-space:nowrap; cursor:pointer;
+      box-shadow:0 0 14px var(--accent-dim);">
+      Auj.
     </button>
     <input type="hidden" id="entry-date-hidden" />
   </div>
 
-  <!-- Type -->
-  <div class="bento-card">
-    <span class="section-label">Type de journée</span>
-    <div class="relative">
-      <select id="entry-type-select" class="big-input">
-        <option value="WORK">💼 &nbsp; Travail (Bureau)</option>
-        <option value="REMOTE">🏠 &nbsp; Télétravail</option>
-        <option value="RTT">🏖 &nbsp; RTT</option>
-        <option value="VACATION">✈️ &nbsp; Vacances</option>
-        <option value="HOLIDAY">🎉 &nbsp; Férié</option>
-      </select>
-      <div class="absolute right-4 top-4 pointer-events-none" style="color:var(--text-muted)">▼</div>
+  <!-- TYPE + TRANSPORT sur même ligne compacte -->
+  <div class="bento-card" style="padding:12px 14px; margin-bottom:8px;">
+    <div style="display:flex; gap:10px; align-items:center;">
+      <div style="flex:1; position:relative;">
+        <select id="entry-type-select" class="big-input" style="height:44px; font-size:14px!important; padding-right:28px;">
+          <option value="WORK">💼 Bureau</option>
+          <option value="REMOTE">🏠 Télétravail</option>
+          <option value="RTT">🏖 RTT</option>
+          <option value="VACATION">✈️ Congés</option>
+          <option value="HOLIDAY">🎉 Férié</option>
+        </select>
+        <div style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;font-size:11px;">▼</div>
+      </div>
+      <!-- Transport inline (visible seulement WORK) -->
+      <div id="transport-card" style="display:flex; gap:6px;">
+        <label class="transport-btn" id="transport-car-label" style="padding:8px 10px; gap:3px;">
+          <input type="radio" name="transport" id="transport-car" value="car" style="display:none;">
+          <span class="transport-icon" style="font-size:18px;">🚗</span>
+        </label>
+        <label class="transport-btn" id="transport-bike-label" style="padding:8px 10px; gap:3px;">
+          <input type="radio" name="transport" id="transport-bike" value="bike" style="display:none;">
+          <span class="transport-icon" style="font-size:18px;">🚲</span>
+        </label>
+      </div>
+    </div>
+    <!-- Bouton plage congés/RTT (visible si RTT ou VACATION) -->
+    <div id="range-btn-wrap" style="display:none; margin-top:8px;">
+      <button id="open-range-modal-btn" style="
+        width:100%; height:38px; border-radius:10px;
+        background:var(--accent-dim); color:var(--accent);
+        border:1px solid var(--border-accent); font-size:12px; font-weight:700;
+        cursor:pointer;">
+        📅 Saisir une plage de dates
+      </button>
     </div>
   </div>
 
-  <!-- Transport -->
-  <div class="bento-card" id="transport-card">
-    <span class="section-label">Transport aller-retour</span>
-    <div style="display:flex; gap:10px;">
-      <label class="transport-btn" id="transport-car-label">
-        <input type="radio" name="transport" id="transport-car" value="car" style="display:none;">
-        <span class="transport-icon">🚗</span>
-        <span class="transport-label">Voiture</span>
-      </label>
-      <label class="transport-btn" id="transport-bike-label">
-        <input type="radio" name="transport" id="transport-bike" value="bike" style="display:none;">
-        <span class="transport-icon">🚲</span>
-        <span class="transport-label">Vélo</span>
-      </label>
-    </div>
-  </div>
-
-  <!-- Horaires (WORK/REMOTE) -->
-  <div id="work-card" class="bento-card transition-opacity duration-300">
-    <div class="flex justify-between items-center mb-3">
-      <span class="section-label" style="margin-bottom:0">Horaires</span>
+  <!-- HORAIRES (WORK/REMOTE) -->
+  <div id="work-card" class="bento-card" style="padding:12px 14px; margin-bottom:8px; transition:opacity 0.2s;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <span class="section-label" style="margin-bottom:0;">Horaires</span>
       <span id="current-day-minutes" class="badge-hours">0h 00m</span>
     </div>
-    <div class="grid grid-cols-2 gap-3 mb-3">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
       <div>
-        <span class="section-label">Début</span>
-        <input type="time" id="start-time" class="big-input text-center mono" style="font-weight:700; font-size:18px!important;"/>
+        <span class="section-label" style="margin-bottom:4px;">Début</span>
+        <input type="time" id="start-time" class="big-input mono" style="height:44px; text-align:center; font-weight:700; font-size:17px!important;"/>
       </div>
       <div>
-        <span class="section-label">Fin</span>
-        <input type="time" id="end-time" class="big-input text-center mono" style="font-weight:700; font-size:18px!important;"/>
+        <span class="section-label" style="margin-bottom:4px;">Fin</span>
+        <input type="time" id="end-time" class="big-input mono" style="height:44px; text-align:center; font-weight:700; font-size:17px!important;"/>
       </div>
     </div>
-    <div class="pt-3" style="border-top: 1px solid var(--border)">
-      <div class="flex justify-between items-center mb-2">
-        <span style="font-size:13px; color:var(--text-dim)">Pause midi</span>
-        <span id="lunch-duration-display" class="mono" style="font-size:11px; color:var(--accent)">45min (minimum légal)</span>
-      </div>
-      <input type="number" id="lunch-duration-manual" class="big-input" style="text-align:right" placeholder="Modifier (min)" inputmode="numeric">
+    <div style="display:flex; align-items:center; gap:8px; padding-top:8px; border-top:1px solid var(--border);">
+      <span style="font-size:12px; color:var(--text-dim); flex:1;">⏸ Pause midi</span>
+      <span id="lunch-duration-display" class="mono" style="font-size:11px; color:var(--accent);">45min</span>
+      <input type="number" id="lunch-duration-manual" style="
+        width:70px; height:34px; border-radius:8px; text-align:center;
+        background:var(--input-bg); color:var(--text); border:1px solid var(--border);
+        font-size:13px!important; font-family:'Space Mono',monospace;" placeholder="min" inputmode="numeric">
     </div>
   </div>
 
-  <!-- Actions -->
-  <div class="grid grid-cols-4 gap-2 mt-1">
-    <button id="auto-fill-btn" class="btn-icon accent col-span-1" title="Remplir auto">⚡️</button>
-    <button id="clear-entry-btn" class="btn-icon col-span-1">↺</button>
-    <button id="save-entry-btn" class="btn-primary col-span-2">Enregistrer</button>
+  <!-- ACTIONS -->
+  <div style="display:grid; grid-template-columns:44px 44px 1fr; gap:8px;">
+    <button id="auto-fill-btn" class="btn-icon accent" style="height:48px;">⚡️</button>
+    <button id="clear-entry-btn" class="btn-icon" style="height:48px;">↺</button>
+    <button id="save-entry-btn" class="btn-primary" style="height:48px;">Enregistrer</button>
   </div>
-  <button id="delete-entry-btn" class="w-full mt-3 py-3 text-sm font-semibold" style="display:none; color:var(--danger); background:none; border:none;">Supprimer cette entrée</button>
+  <button id="delete-entry-btn" style="display:none; width:100%; margin-top:8px; padding:10px; color:var(--danger); background:none; border:none; font-size:13px; font-weight:600; cursor:pointer;">Supprimer cette entrée</button>
 
-  <!-- Mini résumé hebdo -->
-  <div class="mt-5" id="saisie-weekly-summary">
-    <div class="week-nav mb-2" style="justify-content:center;">
-      <div style="text-align:center;">
-        <div class="week-range" id="saisie-week-range-label">–</div>
-        <div class="week-num" id="saisie-week-num-label">Semaine –</div>
-      </div>
-    </div>
-    <div class="weekly-summary-card">
-      <div class="flex justify-between items-center mb-1">
-        <span class="section-label" style="margin-bottom:0">Progression</span>
-        <span id="saisie-weekly-pct" class="mono" style="font-size:11px; font-weight:700; color:var(--accent)">0%</span>
-      </div>
-      <div class="progress-track mb-3">
-        <div id="saisie-weekly-bar" class="progress-fill" style="width:0%"></div>
-      </div>
-      <div class="flex justify-between items-baseline mb-3">
-        <span id="saisie-weekly-total" class="big-total">0h 00m</span>
-        <span id="saisie-weekly-target" style="font-size:12px; color:var(--text-muted); font-family:'Space Mono',monospace">/ 37h 00m</span>
-      </div>
-      <div id="saisie-weekly-days"></div>
-    </div>
-  </div>
 </section>
 
 <section id="tab-hebdo" class="tab-content" style="display:none;">
@@ -490,7 +496,21 @@
     </div>
   </div>
 
-  <div id="weekly-body" class="bento-card" style="padding:0; overflow:hidden;"></div>
+  <div id="weekly-body" class="bento-card" style="padding:0; overflow:hidden; margin-bottom:10px;"></div>
+
+  <!-- Compteur mensuel -->
+  <div class="bento-card" style="padding:14px 18px;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div class="section-label" id="monthly-counter-label">Jours travaillés — mois</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;" id="monthly-counter-sub"></div>
+      </div>
+      <div style="display:flex; align-items:baseline; gap:4px;">
+        <span id="monthly-days-worked-count" class="mono" style="font-size:28px; font-weight:700; color:var(--accent);">0</span>
+        <span style="font-size:12px; color:var(--text-muted);">j</span>
+      </div>
+    </div>
+  </div>
 </section>
 
 <section id="tab-data" class="tab-content" style="display:none;">
@@ -638,7 +658,7 @@
     </div>
   </nav>
 
-  <div id="custom-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); z-index:3000; display:none; align-items:center; justify-content:center; padding:20px;">
+  <div id="custom-modal" style="position:fixed; inset:0; background:var(--modal-bg); backdrop-filter:blur(8px); z-index:3000; display:none; align-items:center; justify-content:center; padding:20px;">
     <div style="background:var(--surface); border:1px solid var(--border); border-radius:24px; padding:24px; width:100%; max-width:320px; box-shadow:0 20px 60px rgba(0,0,0,0.5);">
       <h3 id="modal-title" style="color:var(--text); font-size:17px; font-weight:700; margin-bottom:8px; letter-spacing:-0.02em;">Titre</h3>
       <p id="modal-message" style="color:var(--text-dim); font-size:13px; margin-bottom:24px; line-height:1.6;">Message</p>
@@ -667,7 +687,7 @@
     </div>
   </div>
 
-  <div id="default-times-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); z-index:2500; display:none; align-items:center; justify-content:center; padding:20px;">
+  <div id="default-times-modal" style="position:fixed; inset:0; background:var(--modal-bg); backdrop-filter:blur(8px); z-index:2500; display:none; align-items:center; justify-content:center; padding:20px;">
     <div style="background:var(--surface); border:1px solid var(--border); border-radius:24px; padding:24px; width:100%; max-width:380px; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.5);">
       <h3 style="color:var(--text); font-size:20px; font-weight:700; margin-bottom:6px; letter-spacing:-0.02em;">Horaires par défaut</h3>
       <p style="color:var(--text-muted); font-size:12px; margin-bottom:16px;">Définissez vos horaires types pour le remplissage automatique.</p>
@@ -676,8 +696,31 @@
     </div>
   </div>
 
-  <div id="time-picker-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:2600; display:none; align-items:center; justify-content:center; padding:20px;">
-    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:24px; padding:24px; width:100%; max-width:320px; box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+  <!-- Modal plage de dates congés/RTT -->
+  <div id="range-modal" style="position:fixed; inset:0; background:var(--modal-bg); backdrop-filter:blur(8px); z-index:2700; display:none; align-items:flex-end; justify-content:center;">
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:28px 28px 0 0; padding:24px; width:100%; max-width:480px; padding-bottom:calc(24px + env(safe-area-inset-bottom)); box-shadow:0 -20px 60px var(--shadow);">
+      <h3 style="color:var(--text); font-size:18px; font-weight:700; margin-bottom:4px; letter-spacing:-0.02em;">Plage de dates</h3>
+      <p id="range-modal-subtitle" style="color:var(--text-muted); font-size:12px; margin-bottom:20px;">Saisir plusieurs jours d'un coup</p>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+        <div>
+          <label class="section-label">Du</label>
+          <input type="date" id="range-start" class="big-input" style="height:48px;">
+        </div>
+        <div>
+          <label class="section-label">Au</label>
+          <input type="date" id="range-end" class="big-input" style="height:48px;">
+        </div>
+      </div>
+      <div style="background:var(--surface2); border-radius:12px; padding:12px 14px; margin-bottom:16px; font-size:12px; color:var(--text-dim); border:1px solid var(--border);">
+        ℹ️ Seuls les jours <strong style="color:var(--text);">lundi → vendredi</strong> seront enregistrés. Les week-ends sont ignorés automatiquement.
+      </div>
+      <button id="confirm-range-btn" class="btn-primary" style="margin-bottom:8px; height:50px;">Enregistrer la plage</button>
+      <button id="cancel-range-btn" style="width:100%; padding:12px; background:none; border:none; color:var(--text-muted); font-size:14px; font-weight:600; cursor:pointer;">Annuler</button>
+    </div>
+  </div>
+
+  <div id="time-picker-modal" style="position:fixed; inset:0; background:var(--modal-bg); z-index:2600; display:none; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:24px; padding:24px; width:100%; max-width:320px; box-shadow:0 20px 60px var(--shadow);">
       <h3 id="time-picker-title" style="color:var(--text); font-size:18px; font-weight:700; text-align:center; margin-bottom:20px;">Lundi</h3>
       <div class="grid grid-cols-2 gap-4 mb-4">
         <div>
@@ -884,7 +927,7 @@
               updateSettingsUI();
               renderFullHistory();
               renderDefaultTimesList();
-              renderSaisieWeeklySummary();
+              
               if(config.lastSelectedDate) updateEntryUI(config.lastSelectedDate);
               $('#last-sync-msg').textContent = "Données chargées ✅";
           } else {
@@ -930,7 +973,8 @@
   function saveWorkEntriesLocally() {
     localStorage.setItem('worker_entries', JSON.stringify(workEntries));
     syncData();
-    renderFullHistory(); 
+    renderFullHistory();
+    renderMonthlyCounter();
   }
 
   function showModal(title, msg) {
@@ -994,25 +1038,21 @@
     const end = $('#end-time').value;
     const lunch = $('#lunch-duration-manual').value ? parseInt($('#lunch-duration-manual').value) : undefined;
     const entry = { type, start, end, lunchDurationMinutes: lunch };
-    const workCard = $('#work-card');
-    const transportCard = $('#transport-card');
+
     const showWork = (type === 'WORK' || type === 'REMOTE');
-    const showTransport = (type === 'WORK'); // Seulement bureau
-    if(showWork) {
-       workCard.style.display = 'block';
-       setTimeout(()=>workCard.style.opacity = '1', 10);
-    } else {
-       workCard.style.opacity = '0';
-       setTimeout(()=>workCard.style.display = 'none', 300);
+    const showTransport = (type === 'WORK');
+    const showRange = (type === 'RTT' || type === 'VACATION');
+
+    $('#work-card').style.display = showWork ? 'block' : 'none';
+    $('#transport-card').style.display = showTransport ? 'flex' : 'none';
+    $('#range-btn-wrap').style.display = showRange ? 'block' : 'none';
+
+    if (showWork) {
+      $('#current-day-minutes').textContent = fmtMinutes(calcWorkMinutes(entry));
     }
-    if(showTransport) {
-       transportCard.style.display = 'block';
-       setTimeout(()=>transportCard.style.opacity = '1', 10);
-    } else {
-       transportCard.style.opacity = '0';
-       setTimeout(()=>transportCard.style.display = 'none', 300);
-    }
-    $('#current-day-minutes').textContent = fmtMinutes(calcWorkMinutes(entry));
+    // Mettre à jour le label pause
+    const lunchMins = lunch ?? config.lunchDurationMinutes;
+    $('#lunch-duration-display').textContent = `${lunchMins}min`;
   }
 
   function renderFullHistory() {
@@ -1162,6 +1202,7 @@
     $('#target-weekly-hours-summary').textContent = fmtMinutes(config.targetWeeklyHours);
 
     // Icône dynamique selon transport dominant
+    renderMonthlyCounter();
     const transportEl = $('#weekly-transport-cost');
     transportEl.textContent = `${totalTransportCost.toFixed(2)} €`;
     transportEl.style.color = totalTransportCost > 0 ? '#FB923C' : 'var(--text-muted)';
@@ -1228,7 +1269,7 @@
     config.bikeDailyKm = parseFloat($('#bike-daily-km').value || 0);
     lsSaveConfig(config);
     recalculateBalances();
-    renderSaisieWeeklySummary();
+    
     updateSettingsUI();
     showModal('Réglages Sauvegardés', 'Vos préférences ont été mises à jour.');
   }
@@ -1248,7 +1289,8 @@
      updateEntryUI(config.lastSelectedDate);
      renderFullHistory();
      renderDefaultTimesList();
-     renderSaisieWeeklySummary();
+     renderMonthlyCounter();
+     
      
      // Listeners saisie
      $('#entry-type-select').addEventListener('change', refreshDayTotal);
@@ -1256,16 +1298,57 @@
      $('#end-time').addEventListener('change', refreshDayTotal);
      $('#lunch-duration-manual').addEventListener('input', refreshDayTotal);
 
+     // Bouton Aujourd'hui
+     $('#today-btn').onclick = () => {
+       const today = dateToYMD(new Date());
+       config.lastSelectedDate = today;
+       currentWeekMonday = getMondayOfWeek(today);
+       lsSaveConfig(config);
+       updateEntryUI(today);
+     };
+
      // Transport radio buttons
-     document.querySelectorAll('input[name="transport"]').forEach(radio => {
-       radio.addEventListener('change', () => {
-         document.querySelectorAll('.transport-btn').forEach(el => el.classList.remove('selected'));
-         const label = document.querySelector(`label[for="${radio.id}"]`) || radio.closest('label');
-         if(label) label.classList.add('selected');
-       });
-     });
      $('#transport-car-label').addEventListener('click', () => setTransportUI('car'));
      $('#transport-bike-label').addEventListener('click', () => setTransportUI('bike'));
+
+     // Modal plage de dates
+     $('#open-range-modal-btn').onclick = () => {
+       const type = $('#entry-type-select').value;
+       const label = type === 'RTT' ? 'RTT 🏖' : 'Congés ✈️';
+       $('#range-modal-subtitle').textContent = `Enregistrer plusieurs jours de ${label}`;
+       // Pré-remplir avec la date sélectionnée
+       const cur = $('#entry-date-hidden').value;
+       $('#range-start').value = cur;
+       $('#range-end').value = cur;
+       $('#range-modal').style.display = 'flex';
+     };
+     $('#cancel-range-btn').onclick = () => $('#range-modal').style.display = 'none';
+     $('#confirm-range-btn').onclick = () => {
+       const start = $('#range-start').value;
+       const end = $('#range-end').value;
+       const type = $('#entry-type-select').value;
+       if (!start || !end || start > end) {
+         showModal('Erreur', 'Veuillez saisir une plage de dates valide.');
+         return;
+       }
+       let d = ymdToDate(start);
+       const endDate = ymdToDate(end);
+       let count = 0;
+       while (d <= endDate) {
+         const dow = d.getDay(); // 0=dim, 6=sam
+         if (dow !== 0 && dow !== 6) {
+           const ymd = dateToYMD(d);
+           workEntries = workEntries.filter(e => e.date !== ymd);
+           workEntries.push({ date: ymd, type, start: null, end: null, timestamp: Date.now() });
+           count++;
+         }
+         d.setDate(d.getDate() + 1);
+       }
+       workEntries.sort((a,b) => a.date.localeCompare(b.date));
+       saveWorkEntriesLocally();
+       $('#range-modal').style.display = 'none';
+       showModal('Enregistré ✅', `${count} jour${count > 1 ? 's' : ''} de ${type === 'RTT' ? 'RTT' : 'congés'} sauvegardé${count > 1 ? 's' : ''}.`);
+     };
 
      // ✅ NOUVEAU : navigation semaine
      $('#week-prev').onclick = () => { currentWeekMonday = shiftWeek(currentWeekMonday, -1); updateWeeklyView(); };
@@ -1302,7 +1385,7 @@
         workEntries.sort((a,b) => a.date.localeCompare(b.date));
         saveWorkEntriesLocally();
         updateEntryUI(date);
-        renderSaisieWeeklySummary();
+        
         showModal('Enregistré', 'Entrée sauvegardée avec succès.');
      };
 
@@ -1312,7 +1395,7 @@
              workEntries = workEntries.filter(e => e.date !== date);
              saveWorkEntriesLocally();
              updateEntryUI(date);
-             renderSaisieWeeklySummary();
+             
          }
      };
 
@@ -1381,7 +1464,7 @@
             workEntries.sort((a,b) => a.date.localeCompare(b.date));
             saveWorkEntriesLocally(); 
             renderFullHistory();
-            renderSaisieWeeklySummary();
+            
             alert(`${count} entrées importées avec succès !`);
         };
         reader.readAsText(file);
@@ -1407,7 +1490,7 @@
          currentWeekMonday = getMondayOfWeek(date);
          lsSaveConfig(config);
          updateEntryUI(date);
-         renderSaisieWeeklySummary();
+         
          $('#calendar-modal').style.display = 'none';
          $('#btn-saisie').click();
      };
@@ -1476,62 +1559,14 @@
       $('#time-picker-modal').style.display = 'flex';
   }
 
-  function renderSaisieWeeklySummary() {
-    if (!currentWeekMonday) {
-      currentWeekMonday = getMondayOfWeek(new Date().toISOString().slice(0, 10));
-    }
-    const monday = ymdToDate(currentWeekMonday);
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-
-    const fmtShort = d => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-    $('#saisie-week-range-label').textContent = `${fmtShort(monday)} – ${fmtShort(sunday)}`;
-    $('#saisie-week-num-label').textContent = `Semaine ${getISOWeekNumber(currentWeekMonday)} · ${monday.getFullYear()}`;
-
-    let totalMins = 0;
-    let daysHtml = '';
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      const ymd = dateToYMD(d);
-      const entry = getEntry(ymd);
-      const dayName = DAY_NAMES[i];
-      let timeStr = '–';
-      let colorCls = 'text-gray-600';
-      let icon = '';
-      let dayMins = 0;
-      if (entry) {
-        if (entry.type === 'WORK' || entry.type === 'REMOTE') {
-          dayMins = calcWorkMinutes(entry);
-          timeStr = fmtMinutes(dayMins);
-          colorCls = entry.type === 'WORK' ? 'text-green-400' : 'text-purple-400';
-          icon = entry.type === 'WORK' ? '💼' : '🏠';
-        } else if (entry.type === 'RTT') {
-          dayMins = Math.round(config.targetWeeklyHours / 5);
-          timeStr = fmtMinutes(dayMins); colorCls = 'text-blue-400'; icon = '🏖';
-        } else if (entry.type === 'VACATION') {
-          dayMins = Math.round(config.targetWeeklyHours / 5);
-          timeStr = fmtMinutes(dayMins); colorCls = 'text-pink-400'; icon = '✈️';
-        } else if (entry.type === 'HOLIDAY') {
-          dayMins = Math.round(config.targetWeeklyHours / 5);
-          timeStr = fmtMinutes(dayMins); colorCls = 'text-yellow-400'; icon = '🎉';
-        }
-        totalMins += dayMins;
-      }
-      const isWeekend = i >= 5;
-      const opacity = isWeekend ? 'opacity:0.4;' : '';
-      daysHtml += `<div class="day-row" style="${opacity}">
-        <span class="day-name">${icon} ${dayName}</span>
-        <span class="day-val" style="${colorCls.includes('green') ? 'color:#4ADE80' : colorCls.includes('purple') ? 'color:#A78BFA' : colorCls.includes('blue') ? 'color:#60A5FA' : colorCls.includes('pink') ? 'color:#F472B6' : colorCls.includes('yellow') ? 'color:#FBBF24' : colorCls.includes('gray') ? 'color:var(--text-muted)' : 'color:var(--accent)'}">${timeStr}</span>
-      </div>`;
-    }
-    $('#saisie-weekly-days').innerHTML = daysHtml;
-    $('#saisie-weekly-total').textContent = fmtMinutes(totalMins);
-    $('#saisie-weekly-target').textContent = `/ ${fmtMinutes(config.targetWeeklyHours)}`;
-    const pct = Math.min(100, (totalMins / config.targetWeeklyHours) * 100);
-    $('#saisie-weekly-bar').style.width = `${pct}%`;
-    $('#saisie-weekly-bar').className = `h-full transition-all duration-500 ${pct >= 100 ? 'bg-green-500' : 'bg-blue-500'}`;
-    $('#saisie-weekly-pct').textContent = `${Math.round(pct)}%`;
+  function renderMonthlyCounter() {
+    const today = new Date();
+    const ym = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+    const monthName = today.toLocaleDateString('fr-FR', { month:'long', year:'numeric' });
+    const days = workEntries.filter(e => e.date.startsWith(ym) && (e.type === 'WORK' || e.type === 'REMOTE'));
+    $('#monthly-days-worked-count').textContent = days.length;
+    $('#monthly-counter-label').textContent = `Jours travaillés`;
+    $('#monthly-counter-sub').textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
   }
 
   $('#save-default-times-btn').onclick = () => {
