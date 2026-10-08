@@ -591,6 +591,75 @@
 	    }
 	  </style>
 
+	  <style>
+	    /* Nouvelle architecture : dashboard mobile et espace de travail desktop */
+	    .sidebar-brand { display: none; }
+	    #tab-saisie, #tab-hebdo, #tab-reglages, #tab-data { display: grid; grid-template-columns: minmax(0,1fr); gap: 12px; align-content: start; }
+	    #tab-saisie { grid-template-areas: "date" "overview" "context" "work" "actions" "delete"; }
+	    #tab-saisie > div:first-child { grid-area: date; margin-bottom: 0 !important; }
+	    #entry-context-card { grid-area: context; margin-bottom: 0 !important; }
+	    #work-card { grid-area: work; margin-bottom: 0 !important; }
+	    #entry-actions { grid-area: actions; }
+	    #delete-entry-btn { grid-area: delete; }
+	    #day-overview-card { grid-area: overview; padding: 22px; border: 1px solid rgba(37,132,95,.11); border-radius: 24px; background: linear-gradient(145deg,#FFF 0%,#F1F7F1 100%); box-shadow: 0 8px 24px rgba(22,40,29,.045); }
+	    .overview-topline { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+	    .overview-eyebrow { color: #89938C; font-size: 10px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+	    #home-entry-state { padding: 6px 10px; border-radius: 999px; color: var(--accent); background: #E7F2E9; font-size: 10px; font-weight: 700; white-space: nowrap; }
+	    #home-entry-type { margin: 5px 0 18px; color: #78837B; font-size: 12px; font-weight: 600; }
+	    .day-ring { --day-progress: 0%; display: grid; place-items: center; width: 152px; height: 152px; margin: 0 auto 17px; border-radius: 50%; position: relative; background: conic-gradient(var(--accent) var(--day-progress),#E5ECE6 var(--day-progress)); }
+	    .day-ring::before { content: ""; position: absolute; inset: 8px; border-radius: 50%; background: #FFF; }
+	    .day-ring-content { position: relative; text-align: center; }
+	    #home-total-hours { color: #202522; font-size: 25px; font-weight: 750; letter-spacing: -.055em; }
+	    .day-ring-content small { display: block; margin-top: 3px; color: #89938C; font-size: 10px; }
+	    .overview-progress-label { text-align: center; color: #68736B; font-size: 12px; font-weight: 600; }
+	    #home-progress-caption { margin-top: 5px; text-align: center; color: #98A19A; font-size: 11px; }
+	    #home-week-link { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 18px; padding: 13px 14px; border: 1px solid rgba(31,45,36,.07); border-radius: 14px; background: rgba(255,255,255,.78); color: #4D5C52; font-size: 12px; font-weight: 650; cursor: pointer; }
+	    #home-week-link span { color: var(--accent); font-size: 17px; }
+	    #tab-hebdo { grid-template-columns: minmax(0,1fr); }
+	    #tab-hebdo > .week-nav, #week-today-btn, #tab-hebdo > .bento-card:last-child { grid-column: 1 / -1; }
+	    #tab-hebdo > .hebdo-summary { grid-column: 1 / -1; }
+	    #weekly-body { margin-bottom: 0 !important; }
+	    #tab-data, #tab-reglages { grid-template-columns: minmax(0,1fr); }
+	    #tab-reglages #cloud-section, #save-settings-btn, #tab-reglages > .grid { grid-column: 1 / -1; }
+	    .tab-content { min-width: 0; }
+	    @media (min-width: 900px) {
+	      header.app-header { left: 252px; padding: 15px 34px; box-shadow: none; border-bottom-color: transparent; }
+	      header.app-header > div { max-width: 1240px; }
+	      header.app-header > div > div:first-child { visibility: hidden; }
+	      #pane { width: calc(100% - 252px); max-width: none; margin-left: 252px; padding: 94px 34px 52px !important; }
+	      .nav-bar { inset: 0 auto 0 0; width: 224px; transform: none; display: block; overflow: auto; padding: 0 14px; border: 0; border-right: 1px solid rgba(31,45,36,.07); border-radius: 0; background: rgba(255,255,255,.96); box-shadow: 6px 0 24px rgba(22,40,29,.035); }
+	      .sidebar-brand { display: block; padding: 28px 10px 35px; color: #202522; font-size: 23px; font-weight: 760; letter-spacing: -.06em; }
+	      .sidebar-brand span { color: var(--accent); }
+	      .sidebar-brand small { display: block; margin-top: 4px; color: #929B94; font-size: 9px; font-weight: 700; letter-spacing: .14em; }
+	      .nav-inner { height: auto; max-width: none; flex-direction: column; align-items: stretch; gap: 5px; }
+	      .nav-btn { width: 100%; height: 50px; flex-direction: row; justify-content: flex-start; gap: 12px; padding: 0 12px; border-radius: 13px; }
+	      .nav-btn.is-active { background: #EEF5EF; }
+	      .nav-icon { width: 28px; height: 28px; }
+	      .nav-btn.is-active .nav-icon { background: transparent; }
+	      .nav-label { font-size: 13px; font-weight: 650; }
+	      #tab-saisie { grid-template-columns: minmax(0,1.15fr) minmax(310px,.8fr); grid-template-areas: "date date" "context overview" "work overview" "actions overview" "delete overview"; gap: 16px; }
+	      #tab-saisie > div:first-child { max-width: 760px; }
+	      #day-overview-card { position: sticky; top: 98px; min-height: 436px; padding: 26px; }
+	      .day-ring { width: 176px; height: 176px; margin-top: 25px; margin-bottom: 23px; }
+	      #home-total-hours { font-size: 29px; }
+	      #entry-context-card, #work-card { padding: 22px !important; }
+	      #tab-hebdo { grid-template-columns: minmax(0,1.05fr) minmax(360px,.95fr); grid-template-areas: "week week" "today today" "summary days" "month month"; align-items: start; gap: 14px; }
+	      #tab-hebdo > .week-nav { grid-area: week; }
+	      #week-today-btn { grid-area: today; }
+	      #tab-hebdo > .hebdo-summary { grid-area: summary; }
+	      #weekly-body { grid-area: days; }
+	      #tab-hebdo > .bento-card:last-child { grid-area: month; }
+	      #tab-reglages { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+	      #tab-reglages #cloud-section { grid-column: 1 / -1; }
+	      #tab-reglages > .bento-card { margin-bottom: 0; }
+	      #tab-data { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+	      #tab-data > .section-label { grid-column: 1 / -1; }
+	      #data-list-container { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+	      .entry-card { margin-bottom: 0; }
+	    }
+	    @media (max-width: 380px) { .day-ring { width: 136px; height: 136px; } #home-total-hours { font-size: 22px; } #pane { padding-left: 14px !important; padding-right: 14px !important; } }
+	  </style>
+
 </head>
 
 <body>
@@ -636,8 +705,18 @@
     <input type="hidden" id="entry-date-hidden" />
   </div>
 
-  <!-- TYPE + TRANSPORT sur même ligne -->
-  <div class="bento-card" style="padding:14px 16px; margin-bottom:12px;">
+	  <aside id="day-overview-card" aria-label="Récapitulatif de la journée">
+	    <div class="overview-topline"><span class="overview-eyebrow">En un coup d’œil</span><span id="home-entry-state">À saisir</span></div>
+	    <div id="home-entry-type">💼 Journée au bureau</div>
+	    <div id="day-progress-ring" class="day-ring" aria-label="Progression de l’objectif journalier">
+	      <div class="day-ring-content"><div id="home-total-hours">0h 00m</div><small>sur <span id="home-daily-target">7h 24m</span></small></div>
+	    </div>
+	    <div class="overview-progress-label">Temps comptabilisé</div>
+	    <div id="home-progress-caption">0 % de l’objectif quotidien</div>
+	    <button id="home-week-link" type="button">Voir le détail de la semaine <span>→</span></button>
+	  </aside>
+	  <!-- TYPE + TRANSPORT sur même ligne -->
+	  <div id="entry-context-card" class="bento-card" style="padding:14px 16px; margin-bottom:12px;">
     <div style="display:flex; gap:10px; align-items:center;">
       <div style="flex:1; position:relative;">
         <select id="entry-type-select" class="big-input" style="height:48px; font-size:15px!important; padding-right:28px;">
@@ -700,7 +779,7 @@
   </div>
 
   <!-- ACTIONS -->
-  <div style="display:grid; grid-template-columns:52px 52px 1fr; gap:10px;">
+	  <div id="entry-actions" style="display:grid; grid-template-columns:52px 52px 1fr; gap:10px;">
     <button id="auto-fill-btn" class="btn-icon accent" style="height:52px;">⚡️</button>
     <button id="clear-entry-btn" class="btn-icon" style="height:52px;">↺</button>
     <button id="save-entry-btn" class="btn-primary" style="height:52px;">Enregistrer</button>
@@ -898,16 +977,17 @@
 
   </main>
 
-  <nav id="tabbar" class="nav-bar">
-    <div class="nav-inner">
+	  <nav id="tabbar" class="nav-bar">
+	    <div class="sidebar-brand">Workr<span>.</span><small>SUIVI D’HEURES</small></div>
+	    <div class="nav-inner">
       <button id="btn-saisie" class="nav-btn is-active">
-	        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></span> <span class="nav-label">Saisie</span>
+	        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></span> <span class="nav-label">Aujourd’hui</span>
       </button>
       <button id="btn-hebdo" class="nav-btn">
 	        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5"/><path d="M4 19h17"/><path d="m7 14 4-4 3 2 5-6"/></svg></span> <span class="nav-label">Hebdo</span>
       </button>
       <button id="btn-data" class="nav-btn">
-	        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H10l2 2h5.5A2.5 2.5 0 0 1 20 7.5v10a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5Z"/><path d="M8 11h8M8 15h6"/></svg></span> <span class="nav-label">Data</span>
+	        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H10l2 2h5.5A2.5 2.5 0 0 1 20 7.5v10a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5Z"/><path d="M8 11h8M8 15h6"/></svg></span> <span class="nav-label">Historique</span>
       </button>
       <button id="btn-reglages" class="nav-btn">
 	        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1a1.7 1.7 0 1 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 1 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 1 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 1 1 0-3.4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a1.7 1.7 0 1 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V2a1.7 1.7 0 1 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a1.7 1.7 0 1 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 1 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2 2.9Z"/></svg></span> <span class="nav-label">Réglages</span>
@@ -1307,10 +1387,25 @@
     if (showWork) {
       $('#current-day-minutes').textContent = fmtMinutes(calcWorkMinutes(entry));
     }
-    // Mettre à jour le label pause
-    const lunchMins = lunch ?? config.lunchDurationMinutes;
-    $('#lunch-duration-display').textContent = `${lunchMins}min`;
-  }
+	    // Mettre à jour le label pause
+	    const lunchMins = lunch ?? config.lunchDurationMinutes;
+	    $('#lunch-duration-display').textContent = `${lunchMins}min`;
+
+	    const dailyTarget = Math.round(config.targetWeeklyHours / 5);
+	    const overviewTotal = calcWorkMinutes(entry);
+	    const overviewPercent = dailyTarget > 0 ? Math.min(100, overviewTotal / dailyTarget * 100) : 0;
+	    $('#home-total-hours').textContent = fmtMinutes(overviewTotal);
+	    $('#home-daily-target').textContent = fmtMinutes(dailyTarget);
+	    $('#day-progress-ring').style.setProperty('--day-progress', `${overviewPercent}%`);
+	    $('#home-progress-caption').textContent = `${Math.round(overviewPercent)} % de l’objectif quotidien`;
+	    const typeLabels = { WORK: '💼 Journée au bureau', REMOTE: '🏠 Journée à distance', RTT: '🏖 Journée de RTT', VACATION: '✈️ Jour de congé', HOLIDAY: '🎉 Jour férié' };
+	    $('#home-entry-type').textContent = typeLabels[type] || 'Journée de travail';
+	    const saved = getEntry($('#entry-date-hidden').value);
+	    const sameLunch = (saved?.lunchDurationMinutes ?? config.lunchDurationMinutes) === (lunch ?? config.lunchDurationMinutes);
+	    const sameTransport = type !== 'WORK' || (saved?.transport || null) === getSelectedTransport();
+	    const savedMatchesForm = !!saved && saved.type === type && (showWork ? saved.start === start && saved.end === end : true) && sameLunch && sameTransport;
+	    $('#home-entry-state').textContent = savedMatchesForm ? 'Enregistré' : (showWork && !start && !end ? 'À saisir' : 'Aperçu');
+	  }
 
   function renderFullHistory() {
       const container = $('#data-list-container');
@@ -1527,8 +1622,9 @@
     lsSaveConfig(config);
     recalculateBalances();
     
-    updateSettingsUI();
-    showModal('Réglages Sauvegardés', 'Vos préférences ont été mises à jour.');
+	    updateSettingsUI();
+	    refreshDayTotal();
+	    showModal('Réglages Sauvegardés', 'Vos préférences ont été mises à jour.');
   }
 
   // --- INIT ---
@@ -1626,17 +1722,18 @@
      const tabs = ['saisie','hebdo','data','reglages'];
      tabs.forEach(t => {
          $(`#btn-${t}`).onclick = () => {
-             document.querySelectorAll('.tab-content').forEach(el=>el.style.display='none');
-             document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('is-active'));
-             $(`#tab-${t}`).style.display = 'block';
+	             document.querySelectorAll('.tab-content').forEach(el=>el.style.display='none');
+	             document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('is-active'));
+	             $(`#tab-${t}`).style.display = 'grid';
              $(`#btn-${t}`).classList.add('is-active');
              if(t === 'hebdo') updateWeeklyView();
              if(t === 'reglages') updateSettingsUI();
-             if(t === 'data') renderFullHistory(); 
-         };
-     });
+	             if(t === 'data') renderFullHistory();
+	         };
+	     });
+	     $('#home-week-link').onclick = () => $('#btn-hebdo').click();
 
-     $('#save-entry-btn').onclick = () => {
+	     $('#save-entry-btn').onclick = () => {
         const date = $('#entry-date-hidden').value;
         const type = $('#entry-type-select').value;
         const start = $('#start-time').value;
