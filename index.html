@@ -591,73 +591,156 @@
 	    }
 	  </style>
 
+
 	  <style>
-	    /* Nouvelle architecture : dashboard mobile et espace de travail desktop */
-	    .sidebar-brand { display: none; }
-	    #tab-saisie, #tab-hebdo, #tab-reglages, #tab-data { display: grid; grid-template-columns: minmax(0,1fr); gap: 12px; align-content: start; }
-	    #tab-saisie { grid-template-areas: "date" "overview" "context" "work" "actions" "delete"; }
-	    #tab-saisie > div:first-child { grid-area: date; margin-bottom: 0 !important; }
-	    #entry-context-card { grid-area: context; margin-bottom: 0 !important; }
-	    #work-card { grid-area: work; margin-bottom: 0 !important; }
-	    #entry-actions { grid-area: actions; }
-	    #delete-entry-btn { grid-area: delete; }
-	    #day-overview-card { grid-area: overview; padding: 22px; border: 1px solid rgba(37,132,95,.11); border-radius: 24px; background: linear-gradient(145deg,#FFF 0%,#F1F7F1 100%); box-shadow: 0 8px 24px rgba(22,40,29,.045); }
-	    .overview-topline { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-	    .overview-eyebrow { color: #89938C; font-size: 10px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
-	    #home-entry-state { padding: 6px 10px; border-radius: 999px; color: var(--accent); background: #E7F2E9; font-size: 10px; font-weight: 700; white-space: nowrap; }
-	    #home-entry-type { margin: 5px 0 18px; color: #78837B; font-size: 12px; font-weight: 600; }
-	    .day-ring { --day-progress: 0%; display: grid; place-items: center; width: 152px; height: 152px; margin: 0 auto 17px; border-radius: 50%; position: relative; background: conic-gradient(var(--accent) var(--day-progress),#E5ECE6 var(--day-progress)); }
-	    .day-ring::before { content: ""; position: absolute; inset: 8px; border-radius: 50%; background: #FFF; }
-	    .day-ring-content { position: relative; text-align: center; }
-	    #home-total-hours { color: #202522; font-size: 25px; font-weight: 750; letter-spacing: -.055em; }
-	    .day-ring-content small { display: block; margin-top: 3px; color: #89938C; font-size: 10px; }
-	    .overview-progress-label { text-align: center; color: #68736B; font-size: 12px; font-weight: 600; }
-	    #home-progress-caption { margin-top: 5px; text-align: center; color: #98A19A; font-size: 11px; }
-	    #home-week-link { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 18px; padding: 13px 14px; border: 1px solid rgba(31,45,36,.07); border-radius: 14px; background: rgba(255,255,255,.78); color: #4D5C52; font-size: 12px; font-weight: 650; cursor: pointer; }
-	    #home-week-link span { color: var(--accent); font-size: 17px; }
-	    #tab-hebdo { grid-template-columns: minmax(0,1fr); }
-	    #tab-hebdo > .week-nav, #week-today-btn, #tab-hebdo > .bento-card:last-child { grid-column: 1 / -1; }
-	    #tab-hebdo > .hebdo-summary { grid-column: 1 / -1; }
-	    #weekly-body { margin-bottom: 0 !important; }
-	    #tab-data, #tab-reglages { grid-template-columns: minmax(0,1fr); }
-	    #tab-reglages #cloud-section, #save-settings-btn, #tab-reglages > .grid { grid-column: 1 / -1; }
-	    .tab-content { min-width: 0; }
-	    @media (min-width: 900px) {
-	      header.app-header { left: 252px; padding: 15px 34px; box-shadow: none; border-bottom-color: transparent; }
-	      header.app-header > div { max-width: 1240px; }
-	      header.app-header > div > div:first-child { visibility: hidden; }
-	      #pane { width: calc(100% - 252px); max-width: none; margin-left: 252px; padding: 94px 34px 52px !important; }
-	      .nav-bar { inset: 0 auto 0 0; width: 224px; transform: none; display: block; overflow: auto; padding: 0 14px; border: 0; border-right: 1px solid rgba(31,45,36,.07); border-radius: 0; background: rgba(255,255,255,.96); box-shadow: 6px 0 24px rgba(22,40,29,.035); }
-	      .sidebar-brand { display: block; padding: 28px 10px 35px; color: #202522; font-size: 23px; font-weight: 760; letter-spacing: -.06em; }
-	      .sidebar-brand span { color: var(--accent); }
-	      .sidebar-brand small { display: block; margin-top: 4px; color: #929B94; font-size: 9px; font-weight: 700; letter-spacing: .14em; }
-	      .nav-inner { height: auto; max-width: none; flex-direction: column; align-items: stretch; gap: 5px; }
-	      .nav-btn { width: 100%; height: 50px; flex-direction: row; justify-content: flex-start; gap: 12px; padding: 0 12px; border-radius: 13px; }
-	      .nav-btn.is-active { background: #EEF5EF; }
-	      .nav-icon { width: 28px; height: 28px; }
-	      .nav-btn.is-active .nav-icon { background: transparent; }
-	      .nav-label { font-size: 13px; font-weight: 650; }
-	      #tab-saisie { grid-template-columns: minmax(0,1.15fr) minmax(310px,.8fr); grid-template-areas: "date date" "context overview" "work overview" "actions overview" "delete overview"; gap: 16px; }
-	      #tab-saisie > div:first-child { max-width: 760px; }
-	      #day-overview-card { position: sticky; top: 98px; min-height: 436px; padding: 26px; }
-	      .day-ring { width: 176px; height: 176px; margin-top: 25px; margin-bottom: 23px; }
-	      #home-total-hours { font-size: 29px; }
-	      #entry-context-card, #work-card { padding: 22px !important; }
-	      #tab-hebdo { grid-template-columns: minmax(0,1.05fr) minmax(360px,.95fr); grid-template-areas: "week week" "today today" "summary days" "month month"; align-items: start; gap: 14px; }
-	      #tab-hebdo > .week-nav { grid-area: week; }
-	      #week-today-btn { grid-area: today; }
-	      #tab-hebdo > .hebdo-summary { grid-area: summary; }
-	      #weekly-body { grid-area: days; }
-	      #tab-hebdo > .bento-card:last-child { grid-area: month; }
-	      #tab-reglages { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
-	      #tab-reglages #cloud-section { grid-column: 1 / -1; }
-	      #tab-reglages > .bento-card { margin-bottom: 0; }
-	      #tab-data { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
-	      #tab-data > .section-label { grid-column: 1 / -1; }
-	      #data-list-container { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
-	      .entry-card { margin-bottom: 0; }
+	    /* Refonte Workr — papier, encre et bleu électrique. La barre d’onglets reste inchangée. */
+	    :root {
+	      --bg: #F3F4F8; --surface: #FFFFFF; --surface2: #F6F7FB;
+	      --text: #1A2030; --text-dim: #667087; --text-muted: #939AAF;
+	      --accent: #5369E8; --accent-dim: #EEF0FF; --border-accent: rgba(83,105,232,.22);
+	      --border: rgba(28,39,72,.09); --danger: #C9475C; --shadow: rgba(29,38,69,.08);
+	      --header-bg: rgba(243,244,248,.90); --nav-bg: rgba(255,255,255,.94);
+	      --modal-bg: rgba(22,28,48,.42); --splash-bg: #F3F4F8; --input-bg: #F7F8FC;
+	      --progress-track: rgba(83,105,232,.12); --radius: 22px;
 	    }
-	    @media (max-width: 380px) { .day-ring { width: 136px; height: 136px; } #home-total-hours { font-size: 22px; } #pane { padding-left: 14px !important; padding-right: 14px !important; } }
+	    html, body { min-height:100%; background:var(--bg); }
+	    body { color:var(--text); background:radial-gradient(ellipse at 12% 0%,rgba(83,105,232,.075),transparent 34rem),var(--bg); }
+	    button, input, select { font-family:inherit !important; }
+	    button:focus-visible, input:focus-visible, select:focus-visible { outline:3px solid rgba(83,105,232,.24); outline-offset:2px; }
+	    header.app-header { left:0; right:0; padding:calc(env(safe-area-inset-top) + 13px) 22px 13px; background:var(--header-bg); border-bottom:1px solid rgba(28,39,72,.06); box-shadow:0 5px 24px rgba(25,33,60,.035); backdrop-filter:blur(22px); }
+	    header.app-header > div { max-width:1120px; margin:0 auto; }
+	    header.app-header > div > div:first-child { visibility:visible; }
+	    .app-logo { font-size:22px; font-weight:760; letter-spacing:-.06em; }
+	    .app-subtitle { color:#8B92A5; font-size:9px; font-weight:700; letter-spacing:.15em; }
+	    #profile-picture-container, #settings-profile-preview, #user-avatar { background-color:#E9ECFA !important; border-color:rgba(28,39,72,.1) !important; color:var(--accent); }
+	    #pane { width:100%; max-width:1120px; margin:0 auto; padding:calc(env(safe-area-inset-top) + 92px) 24px 118px !important; }
+	    .tab-content { min-width:0; animation:tabEnter .24s ease both; }
+	    @keyframes tabEnter { from { opacity:0; transform:translateY(7px); } to { opacity:1; transform:translateY(0); } }
+	    #tab-saisie, #tab-hebdo, #tab-data, #tab-reglages { display:grid; grid-template-columns:minmax(0,1fr); gap:15px; align-content:start; }
+	    .page-heading { margin:5px 2px 3px; }
+	    .page-kicker { display:block; margin-bottom:8px; color:var(--accent); font-size:9px; font-weight:800; letter-spacing:.16em; }
+	    .page-heading h1 { margin:0; color:#171D2C; font-size:clamp(30px,5vw,42px); font-weight:730; line-height:1.05; letter-spacing:-.065em; }
+	    .page-heading p { margin:8px 0 0; color:#798198; font-size:13px; line-height:1.5; }
+	    #tab-saisie { grid-template-areas:"heading" "date" "context" "work" "actions" "delete"; }
+	    #tab-saisie > div:first-child { grid-area:heading; margin-bottom:0 !important; }
+	    #entry-date-row { grid-area:date; margin:0 !important; gap:9px !important; }
+	    #entry-context-card { grid-area:context; padding:18px !important; margin:0 !important; }
+	    #work-card { grid-area:work; padding:19px !important; margin:0 !important; }
+	    #entry-actions { grid-area:actions; align-items:center; }
+	    #delete-entry-btn { grid-area:delete; margin:0 !important; }
+	    .bento-card, .entry-card, .week-nav, .hebdo-summary { background:var(--surface); border:1px solid var(--border); box-shadow:0 8px 28px rgba(29,38,69,.045); }
+	    .bento-card { border-radius:22px; }
+	    .field-caption { margin:0 0 12px 1px; color:#8B92A5; font-size:9px; font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
+	    .section-label { color:#858DA2; font-size:9px; font-weight:800; letter-spacing:.13em; }
+	    .date-hero-btn { display:flex; align-items:center; justify-content:space-between; background:#FFF; border:1px solid var(--border); border-radius:19px; box-shadow:none; padding:14px 16px !important; }
+	    .date-hero-label { color:#8E95A7; font-size:9px; font-weight:800; letter-spacing:.14em; }
+	    .date-hero-value { color:var(--text); font-size:16px !important; font-weight:700; letter-spacing:-.03em; }
+	    .date-hero-icon { display:grid; place-items:center; color:var(--accent); background:var(--accent-dim); border:0; border-radius:14px; }
+	    #today-btn { border-radius:16px !important; box-shadow:none !important; font-size:11px !important; }
+	    .big-input { color:var(--text); background:var(--input-bg); border:1px solid rgba(28,39,72,.09); border-radius:14px; }
+	    .big-input:focus { background:#FFF; border-color:rgba(83,105,232,.56); box-shadow:0 0 0 4px rgba(83,105,232,.1); }
+	    #entry-type-select { height:52px !important; font-size:14px !important; font-weight:650; }
+	    .transport-btn { border:1px solid var(--border); border-radius:14px; background:#F8F9FC; }
+	    .transport-btn.selected { color:var(--accent); background:var(--accent-dim); border-color:rgba(83,105,232,.38); }
+	    #work-card > div:first-child { margin-bottom:16px !important; }
+	    #work-card .section-label { color:#6F7890; }
+	    #current-day-minutes { padding:0; color:var(--accent); background:transparent; font-size:24px; font-weight:750; letter-spacing:-.06em; }
+	    #work-card .big-input { height:62px !important; border-radius:16px; font-size:clamp(19px,3vw,25px) !important; }
+	    #work-card > div:nth-child(3) { gap:12px !important; margin-bottom:15px !important; }
+	    #lunch-duration-manual { height:40px !important; border-radius:11px !important; background:#F7F8FC !important; }
+	    .btn-primary { min-height:54px; border:0; border-radius:16px; background:var(--accent); color:#FFF; box-shadow:0 9px 20px rgba(83,105,232,.2); font-size:14px; font-weight:750; transition:transform .16s ease,box-shadow .16s ease; }
+	    .btn-primary:hover { background:#465BDD; box-shadow:0 11px 23px rgba(83,105,232,.25); }
+	    .btn-primary:active { transform:scale(.985); }
+	    .btn-primary.is-edit { color:var(--accent); background:var(--accent-dim); box-shadow:none; }
+	    .btn-icon { border:1px solid var(--border); border-radius:16px; color:#69738A; background:#FFF; box-shadow:0 5px 15px rgba(29,38,69,.04); }
+	    .btn-icon.accent { color:var(--accent); background:var(--accent-dim); border-color:transparent; }
+	    #range-btn-wrap button { border-radius:14px !important; }
+	    #tab-hebdo { grid-template-areas:"week-title" "week-nav" "week-today" "week-summary" "week-days" "week-month"; }
+	    #tab-hebdo > .page-heading { grid-area:week-title; }
+	    #tab-hebdo > .week-nav { grid-area:week-nav; }
+	    #week-today-btn { grid-area:week-today; margin:0 !important; }
+	    #tab-hebdo > .hebdo-summary { grid-area:week-summary; }
+	    #weekly-body { grid-area:week-days; margin:0 !important; }
+	    #tab-hebdo > .bento-card:last-child { grid-area:week-month; margin:0; }
+	    .week-nav { min-height:72px; padding:10px 14px; border-radius:18px; }
+	    .week-nav-btn { border-radius:13px; background:#F2F3F8; }
+	    .week-nav-btn.week-today { color:var(--accent); background:var(--accent-dim); border-color:transparent; font-weight:700; }
+	    .week-range { color:var(--text); font-weight:700; letter-spacing:-.02em; }
+	    .week-num { margin-top:3px; color:#9097A9; font-size:10px; }
+	    .hebdo-summary { padding:22px; border:1px solid rgba(83,105,232,.13); border-radius:22px; background:linear-gradient(145deg,#FFF 0%,#F5F6FF 100%); box-shadow:0 10px 30px rgba(29,38,69,.05); }
+	    .hebdo-summary .mono { letter-spacing:-.055em; }
+	    .progress-track { height:8px; border-radius:999px; background:var(--progress-track); }
+	    .progress-fill { border-radius:inherit; background:linear-gradient(90deg,#7788FA,var(--accent)); box-shadow:none; }
+	    #weekly-body { overflow:hidden; border-radius:20px; padding:0 !important; }
+	    .day-row { padding:12px 18px; border-bottom-color:rgba(28,39,72,.07); }
+	    #tab-hebdo > .bento-card:last-child { padding:18px !important; }
+	    #tab-hebdo > .bento-card:last-child > div:last-child > div { border-radius:15px !important; background:#F7F8FC !important; border-color:rgba(28,39,72,.06) !important; }
+	    #tab-data { grid-template-areas:"history-title" "history-list"; }
+	    #tab-data > .page-heading { grid-area:history-title; }
+	    #data-list-container { grid-area:history-list; display:grid; grid-template-columns:minmax(0,1fr); gap:10px; }
+	    .entry-card { margin:0 !important; padding:17px 18px; border-radius:18px; transition:transform .16s ease,box-shadow .16s ease; }
+	    .entry-card:active { background:#F8F9FD; transform:scale(.99); }
+	    .entry-date { color:#8A92A5; }
+	    #data-list-container > div:not(.entry-card) { grid-column:1/-1; padding:32px 20px; color:#858DA2; background:#FFF; border:1px dashed rgba(28,39,72,.14); border-radius:20px; }
+	    #tab-reglages { grid-template-areas:"settings-title" "cloud" "profile" "finance" "transport" "defaults" "preferences" "save" "export" "user-id"; }
+	    #tab-reglages > .page-heading { grid-area:settings-title; }
+	    #tab-reglages #cloud-section { grid-area:cloud; margin:0 !important; }
+	    #tab-reglages > .bento-card { align-self:start; margin:0; padding:20px; border-radius:20px; }
+	    #tab-reglages > .bento-card:nth-of-type(3) { grid-area:profile; }
+	    #tab-reglages > .bento-card:nth-of-type(4) { grid-area:finance; }
+	    #tab-reglages > .bento-card:nth-of-type(5) { grid-area:transport; }
+	    #tab-reglages > .bento-card:nth-of-type(6) { grid-area:defaults; }
+	    #tab-reglages > .bento-card:nth-of-type(7) { grid-area:preferences; }
+	    #save-settings-btn { grid-area:save; }
+	    #tab-reglages .section-label { display:inline-block; margin-bottom:12px; }
+	    #tab-reglages .big-input { width:100%; min-height:43px; padding:10px 12px; }
+	    #tab-reglages .grid { gap:12px !important; }
+	    #tab-reglages .btn-primary { width:100%; }
+	    #save-settings-btn { width:100%; }
+	    #csv-export-section { grid-area:export; }
+	    #tab-reglages > .settings-id { grid-area:user-id; }
+	    #calendar-container { max-width:520px; background:#FFF; border:1px solid var(--border); box-shadow:0 24px 64px rgba(22,28,48,.18); }
+	    .cal-btn { border-radius:12px; }
+	    .cal-btn.is-selected { color:#FFF; background:var(--accent); }
+	    .cal-btn.is-today { color:var(--accent); border-color:var(--accent); }
+	    #custom-modal > div, #default-times-modal > div, #time-picker-modal > div, #range-modal > div { border:1px solid var(--border) !important; border-radius:24px !important; box-shadow:0 24px 72px rgba(22,28,48,.22) !important; }
+	    #splash-screen { background:var(--splash-bg); }
+	    .splash-logo { font-weight:760; letter-spacing:-.06em; }
+	    .splash-dot { background:var(--accent); }
+	    #tabbar.nav-bar { position:fixed; top:auto; left:50%; right:auto; bottom:calc(10px + env(safe-area-inset-bottom)); z-index:60; width:min(520px,calc(100% - 28px)); transform:translateX(-50%); display:block; overflow:hidden; padding:0 8px env(safe-area-inset-bottom); border:1px solid rgba(31,45,36,.07); border-radius:22px; background:rgba(255,255,255,.94); box-shadow:0 10px 35px rgba(22,40,29,.12); backdrop-filter:blur(22px); }
+	    #tabbar .sidebar-brand { display:none !important; }
+	    #tabbar .nav-inner { display:flex; flex-direction:row; align-items:center; justify-content:space-around; width:100%; max-width:100%; height:66px; margin:0 auto; gap:0; }
+	    #tabbar .nav-btn { display:flex; flex:1; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%; gap:2px; padding:0; border-radius:0; color:#8A948D; background:transparent; }
+	    #tabbar .nav-btn.is-active { color:#25845F; background:transparent; }
+	    #tabbar .nav-btn.is-active::before { display:none; }
+	    #tabbar .nav-icon { display:grid; place-items:center; width:42px; height:30px; border-radius:12px; font-size:18px; }
+	    #tabbar .nav-btn.is-active .nav-icon { background:#EDF5EF; }
+	    #tabbar .nav-icon svg { display:block; width:19px; height:19px; stroke:currentColor; }
+	    #tabbar .nav-label { font-size:10px; font-weight:600; letter-spacing:.005em; }
+	    @media (min-width:900px) {
+	      #pane { padding:104px 30px 126px !important; }
+	      #tab-saisie { grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); grid-template-areas:"heading heading" "date date" "context work" "actions work" "delete delete"; gap:16px; }
+	      #tab-saisie > .page-heading { grid-area:heading; }
+	      #entry-date-row { grid-area:date; max-width:690px; }
+	      #entry-context-card { align-self:start; min-height:142px; }
+	      #work-card { align-self:start; min-height:282px; }
+	      #entry-actions { max-width:520px; }
+	      #tab-hebdo { grid-template-columns:minmax(0,1.2fr) minmax(330px,.8fr); grid-template-areas:"week-title week-title" "week-nav week-nav" "week-today week-today" "week-days week-summary" "week-month week-month"; align-items:start; gap:16px; }
+	      #tab-data { grid-template-columns:minmax(0,1fr); }
+	      #data-list-container { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+	      #tab-reglages { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-areas:"settings-title settings-title" "cloud cloud" "profile finance" "transport defaults" "preferences preferences" "save save" "export export" "user-id user-id"; gap:14px; }
+	      #tab-reglages > .page-heading { grid-column:1/-1; }
+	      #tab-reglages #cloud-section { grid-column:1/-1; }
+	      #tab-reglages > .bento-card { min-width:0; align-self:start; }
+	    }
+	    @media (max-width:560px) {
+	      #pane { padding-right:16px !important; padding-left:16px !important; }
+	      .page-heading h1 { font-size:34px; }
+	      #entry-context-card > div:nth-child(2) { gap:8px !important; }
+	      #transport-card { gap:6px !important; }
+	      #transport-card .transport-btn { padding:9px 10px !important; }
+	    }
+	    @media (prefers-reduced-motion:reduce) { .tab-content { animation:none; } }
 	  </style>
 
 </head>
@@ -684,9 +767,10 @@
   <main id="pane" class="w-full min-h-screen pb-28 px-4">
 
 <section id="tab-saisie" class="tab-content">
+	  <div class="page-heading saisie-heading"><span class="page-kicker">VOTRE ESPACE DE TRAVAIL</span><h1>La journée</h1><p>Enregistrez vos horaires et le type de journée.</p></div>
 
-  <!-- DATE ROW : bouton date + today -->
-  <div style="display:flex; gap:10px; margin-bottom:12px; align-items:stretch;">
+	  <!-- DATE ROW : bouton date + today -->
+	  <div id="entry-date-row" style="display:flex; gap:10px; margin-bottom:12px; align-items:stretch;">
     <button id="entry-date-button" class="date-hero-btn" style="flex:1; padding:16px 18px;">
       <div class="text-left">
         <div class="date-hero-label">Date</div>
@@ -705,18 +789,9 @@
     <input type="hidden" id="entry-date-hidden" />
   </div>
 
-	  <aside id="day-overview-card" aria-label="Récapitulatif de la journée">
-	    <div class="overview-topline"><span class="overview-eyebrow">En un coup d’œil</span><span id="home-entry-state">À saisir</span></div>
-	    <div id="home-entry-type">💼 Journée au bureau</div>
-	    <div id="day-progress-ring" class="day-ring" aria-label="Progression de l’objectif journalier">
-	      <div class="day-ring-content"><div id="home-total-hours">0h 00m</div><small>sur <span id="home-daily-target">7h 24m</span></small></div>
-	    </div>
-	    <div class="overview-progress-label">Temps comptabilisé</div>
-	    <div id="home-progress-caption">0 % de l’objectif quotidien</div>
-	    <button id="home-week-link" type="button">Voir le détail de la semaine <span>→</span></button>
-	  </aside>
 	  <!-- TYPE + TRANSPORT sur même ligne -->
 	  <div id="entry-context-card" class="bento-card" style="padding:14px 16px; margin-bottom:12px;">
+	    <div class="field-caption">Type de journée</div>
     <div style="display:flex; gap:10px; align-items:center;">
       <div style="flex:1; position:relative;">
         <select id="entry-type-select" class="big-input" style="height:48px; font-size:15px!important; padding-right:28px;">
@@ -789,7 +864,8 @@
 </section>
 
 <section id="tab-hebdo" class="tab-content" style="display:none;">
-  <div class="week-nav">
+	  <div class="page-heading"><span class="page-kicker">VUE D’ENSEMBLE</span><h1>Votre semaine</h1><p>Heures, objectif et rythme du mois.</p></div>
+	  <div class="week-nav">
     <button class="week-nav-btn" id="week-prev">‹</button>
     <div style="text-align:center;">
       <div class="week-range" id="week-range-label">–</div>
@@ -850,11 +926,12 @@
 </section>
 
 <section id="tab-data" class="tab-content" style="display:none;">
-  <div class="section-label px-1 mb-3">Historique complet</div>
-  <div id="data-list-container"></div>
+	  <div class="page-heading"><span class="page-kicker">VOTRE PARCOURS</span><h1>Historique</h1><p>Chaque journée enregistrée, au même endroit.</p></div>
+	  <div id="data-list-container"></div>
 </section>
 
 <section id="tab-reglages" class="tab-content" style="display:none;">
+	  <div class="page-heading"><span class="page-kicker">PERSONNALISATION</span><h1>Réglages</h1><p>Adaptez Workr à vos horaires et à vos habitudes.</p></div>
 
   <!-- Cloud -->
   <div class="bento-card mb-2" id="cloud-section">
@@ -966,28 +1043,27 @@
 
   <button id="save-settings-btn" class="btn-primary mb-4">Sauvegarder</button>
 
-  <div class="grid grid-cols-2 gap-3">
+  <div id="csv-export-section" class="grid grid-cols-2 gap-3">
     <button id="export-data-btn" class="h-10 rounded-xl text-sm font-semibold" style="background:var(--surface); color:var(--text-dim); border:1px solid var(--border);">Exporter CSV</button>
     <button id="import-data-btn" class="h-10 rounded-xl text-sm font-semibold" style="background:var(--surface); color:var(--text-dim); border:1px solid var(--border);">Importer CSV</button>
     <input id="import-file" type="file" accept=".csv" class="hidden">
   </div>
 
-  <div style="text-align:center; font-size:10px; color:var(--text-muted); margin-top:24px; padding-bottom:8px; font-family:'Space Mono',monospace;">ID: <span id="user-id-display">Local</span></div>
+  <div class="settings-id" style="text-align:center; font-size:10px; color:var(--text-muted); margin-top:24px; padding-bottom:8px; font-family:'Space Mono',monospace;">ID: <span id="user-id-display">Local</span></div>
 </section>
 
   </main>
 
 	  <nav id="tabbar" class="nav-bar">
-	    <div class="sidebar-brand">Workr<span>.</span><small>SUIVI D’HEURES</small></div>
 	    <div class="nav-inner">
       <button id="btn-saisie" class="nav-btn is-active">
-	        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></span> <span class="nav-label">Aujourd’hui</span>
+	        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></span> <span class="nav-label">Saisie</span>
       </button>
       <button id="btn-hebdo" class="nav-btn">
 	        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5"/><path d="M4 19h17"/><path d="m7 14 4-4 3 2 5-6"/></svg></span> <span class="nav-label">Hebdo</span>
       </button>
       <button id="btn-data" class="nav-btn">
-	        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H10l2 2h5.5A2.5 2.5 0 0 1 20 7.5v10a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5Z"/><path d="M8 11h8M8 15h6"/></svg></span> <span class="nav-label">Historique</span>
+	        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H10l2 2h5.5A2.5 2.5 0 0 1 20 7.5v10a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5Z"/><path d="M8 11h8M8 15h6"/></svg></span> <span class="nav-label">Data</span>
       </button>
       <button id="btn-reglages" class="nav-btn">
 	        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1a1.7 1.7 0 1 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 1 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 1 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 1 1 0-3.4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a1.7 1.7 0 1 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V2a1.7 1.7 0 1 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a1.7 1.7 0 1 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 1 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2 2.9Z"/></svg></span> <span class="nav-label">Réglages</span>
@@ -1391,20 +1467,6 @@
 	    const lunchMins = lunch ?? config.lunchDurationMinutes;
 	    $('#lunch-duration-display').textContent = `${lunchMins}min`;
 
-	    const dailyTarget = Math.round(config.targetWeeklyHours / 5);
-	    const overviewTotal = calcWorkMinutes(entry);
-	    const overviewPercent = dailyTarget > 0 ? Math.min(100, overviewTotal / dailyTarget * 100) : 0;
-	    $('#home-total-hours').textContent = fmtMinutes(overviewTotal);
-	    $('#home-daily-target').textContent = fmtMinutes(dailyTarget);
-	    $('#day-progress-ring').style.setProperty('--day-progress', `${overviewPercent}%`);
-	    $('#home-progress-caption').textContent = `${Math.round(overviewPercent)} % de l’objectif quotidien`;
-	    const typeLabels = { WORK: '💼 Journée au bureau', REMOTE: '🏠 Journée à distance', RTT: '🏖 Journée de RTT', VACATION: '✈️ Jour de congé', HOLIDAY: '🎉 Jour férié' };
-	    $('#home-entry-type').textContent = typeLabels[type] || 'Journée de travail';
-	    const saved = getEntry($('#entry-date-hidden').value);
-	    const sameLunch = (saved?.lunchDurationMinutes ?? config.lunchDurationMinutes) === (lunch ?? config.lunchDurationMinutes);
-	    const sameTransport = type !== 'WORK' || (saved?.transport || null) === getSelectedTransport();
-	    const savedMatchesForm = !!saved && saved.type === type && (showWork ? saved.start === start && saved.end === end : true) && sameLunch && sameTransport;
-	    $('#home-entry-state').textContent = savedMatchesForm ? 'Enregistré' : (showWork && !start && !end ? 'À saisir' : 'Aperçu');
 	  }
 
   function renderFullHistory() {
@@ -1731,7 +1793,6 @@
 	             if(t === 'data') renderFullHistory();
 	         };
 	     });
-	     $('#home-week-link').onclick = () => $('#btn-hebdo').click();
 
 	     $('#save-entry-btn').onclick = () => {
         const date = $('#entry-date-hidden').value;
